@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'register_page.dart';
 import 'dashboard_page.dart';
+import 'Dashboard/guru_dashboard_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -16,9 +17,6 @@ class _LoginPageState extends State<LoginPage> {
   bool passwordVisible = false;
   String selectedRole = 'Siswa';
 
-  // ==============================
-  // WARNA MINDSHPERE
-  // ==============================
   static const Color primaryBlue = Color(0xFF2166D5);
   static const Color lightBlue = Color(0xFF56B4F8);
   static const Color paleBlue = Color(0xFFEAF6FF);
@@ -32,9 +30,10 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
-  // ==============================
+  // ============================================================
   // LOGIN
-  // ==============================
+  // ============================================================
+
   void login() {
     if (emailController.text.trim().isEmpty ||
         passwordController.text.trim().isEmpty) {
@@ -46,15 +45,25 @@ class _LoginPageState extends State<LoginPage> {
       return;
     }
 
-    // Sementara masuk ke dashboard yang sudah ada.
-    // Nanti akan kita pisahkan menjadi
-    // Dashboard Siswa dan Dashboard Guru.
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (_) => DashboardPage(),
-      ),
-    );
+    // Jika memilih SISWA
+    if (selectedRole == 'Siswa') {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => DashboardPage(),
+        ),
+      );
+    }
+
+    // Jika memilih GURU
+    else if (selectedRole == 'Guru') {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const GuruDashboardPage(),
+        ),
+      );
+    }
   }
 
   @override
@@ -69,6 +78,7 @@ class _LoginPageState extends State<LoginPage> {
               // =====================================================
               // BAGIAN ATAS
               // =====================================================
+
               SizedBox(
                 height: 315,
                 child: Stack(
@@ -89,9 +99,7 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                     ),
 
-                    // =================================================
-                    // DEKORASI LINGKARAN KIRI
-                    // =================================================
+                    // Dekorasi kiri
                     Positioned(
                       left: -48,
                       top: 45,
@@ -105,9 +113,7 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                     ),
 
-                    // =================================================
-                    // DEKORASI LINGKARAN KANAN
-                    // =================================================
+                    // Dekorasi kanan
                     Positioned(
                       right: -42,
                       top: 65,
@@ -121,9 +127,7 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                     ),
 
-                    // =================================================
-                    // TITIK DEKORASI
-                    // =================================================
+                    // Titik dekorasi
                     Positioned(
                       left: 43,
                       top: 75,
@@ -154,6 +158,7 @@ class _LoginPageState extends State<LoginPage> {
                     // =================================================
                     // ILUSTRASI MINDSHPERE
                     // =================================================
+
                     Center(
                       child: Padding(
                         padding: const EdgeInsets.only(top: 18),
@@ -165,9 +170,7 @@ class _LoginPageState extends State<LoginPage> {
                               child: Stack(
                                 alignment: Alignment.center,
                                 children: [
-                                  // =====================================
-                                  // ORBIT BESAR
-                                  // =====================================
+                                  // Orbit besar
                                   Container(
                                     width: 178,
                                     height: 178,
@@ -180,9 +183,7 @@ class _LoginPageState extends State<LoginPage> {
                                     ),
                                   ),
 
-                                  // =====================================
-                                  // ORBIT MELINTANG
-                                  // =====================================
+                                  // Orbit melintang
                                   Transform.rotate(
                                     angle: -0.35,
                                     child: Container(
@@ -200,9 +201,7 @@ class _LoginPageState extends State<LoginPage> {
                                     ),
                                   ),
 
-                                  // =====================================
-                                  // ORBIT KECIL
-                                  // =====================================
+                                  // Orbit kecil
                                   Transform.rotate(
                                     angle: 0.55,
                                     child: Container(
@@ -210,8 +209,7 @@ class _LoginPageState extends State<LoginPage> {
                                       height: 75,
                                       decoration: BoxDecoration(
                                         border: Border.all(
-                                          color:
-                                              lightBlue.withOpacity(0.18),
+                                          color: lightBlue.withOpacity(0.18),
                                           width: 1.5,
                                         ),
                                         borderRadius:
@@ -220,9 +218,7 @@ class _LoginPageState extends State<LoginPage> {
                                     ),
                                   ),
 
-                                  // =====================================
-                                  // SPHERE UTAMA
-                                  // =====================================
+                                  // Sphere utama
                                   Container(
                                     width: 108,
                                     height: 108,
@@ -238,7 +234,8 @@ class _LoginPageState extends State<LoginPage> {
                                       ),
                                       boxShadow: [
                                         BoxShadow(
-                                          color: primaryBlue.withOpacity(0.25),
+                                          color:
+                                              primaryBlue.withOpacity(0.25),
                                           blurRadius: 25,
                                           spreadRadius: 3,
                                           offset: const Offset(0, 8),
@@ -248,7 +245,6 @@ class _LoginPageState extends State<LoginPage> {
                                     child: Stack(
                                       alignment: Alignment.center,
                                       children: [
-                                        // Garis globe
                                         Container(
                                           width: 77,
                                           height: 77,
@@ -261,8 +257,6 @@ class _LoginPageState extends State<LoginPage> {
                                             ),
                                           ),
                                         ),
-
-                                        // Globe / MindSphere
                                         const Icon(
                                           Icons.public_rounded,
                                           color: Colors.white,
@@ -272,9 +266,7 @@ class _LoginPageState extends State<LoginPage> {
                                     ),
                                   ),
 
-                                  // =====================================
-                                  // BUKU
-                                  // =====================================
+                                  // Buku
                                   Positioned(
                                     left: 20,
                                     top: 54,
@@ -284,9 +276,7 @@ class _LoginPageState extends State<LoginPage> {
                                     ),
                                   ),
 
-                                  // =====================================
-                                  // EXPLORE
-                                  // =====================================
+                                  // Explore
                                   Positioned(
                                     right: 18,
                                     top: 40,
@@ -296,9 +286,7 @@ class _LoginPageState extends State<LoginPage> {
                                     ),
                                   ),
 
-                                  // =====================================
-                                  // PROGRESS
-                                  // =====================================
+                                  // Progress
                                   Positioned(
                                     right: 32,
                                     bottom: 15,
@@ -308,9 +296,7 @@ class _LoginPageState extends State<LoginPage> {
                                     ),
                                   ),
 
-                                  // =====================================
-                                  // IDE
-                                  // =====================================
+                                  // Ide
                                   Positioned(
                                     left: 32,
                                     bottom: 12,
@@ -320,9 +306,7 @@ class _LoginPageState extends State<LoginPage> {
                                     ),
                                   ),
 
-                                  // =====================================
-                                  // BINTANG
-                                  // =====================================
+                                  // Bintang
                                   const Positioned(
                                     top: 12,
                                     left: 110,
@@ -346,9 +330,7 @@ class _LoginPageState extends State<LoginPage> {
                               ),
                             ),
 
-                            // =========================================
-                            // NAMA APLIKASI
-                            // =========================================
+                            // Nama aplikasi
                             const Text(
                               'MindSphere',
                               style: TextStyle(
@@ -379,6 +361,7 @@ class _LoginPageState extends State<LoginPage> {
               // =====================================================
               // LOGIN CARD
               // =====================================================
+
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 18),
                 child: Container(
@@ -403,9 +386,7 @@ class _LoginPageState extends State<LoginPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // =============================================
-                      // JUDUL
-                      // =============================================
+                      // Judul
                       const Center(
                         child: Text(
                           'Selamat Datang!',
@@ -431,9 +412,10 @@ class _LoginPageState extends State<LoginPage> {
 
                       const SizedBox(height: 23),
 
-                      // =============================================
+                      // =================================================
                       // PILIH ROLE
-                      // =============================================
+                      // =================================================
+
                       const Text(
                         'Masuk sebagai',
                         style: TextStyle(
@@ -469,9 +451,10 @@ class _LoginPageState extends State<LoginPage> {
 
                       const SizedBox(height: 19),
 
-                      // =============================================
+                      // =================================================
                       // EMAIL
-                      // =============================================
+                      // =================================================
+
                       const Text(
                         'Email',
                         style: TextStyle(
@@ -494,9 +477,10 @@ class _LoginPageState extends State<LoginPage> {
 
                       const SizedBox(height: 15),
 
-                      // =============================================
+                      // =================================================
                       // PASSWORD
-                      // =============================================
+                      // =================================================
+
                       const Text(
                         'Password',
                         style: TextStyle(
@@ -533,9 +517,7 @@ class _LoginPageState extends State<LoginPage> {
 
                       const SizedBox(height: 9),
 
-                      // =============================================
-                      // LUPA PASSWORD
-                      // =============================================
+                      // Lupa password
                       Align(
                         alignment: Alignment.centerRight,
                         child: Text(
@@ -550,9 +532,10 @@ class _LoginPageState extends State<LoginPage> {
 
                       const SizedBox(height: 20),
 
-                      // =============================================
+                      // =================================================
                       // BUTTON LOGIN
-                      // =============================================
+                      // =================================================
+
                       SizedBox(
                         width: double.infinity,
                         height: 53,
@@ -588,9 +571,10 @@ class _LoginPageState extends State<LoginPage> {
 
                       const SizedBox(height: 19),
 
-                      // =============================================
+                      // =================================================
                       // REGISTER
-                      // =============================================
+                      // =================================================
+
                       Center(
                         child: GestureDetector(
                           onTap: () {
@@ -629,6 +613,7 @@ class _LoginPageState extends State<LoginPage> {
               // =====================================================
               // DEKORASI BAWAH
               // =====================================================
+
               const SizedBox(height: 20),
 
               SizedBox(
@@ -673,6 +658,7 @@ class _LoginPageState extends State<LoginPage> {
   // ============================================================
   // ROLE BUTTON
   // ============================================================
+
   Widget roleButton({
     required String title,
     required IconData icon,
@@ -707,7 +693,9 @@ class _LoginPageState extends State<LoginPage> {
               size: 21,
               color: selected ? primaryBlue : mutedBlue,
             ),
+
             const SizedBox(width: 7),
+
             Text(
               title,
               style: TextStyle(
@@ -725,6 +713,7 @@ class _LoginPageState extends State<LoginPage> {
   // ============================================================
   // INPUT DECORATION
   // ============================================================
+
   InputDecoration inputDecoration({
     required String hint,
     required IconData icon,
@@ -736,26 +725,33 @@ class _LoginPageState extends State<LoginPage> {
         fontSize: 12.5,
         color: Color(0xFF9BAEC5),
       ),
+
       prefixIcon: Icon(
         icon,
         color: const Color(0xFF5C9FE8),
         size: 20,
       ),
+
       suffixIcon: suffix,
+
       filled: true,
       fillColor: const Color(0xFFF5F9FD),
+
       contentPadding: const EdgeInsets.symmetric(
         horizontal: 15,
         vertical: 15,
       ),
+
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
         borderSide: BorderSide.none,
       ),
+
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
         borderSide: BorderSide.none,
       ),
+
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
         borderSide: const BorderSide(
@@ -769,6 +765,7 @@ class _LoginPageState extends State<LoginPage> {
   // ============================================================
   // ICON MELAYANG MINDSHPERE
   // ============================================================
+
   Widget _mindSphereFloatingIcon({
     required IconData icon,
     required Color color,
@@ -801,6 +798,7 @@ class _LoginPageState extends State<LoginPage> {
   // ============================================================
   // DOT DEKORASI
   // ============================================================
+
   Widget _dot(
     double size,
     Color color,
