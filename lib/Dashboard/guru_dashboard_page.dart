@@ -1,49 +1,338 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
-class GuruDashboardPage extends StatelessWidget {
+class GuruDashboardPage extends StatefulWidget {
   const GuruDashboardPage({super.key});
 
-  static const Color primaryBlue = Color(0xFF2166D5);
-  static const Color lightBlue = Color(0xFF56B4F8);
-  static const Color paleBlue = Color(0xFFEAF6FF);
+  @override
+  State<GuruDashboardPage> createState() => _GuruDashboardPageState();
+}
+
+class _GuruDashboardPageState extends State<GuruDashboardPage> {
+  int selectedIndex = 0;
+
+  // Menyimpan daftar kelas yang dibuat guru
+  final List<Map<String, dynamic>> daftarKelas = [];
+
+  // Warna utama MindSphere
+  static const Color royalBlue = Color(0xFF2166D5);
+  static const Color deepBlue = Color(0xFF123B70);
+  static const Color skyBlue = Color(0xFF56B4F8);
+  static const Color paleBlue = Color(0xFFDCEBFF);
   static const Color textBlue = Color(0xFF18365D);
   static const Color mutedBlue = Color(0xFF7288A8);
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF7FBFF),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
-          child: Column(
+  // Membuat kode kelas otomatis
+  String generateKodeKelas(String namaKelas) {
+    final words = namaKelas
+        .trim()
+        .split(' ')
+        .where((word) => word.isNotEmpty)
+        .toList();
+
+    String kode = '';
+
+    if (words.length >= 2) {
+      kode = words
+          .take(3)
+          .map((word) => word[0].toUpperCase())
+          .join();
+    } else if (words.isNotEmpty) {
+      kode = words[0].length >= 3
+          ? words[0].substring(0, 3).toUpperCase()
+          : words[0].toUpperCase();
+    } else {
+      kode = 'KLS';
+    }
+
+    // Nomor urut kelas
+    final nomor = (daftarKelas.length + 1).toString().padLeft(2, '0');
+
+    return '$kode-$nomor';
+  }
+
+  // Dialog untuk membuat kelas
+  void showBuatKelasDialog() {
+    final namaKelasController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
+          title: const Text(
+            'Buat Kelas Baru',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: textBlue,
+            ),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildHeader(),
-              const SizedBox(height: 20),
-              _buildWelcomeCard(),
-              const SizedBox(height: 24),
-              _buildSectionTitle(
-                'Menu Pengelolaan',
-                'Kelola pembelajaran di MindSphere',
+              const Text(
+                'Masukkan nama kelas yang ingin dibuat.',
+                style: TextStyle(
+                  color: mutedBlue,
+                  fontSize: 14,
+                ),
               ),
-              const SizedBox(height: 13),
-              _buildManagementMenu(),
-              const SizedBox(height: 25),
-              _buildSectionTitle(
-                'Ringkasan Pembelajaran',
-                'Informasi aktivitas siswa',
+              const SizedBox(height: 18),
+              TextField(
+                controller: namaKelasController,
+                textCapitalization: TextCapitalization.words,
+                decoration: InputDecoration(
+                  labelText: 'Nama Kelas',
+                  hintText: 'Contoh: Pemrograman Dasar X',
+                  prefixIcon: const Icon(
+                    Icons.class_rounded,
+                    color: royalBlue,
+                  ),
+                  filled: true,
+                  fillColor: const Color(0xFFF5F8FD),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide.none,
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: const BorderSide(
+                      color: royalBlue,
+                      width: 1.5,
+                    ),
+                  ),
+                ),
               ),
-              const SizedBox(height: 13),
-              _buildSummary(),
-              const SizedBox(height: 25),
-              _buildRecentActivity(),
-              const SizedBox(height: 30),
             ],
           ),
-        ),
+          actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 18),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: const Text(
+                'Batal',
+                style: TextStyle(
+                  color: mutedBlue,
+                ),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                final namaKelas = namaKelasController.text.trim();
+
+                if (namaKelas.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Nama kelas harus diisi.'),
+                    ),
+                  );
+                  return;
+                }
+
+                final kodeKelas = generateKodeKelas(namaKelas);
+
+                setState(() {
+                  daftarKelas.add({
+                    'nama': namaKelas,
+                    'kode': kodeKelas,
+                    'jumlahSiswa': 0,
+                  });
+                });
+
+                Navigator.pop(context);
+
+                // Tampilkan kode kelas setelah berhasil dibuat
+                showKodeKelasDialog(
+                  namaKelas,
+                  kodeKelas,
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: royalBlue,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 12,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: const Text(
+                'Buat Kelas',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // Dialog kode kelas setelah dibuat
+  void showKodeKelasDialog(
+    String namaKelas,
+    String kodeKelas,
+  ) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 70,
+                height: 70,
+                decoration: BoxDecoration(
+                  color: paleBlue,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.check_circle_rounded,
+                  color: royalBlue,
+                  size: 42,
+                ),
+              ),
+              const SizedBox(height: 18),
+              const Text(
+                'Kelas Berhasil Dibuat!',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: textBlue,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                namaKelas,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: mutedBlue,
+                ),
+              ),
+              const SizedBox(height: 22),
+              const Text(
+                'Kode Kelas',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: mutedBlue,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 18,
+                  vertical: 16,
+                ),
+                decoration: BoxDecoration(
+                  color: paleBlue,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      kodeKelas,
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 2,
+                        color: royalBlue,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    IconButton(
+                      tooltip: 'Salin kode',
+                      onPressed: () {
+                        Clipboard.setData(
+                          ClipboardData(text: kodeKelas),
+                        );
+
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'Kode kelas berhasil disalin.',
+                            ),
+                          ),
+                        );
+                      },
+                      icon: const Icon(
+                        Icons.copy_rounded,
+                        color: royalBlue,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Bagikan kode ini kepada siswa agar mereka dapat bergabung ke kelas.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 13,
+                  color: mutedBlue,
+                  height: 1.4,
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: royalBlue,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(vertical: 13),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(13),
+                  ),
+                ),
+                child: const Text(
+                  'Selesai',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // Menyalin kode dari kartu kelas
+  void salinKode(String kode) {
+    Clipboard.setData(
+      ClipboardData(text: kode),
+    );
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Kode kelas berhasil disalin.'),
       ),
-      bottomNavigationBar: _buildBottomNavigation(),
     );
   }
 
@@ -51,78 +340,65 @@ class GuruDashboardPage extends StatelessWidget {
   // HEADER
   // =========================
 
-  Widget _buildHeader() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 18, 20, 0),
-      child: Row(
-        children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [
-                  lightBlue,
-                  primaryBlue,
-                ],
-              ),
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: primaryBlue.withOpacity(0.18),
-                  blurRadius: 14,
-                  offset: const Offset(0, 6),
-                ),
+  Widget buildHeader() {
+    return Row(
+      children: [
+        Container(
+          width: 48,
+          height: 48,
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [
+                royalBlue,
+                skyBlue,
               ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
             ),
-            child: const Icon(
-              Icons.public_rounded,
-              color: Colors.white,
-              size: 28,
-            ),
+            borderRadius: BorderRadius.circular(15),
           ),
-          const SizedBox(width: 12),
-          const Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'MindSphere',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w800,
-                    color: textBlue,
-                  ),
-                ),
-                SizedBox(height: 2),
-                Text(
-                  'Dashboard Guru',
-                  style: TextStyle(
-                    fontSize: 11.5,
-                    color: mutedBlue,
-                  ),
-                ),
-              ],
-            ),
+          child: const Icon(
+            Icons.public_rounded,
+            color: Colors.white,
+            size: 28,
           ),
-          Container(
-            width: 42,
-            height: 42,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(
-                color: const Color(0xFFE2ECF5),
+        ),
+        const SizedBox(width: 12),
+        const Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'MindSphere',
+                style: TextStyle(
+                  fontSize: 19,
+                  fontWeight: FontWeight.bold,
+                  color: textBlue,
+                ),
               ),
-            ),
-            child: const Icon(
-              Icons.notifications_none_rounded,
-              color: textBlue,
-              size: 23,
-            ),
+              Text(
+                'Dashboard Guru',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: mutedBlue,
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        ),
+        Container(
+          width: 42,
+          height: 42,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(13),
+          ),
+          child: const Icon(
+            Icons.notifications_none_rounded,
+            color: textBlue,
+          ),
+        ),
+      ],
     );
   }
 
@@ -130,140 +406,206 @@ class GuruDashboardPage extends StatelessWidget {
   // WELCOME CARD
   // =========================
 
-  Widget _buildWelcomeCard() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(22),
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xFF56B4F8),
-              Color(0xFF2166D5),
-            ],
-          ),
-          borderRadius: BorderRadius.circular(26),
-          boxShadow: [
-            BoxShadow(
-              color: primaryBlue.withOpacity(0.22),
-              blurRadius: 22,
-              offset: const Offset(0, 10),
-            ),
+  Widget buildWelcomeCard() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(22),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [
+            royalBlue,
+            Color(0xFF4C9BF5),
           ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
-        child: Stack(
-          children: [
-            Positioned(
-              right: -20,
-              top: -25,
-              child: Container(
-                width: 110,
-                height: 110,
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.10),
-                  shape: BoxShape.circle,
-                ),
-              ),
-            ),
-            Positioned(
-              right: 30,
-              bottom: -45,
-              child: Container(
-                width: 90,
-                height: 90,
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.08),
-                  shape: BoxShape.circle,
-                ),
-              ),
-            ),
-            Column(
+        borderRadius: BorderRadius.circular(25),
+        boxShadow: [
+          BoxShadow(
+            color: royalBlue.withOpacity(0.20),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  'Halo, Guru! 👋',
+                  'Selamat Datang, Guru! 👋',
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: 22,
-                    fontWeight: FontWeight.w800,
+                    fontSize: 19,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
-                const SizedBox(height: 7),
-                Text(
-                  'Selamat datang di dashboard MindSphere.',
+                const SizedBox(height: 8),
+                const Text(
+                  'Bangun perjalanan belajar siswa bersama MindSphere.',
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.90),
-                    fontSize: 12.5,
+                    color: Colors.white70,
+                    fontSize: 13,
+                    height: 1.4,
                   ),
                 ),
-                const SizedBox(height: 18),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 13,
-                    vertical: 8,
+                const SizedBox(height: 16),
+                ElevatedButton.icon(
+                  onPressed: showBuatKelasDialog,
+                  icon: const Icon(
+                    Icons.add_rounded,
+                    size: 19,
                   ),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.16),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.auto_awesome_rounded,
-                        color: Colors.white,
-                        size: 17,
-                      ),
-                      SizedBox(width: 7),
-                      Text(
-                        'Kelola pembelajaran dengan mudah',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 11.5,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
+                  label: const Text('Buat Kelas'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: royalBlue,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 11,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                 ),
               ],
             ),
-          ],
-        ),
+          ),
+          const SizedBox(width: 10),
+          Container(
+            width: 72,
+            height: 72,
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.15),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.school_rounded,
+              color: Colors.white,
+              size: 38,
+            ),
+          ),
+        ],
       ),
     );
   }
 
   // =========================
-  // SECTION TITLE
+  // KELAS SAYA
   // =========================
 
-  Widget _buildSectionTitle(
-    String title,
-    String subtitle,
-  ) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
+  Widget buildKelasSaya() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Expanded(
+              child: Text(
+                'Kelas Saya',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: textBlue,
+                ),
+              ),
+            ),
+            TextButton.icon(
+              onPressed: showBuatKelasDialog,
+              icon: const Icon(
+                Icons.add_rounded,
+                size: 18,
+              ),
+              label: const Text('Buat Kelas'),
+              style: TextButton.styleFrom(
+                foregroundColor: royalBlue,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        if (daftarKelas.isEmpty)
+          buildEmptyClass()
+        else
+          ...daftarKelas.asMap().entries.map(
+            (entry) {
+              final kelas = entry.value;
+              return buildClassCard(
+                kelas['nama'],
+                kelas['kode'],
+                kelas['jumlahSiswa'],
+              );
+            },
+          ),
+      ],
+    );
+  }
+
+  Widget buildEmptyClass() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(25),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(
+          color: const Color(0xFFE4EBF5),
+        ),
+      ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w800,
+          Container(
+            width: 65,
+            height: 65,
+            decoration: BoxDecoration(
+              color: paleBlue,
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.class_outlined,
+              color: royalBlue,
+              size: 32,
+            ),
+          ),
+          const SizedBox(height: 14),
+          const Text(
+            'Belum Ada Kelas',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
               color: textBlue,
             ),
           ),
-          const SizedBox(height: 3),
-          Text(
-            subtitle,
-            style: const TextStyle(
-              fontSize: 11.5,
+          const SizedBox(height: 6),
+          const Text(
+            'Buat kelas terlebih dahulu untuk mulai mengelola pembelajaran siswa.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 13,
               color: mutedBlue,
+              height: 1.4,
+            ),
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton.icon(
+            onPressed: showBuatKelasDialog,
+            icon: const Icon(Icons.add_rounded),
+            label: const Text('Buat Kelas'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: royalBlue,
+              foregroundColor: Colors.white,
+              elevation: 0,
+              padding: const EdgeInsets.symmetric(
+                horizontal: 20,
+                vertical: 12,
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(13),
+              ),
             ),
           ),
         ],
@@ -271,120 +613,175 @@ class GuruDashboardPage extends StatelessWidget {
     );
   }
 
-  // =========================
-  // MANAGEMENT MENU
-  // =========================
-
-  Widget _buildManagementMenu() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: _managementCard(
-                  icon: Icons.menu_book_rounded,
-                  title: 'Kelola Materi',
-                  subtitle: 'Tambah dan ubah materi',
-                  color: primaryBlue,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _managementCard(
-                  icon: Icons.quiz_rounded,
-                  title: 'Kelola Soal',
-                  subtitle: 'Buat dan atur soal',
-                  color: lightBlue,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: _managementCard(
-                  icon: Icons.bar_chart_rounded,
-                  title: 'Hasil Siswa',
-                  subtitle: 'Lihat hasil belajar',
-                  color: const Color(0xFF6A7FF2),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _managementCard(
-                  icon: Icons.person_rounded,
-                  title: 'Profil',
-                  subtitle: 'Kelola profil guru',
-                  color: const Color(0xFF4C9FEF),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _managementCard({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required Color color,
-  }) {
+  Widget buildClassCard(
+    String nama,
+    String kode,
+    int jumlahSiswa,
+  ) {
     return Container(
-      height: 125,
-      padding: const EdgeInsets.all(15),
+      margin: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(22),
         border: Border.all(
-          color: const Color(0xFFE3EDF6),
+          color: const Color(0xFFE1E9F5),
         ),
         boxShadow: [
           BoxShadow(
-            color: primaryBlue.withOpacity(0.05),
-            blurRadius: 15,
-            offset: const Offset(0, 7),
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 12,
+            offset: const Offset(0, 5),
           ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: paleBlue,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: const Icon(
+                  Icons.menu_book_rounded,
+                  color: royalBlue,
+                  size: 25,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      nama,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: textBlue,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '$jumlahSiswa Siswa',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: mutedBlue,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              IconButton(
+                onPressed: () {
+                  salinKode(kode);
+                },
+                tooltip: 'Salin kode',
+                icon: const Icon(
+                  Icons.copy_rounded,
+                  color: royalBlue,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
           Container(
-            width: 43,
-            height: 43,
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(
+              horizontal: 15,
+              vertical: 13,
+            ),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.10),
+              color: const Color(0xFFF3F7FD),
               borderRadius: BorderRadius.circular(14),
             ),
-            child: Icon(
-              icon,
-              color: color,
-              size: 23,
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.key_rounded,
+                  color: royalBlue,
+                  size: 20,
+                ),
+                const SizedBox(width: 9),
+                const Text(
+                  'Kode Kelas:',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: mutedBlue,
+                  ),
+                ),
+                const SizedBox(width: 7),
+                Text(
+                  kode,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1,
+                    color: textBlue,
+                  ),
+                ),
+              ],
             ),
           ),
-          const Spacer(),
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w800,
-              color: textBlue,
-            ),
-          ),
-          const SizedBox(height: 3),
-          Text(
-            subtitle,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              fontSize: 9.5,
-              color: mutedBlue,
-            ),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () {
+                    salinKode(kode);
+                  },
+                  icon: const Icon(
+                    Icons.copy_rounded,
+                    size: 17,
+                  ),
+                  label: const Text('Salin Kode'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: royalBlue,
+                    side: const BorderSide(
+                      color: royalBlue,
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 11,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          'Halaman detail kelas akan dibuat selanjutnya.',
+                        ),
+                      ),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: royalBlue,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 11,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text('Lihat Kelas'),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -392,135 +789,152 @@ class GuruDashboardPage extends StatelessWidget {
   }
 
   // =========================
-  // SUMMARY
+  // KELOLA PEMBELAJARAN
   // =========================
 
-  Widget _buildSummary() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Row(
-        children: [
-          Expanded(
-            child: _summaryCard(
-              icon: Icons.people_alt_rounded,
-              value: '24',
-              label: 'Siswa',
-            ),
+  Widget buildKelolaPembelajaran() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Kelola Pembelajaran',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: textBlue,
           ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: _summaryCard(
-              icon: Icons.menu_book_rounded,
-              value: '8',
-              label: 'Materi',
-            ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: _summaryCard(
-              icon: Icons.quiz_rounded,
-              value: '12',
-              label: 'Soal',
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _summaryCard({
-    required IconData icon,
-    required String value,
-    required String label,
-  }) {
-    return Container(
-      height: 112,
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(19),
-        border: Border.all(
-          color: const Color(0xFFE3EDF6),
         ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(
-            icon,
-            color: primaryBlue,
-            size: 22,
-          ),
-          const Spacer(),
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w800,
-              color: textBlue,
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: buildMenuCard(
+                icon: Icons.menu_book_rounded,
+                title: 'Kelola Materi',
+                subtitle: 'Tambah dan atur materi',
+                onTap: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        'Halaman Kelola Materi akan dibuat selanjutnya.',
+                      ),
+                    ),
+                  );
+                },
+              ),
             ),
-          ),
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 10,
-              color: mutedBlue,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // =========================
-  // RECENT ACTIVITY
-  // =========================
-
-  Widget _buildRecentActivity() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(18),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(22),
-          border: Border.all(
-            color: const Color(0xFFE3EDF6),
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: primaryBlue.withOpacity(0.05),
-              blurRadius: 15,
-              offset: const Offset(0, 7),
+            const SizedBox(width: 12),
+            Expanded(
+              child: buildMenuCard(
+                icon: Icons.quiz_rounded,
+                title: 'Kelola Tantangan',
+                subtitle: 'Buat kuis dan soal',
+                onTap: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        'Halaman Kelola Tantangan akan dibuat selanjutnya.',
+                      ),
+                    ),
+                  );
+                },
+              ),
             ),
           ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: buildMenuCard(
+                icon: Icons.bar_chart_rounded,
+                title: 'Hasil Siswa',
+                subtitle: 'Lihat perkembangan siswa',
+                onTap: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        'Halaman Hasil Siswa akan dibuat selanjutnya.',
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: buildMenuCard(
+                icon: Icons.person_rounded,
+                title: 'Profil',
+                subtitle: 'Kelola profil guru',
+                onTap: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        'Halaman Profil akan dibuat selanjutnya.',
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget buildMenuCard({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(18),
+      child: Container(
+        padding: const EdgeInsets.all(15),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+            color: const Color(0xFFE3EAF4),
+          ),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Aktivitas Terbaru',
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w800,
+            Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                color: paleBlue,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                icon,
+                color: royalBlue,
+                size: 22,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
                 color: textBlue,
               ),
             ),
-            const SizedBox(height: 15),
-            _activityItem(
-              icon: Icons.menu_book_rounded,
-              title: 'Materi baru ditambahkan',
-              subtitle: 'Pengenalan Teknologi Informasi',
-            ),
-            const Divider(
-              height: 22,
-              color: Color(0xFFEAF0F5),
-            ),
-            _activityItem(
-              icon: Icons.quiz_rounded,
-              title: 'Soal evaluasi diperbarui',
-              subtitle: 'Pemrograman Dasar',
+            const SizedBox(height: 4),
+            Text(
+              subtitle,
+              style: const TextStyle(
+                fontSize: 11,
+                color: mutedBlue,
+                height: 1.3,
+              ),
             ),
           ],
         ),
@@ -528,56 +942,161 @@ class GuruDashboardPage extends StatelessWidget {
     );
   }
 
-  Widget _activityItem({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-  }) {
-    return Row(
+  // =========================
+  // RINGKASAN
+  // =========================
+
+  Widget buildRingkasan() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            color: paleBlue,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Icon(
-            icon,
-            color: primaryBlue,
-            size: 20,
+        const Text(
+          'Ringkasan Pembelajaran',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: textBlue,
           ),
         ),
-        const SizedBox(width: 11),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 11.5,
-                  fontWeight: FontWeight.w700,
-                  color: textBlue,
-                ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: buildStatCard(
+                icon: Icons.people_alt_rounded,
+                title: 'Siswa',
+                value: totalSiswa().toString(),
               ),
-              const SizedBox(height: 3),
-              Text(
-                subtitle,
-                style: const TextStyle(
-                  fontSize: 10,
-                  color: mutedBlue,
-                ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: buildStatCard(
+                icon: Icons.menu_book_rounded,
+                title: 'Materi',
+                value: '0',
               ),
-            ],
-          ),
-        ),
-        const Icon(
-          Icons.chevron_right_rounded,
-          color: mutedBlue,
-          size: 20,
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: buildStatCard(
+                icon: Icons.quiz_rounded,
+                title: 'Tantangan',
+                value: '0',
+              ),
+            ),
+          ],
         ),
       ],
+    );
+  }
+
+  int totalSiswa() {
+    int total = 0;
+
+    for (final kelas in daftarKelas) {
+      total += kelas['jumlahSiswa'] as int;
+    }
+
+    return total;
+  }
+
+  Widget buildStatCard({
+    required IconData icon,
+    required String title,
+    required String value,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: 10,
+        vertical: 15,
+      ),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: const Color(0xFFE3EAF4),
+        ),
+      ),
+      child: Column(
+        children: [
+          Icon(
+            icon,
+            color: royalBlue,
+            size: 25,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: textBlue,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 11,
+              color: mutedBlue,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // =========================
+  // AKTIVITAS
+  // =========================
+
+  Widget buildAktivitas() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(22),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(
+          color: const Color(0xFFE3EAF4),
+        ),
+      ),
+      child: Column(
+        children: [
+          Container(
+            width: 58,
+            height: 58,
+            decoration: BoxDecoration(
+              color: paleBlue,
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.notifications_none_rounded,
+              color: royalBlue,
+              size: 30,
+            ),
+          ),
+          const SizedBox(height: 12),
+          const Text(
+            'Belum Ada Aktivitas',
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.bold,
+              color: textBlue,
+            ),
+          ),
+          const SizedBox(height: 5),
+          const Text(
+            'Aktivitas siswa akan muncul di sini setelah kelas mulai digunakan.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 12,
+              color: mutedBlue,
+              height: 1.4,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -585,88 +1104,155 @@ class GuruDashboardPage extends StatelessWidget {
   // BOTTOM NAVIGATION
   // =========================
 
-  Widget _buildBottomNavigation() {
+  Widget buildBottomNavigation() {
     return Container(
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      padding: const EdgeInsets.symmetric(
+        vertical: 8,
+        horizontal: 5,
+      ),
       decoration: BoxDecoration(
         color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 15,
-            offset: const Offset(0, -4),
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: 10,
-            vertical: 8,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          buildNavItem(
+            icon: Icons.dashboard_rounded,
+            label: 'Dashboard',
+            index: 0,
           ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _bottomItem(
-                icon: Icons.dashboard_rounded,
-                label: 'Dashboard',
-                active: true,
-              ),
-              _bottomItem(
-                icon: Icons.menu_book_rounded,
-                label: 'Materi',
-              ),
-              _bottomItem(
-                icon: Icons.quiz_rounded,
-                label: 'Soal',
-              ),
-              _bottomItem(
-                icon: Icons.bar_chart_rounded,
-                label: 'Hasil',
-              ),
-              _bottomItem(
-                icon: Icons.person_rounded,
-                label: 'Profil',
-              ),
-            ],
+          buildNavItem(
+            icon: Icons.menu_book_rounded,
+            label: 'Materi',
+            index: 1,
           ),
+          buildNavItem(
+            icon: Icons.quiz_rounded,
+            label: 'Soal',
+            index: 2,
+          ),
+          buildNavItem(
+            icon: Icons.bar_chart_rounded,
+            label: 'Hasil',
+            index: 3,
+          ),
+          buildNavItem(
+            icon: Icons.person_rounded,
+            label: 'Profil',
+            index: 4,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget buildNavItem({
+    required IconData icon,
+    required String label,
+    required int index,
+  }) {
+    final bool isSelected = selectedIndex == index;
+
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          selectedIndex = index;
+        });
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(
+          horizontal: 10,
+          vertical: 8,
+        ),
+        decoration: BoxDecoration(
+          color: isSelected ? paleBlue : Colors.transparent,
+          borderRadius: BorderRadius.circular(15),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 21,
+              color: isSelected ? royalBlue : mutedBlue,
+            ),
+            const SizedBox(height: 3),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight:
+                    isSelected ? FontWeight.bold : FontWeight.normal,
+                color: isSelected ? royalBlue : mutedBlue,
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _bottomItem({
-    required IconData icon,
-    required String label,
-    bool active = false,
-  }) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: 12,
-            vertical: 6,
-          ),
-          decoration: BoxDecoration(
-            color: active ? paleBlue : Colors.transparent,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Icon(
-            icon,
-            size: 21,
-            color: active ? primaryBlue : mutedBlue,
-          ),
+  // =========================
+  // BUILD
+  // =========================
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFF6F9FE),
+      body: SafeArea(
+        child: Column(
+          children: [
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(
+                  20,
+                  18,
+                  20,
+                  10,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    buildHeader(),
+                    const SizedBox(height: 22),
+                    buildWelcomeCard(),
+                    const SizedBox(height: 26),
+                    buildKelasSaya(),
+                    const SizedBox(height: 26),
+                    buildKelolaPembelajaran(),
+                    const SizedBox(height: 26),
+                    buildRingkasan(),
+                    const SizedBox(height: 26),
+                    const Text(
+                      'Aktivitas Terbaru',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: textBlue,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    buildAktivitas(),
+                    const SizedBox(height: 20),
+                  ],
+                ),
+              ),
+            ),
+            buildBottomNavigation(),
+          ],
         ),
-        const SizedBox(height: 2),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 9.5,
-            fontWeight: active ? FontWeight.w700 : FontWeight.w500,
-            color: active ? primaryBlue : mutedBlue,
-          ),
-        ),
-      ],
+      ),
     );
   }
 }
