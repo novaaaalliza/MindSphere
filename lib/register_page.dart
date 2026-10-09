@@ -1,6 +1,6 @@
-
 import 'package:flutter/material.dart';
-import 'dashboard_page.dart';
+import 'Dashboard/dashboard_page.dart';
+import 'Dashboard/guru_dashboard_page.dart';
 
 const Color registerRoyalBlue = Color(0xFF2166D5);
 const Color registerDeepBlue = Color(0xFF123B70);
@@ -21,6 +21,8 @@ class _RegisterPageState extends State<RegisterPage> {
 
   bool passwordVisible = false;
   bool confirmPasswordVisible = false;
+
+  String selectedRole = 'Siswa';
 
   @override
   void dispose() {
@@ -50,6 +52,16 @@ class _RegisterPageState extends State<RegisterPage> {
       return;
     }
 
+    if (password.length < 6) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Password minimal 6 karakter.'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+      return;
+    }
+
     if (password != confirmPassword) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -60,14 +72,24 @@ class _RegisterPageState extends State<RegisterPage> {
       return;
     }
 
-    // Sementara langsung masuk Dashboard.
-    // Firebase bisa ditambahkan nanti.
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const DashboardPage(),
-      ),
-    );
+    // Sementara:
+    // Siswa masuk ke Dashboard Siswa
+    // Guru masuk ke Dashboard Guru
+    if (selectedRole == 'Siswa') {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => DashboardPage(),
+        ),
+      );
+    } else {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const GuruDashboardPage(),
+        ),
+      );
+    }
   }
 
   @override
@@ -79,7 +101,10 @@ class _RegisterPageState extends State<RegisterPage> {
     return Scaffold(
       body: Stack(
         children: [
-          // LATAR GRADASI BIRU PREMIUM
+          // ============================================================
+          // LATAR
+          // ============================================================
+
           Positioned.fill(
             child: DecoratedBox(
               decoration: const BoxDecoration(
@@ -98,7 +123,6 @@ class _RegisterPageState extends State<RegisterPage> {
             ),
           ),
 
-          // CAHAYA LATAR
           Positioned(
             top: -70,
             right: -55,
@@ -120,13 +144,15 @@ class _RegisterPageState extends State<RegisterPage> {
               height: 250,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: const Color(0xFF8EDFFF)
-                    .withOpacity(0.16),
+                color: const Color(0xFF8EDFFF).withOpacity(0.16),
               ),
             ),
           ),
 
-          // KONTEN REGISTER
+          // ============================================================
+          // REGISTER CARD
+          // ============================================================
+
           SafeArea(
             child: Center(
               child: SingleChildScrollView(
@@ -151,13 +177,12 @@ class _RegisterPageState extends State<RegisterPage> {
                     ),
                     borderRadius: BorderRadius.circular(32),
                     border: Border.all(
-                      color: Colors.white.withOpacity(0.95),
+                      color: Colors.white,
                       width: 2,
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFF071B49)
-                            .withOpacity(0.25),
+                        color: const Color(0xFF071B49).withOpacity(0.25),
                         blurRadius: 42,
                         spreadRadius: 2,
                         offset: const Offset(0, 18),
@@ -167,7 +192,10 @@ class _RegisterPageState extends State<RegisterPage> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      // LOGO REGISTER
+                      // ==================================================
+                      // LOGO
+                      // ==================================================
+
                       Container(
                         width: 92,
                         height: 92,
@@ -185,8 +213,7 @@ class _RegisterPageState extends State<RegisterPage> {
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: registerRoyalBlue
-                                  .withOpacity(0.30),
+                              color: registerRoyalBlue.withOpacity(0.30),
                               blurRadius: 25,
                               offset: const Offset(0, 8),
                             ),
@@ -217,7 +244,10 @@ class _RegisterPageState extends State<RegisterPage> {
 
                       const SizedBox(height: 20),
 
+                      // ==================================================
                       // NAMA APLIKASI
+                      // ==================================================
+
                       RichText(
                         text: const TextSpan(
                           style: TextStyle(
@@ -263,7 +293,6 @@ class _RegisterPageState extends State<RegisterPage> {
                           fontSize: 28,
                           fontWeight: FontWeight.w900,
                           color: registerDeepBlue,
-                          letterSpacing: -0.5,
                         ),
                       ),
 
@@ -296,9 +325,52 @@ class _RegisterPageState extends State<RegisterPage> {
                         ),
                       ),
 
-                      const SizedBox(height: 30),
+                      const SizedBox(height: 28),
 
-                      // NAMA LENGKAP
+                      // ==================================================
+                      // PILIH ROLE
+                      // ==================================================
+
+                      const Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          'Daftar sebagai',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w800,
+                            color: registerDeepBlue,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 10),
+
+                      Row(
+                        children: [
+                          Expanded(
+                            child: roleButton(
+                              title: 'Siswa',
+                              icon: Icons.school_rounded,
+                              role: 'Siswa',
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: roleButton(
+                              title: 'Guru',
+                              icon: Icons.person_rounded,
+                              role: 'Guru',
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 20),
+
+                      // ==================================================
+                      // NAMA
+                      // ==================================================
+
                       buildField(
                         controller: nameController,
                         label: 'Nama Lengkap',
@@ -308,7 +380,10 @@ class _RegisterPageState extends State<RegisterPage> {
 
                       const SizedBox(height: 19),
 
+                      // ==================================================
                       // EMAIL
+                      // ==================================================
+
                       buildField(
                         controller: emailController,
                         label: 'Email',
@@ -319,7 +394,10 @@ class _RegisterPageState extends State<RegisterPage> {
 
                       const SizedBox(height: 19),
 
+                      // ==================================================
                       // PASSWORD
+                      // ==================================================
+
                       buildField(
                         controller: passwordController,
                         label: 'Password',
@@ -327,9 +405,6 @@ class _RegisterPageState extends State<RegisterPage> {
                         icon: Icons.lock_outline_rounded,
                         obscureText: !passwordVisible,
                         suffixIcon: IconButton(
-                          tooltip: passwordVisible
-                              ? 'Sembunyikan password'
-                              : 'Lihat password',
                           onPressed: () {
                             setState(() {
                               passwordVisible = !passwordVisible;
@@ -345,7 +420,10 @@ class _RegisterPageState extends State<RegisterPage> {
 
                       const SizedBox(height: 19),
 
+                      // ==================================================
                       // KONFIRMASI PASSWORD
+                      // ==================================================
+
                       buildField(
                         controller: confirmPasswordController,
                         label: 'Konfirmasi Password',
@@ -353,9 +431,6 @@ class _RegisterPageState extends State<RegisterPage> {
                         icon: Icons.lock_reset_rounded,
                         obscureText: !confirmPasswordVisible,
                         suffixIcon: IconButton(
-                          tooltip: confirmPasswordVisible
-                              ? 'Sembunyikan password'
-                              : 'Lihat password',
                           onPressed: () {
                             setState(() {
                               confirmPasswordVisible =
@@ -372,7 +447,10 @@ class _RegisterPageState extends State<RegisterPage> {
 
                       const SizedBox(height: 28),
 
+                      // ==================================================
                       // TOMBOL DAFTAR
+                      // ==================================================
+
                       SizedBox(
                         width: double.infinity,
                         height: 59,
@@ -390,8 +468,7 @@ class _RegisterPageState extends State<RegisterPage> {
                             borderRadius: BorderRadius.circular(18),
                             boxShadow: [
                               BoxShadow(
-                                color: registerRoyalBlue
-                                    .withOpacity(0.28),
+                                color: registerRoyalBlue.withOpacity(0.28),
                                 blurRadius: 18,
                                 offset: const Offset(0, 7),
                               ),
@@ -407,19 +484,18 @@ class _RegisterPageState extends State<RegisterPage> {
                                 borderRadius: BorderRadius.circular(18),
                               ),
                             ),
-                            child: const Row(
+                            child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Text(
-                                  'Daftar Sekarang',
-                                  style: TextStyle(
+                                  'Daftar sebagai $selectedRole',
+                                  style: const TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w800,
-                                    letterSpacing: 0.3,
                                   ),
                                 ),
-                                SizedBox(width: 10),
-                                Icon(
+                                const SizedBox(width: 10),
+                                const Icon(
                                   Icons.arrow_forward_rounded,
                                   size: 22,
                                 ),
@@ -431,7 +507,10 @@ class _RegisterPageState extends State<RegisterPage> {
 
                       const SizedBox(height: 24),
 
+                      // ==================================================
                       // KEMBALI KE LOGIN
+                      // ==================================================
+
                       Wrap(
                         alignment: WrapAlignment.center,
                         crossAxisAlignment: WrapCrossAlignment.center,
@@ -447,12 +526,6 @@ class _RegisterPageState extends State<RegisterPage> {
                             onPressed: () {
                               Navigator.pop(context);
                             },
-                            style: TextButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 4,
-                                vertical: 6,
-                              ),
-                            ),
                             child: const Text(
                               'Masuk',
                               style: TextStyle(
@@ -467,7 +540,10 @@ class _RegisterPageState extends State<RegisterPage> {
 
                       const SizedBox(height: 10),
 
+                      // ==================================================
                       // FOOTER
+                      // ==================================================
+
                       const Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
@@ -499,6 +575,66 @@ class _RegisterPageState extends State<RegisterPage> {
       ),
     );
   }
+
+  // ============================================================
+  // ROLE BUTTON
+  // ============================================================
+
+  Widget roleButton({
+    required String title,
+    required IconData icon,
+    required String role,
+  }) {
+    final bool selected = selectedRole == role;
+
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          selectedRole = role;
+        });
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        height: 58,
+        decoration: BoxDecoration(
+          color: selected
+              ? const Color(0xFFEAF4FF)
+              : const Color(0xFFF8FAFD),
+          borderRadius: BorderRadius.circular(15),
+          border: Border.all(
+            color: selected
+                ? registerRoyalBlue
+                : const Color(0xFFDCE7F3),
+            width: selected ? 1.5 : 1,
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              size: 21,
+              color: selected ? registerRoyalBlue : registerMutedBlue,
+            ),
+            const SizedBox(width: 7),
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color:
+                    selected ? registerRoyalBlue : registerMutedBlue,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ============================================================
+  // INPUT FIELD
+  // ============================================================
 
   Widget buildField({
     required TextEditingController controller,
