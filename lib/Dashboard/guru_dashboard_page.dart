@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'detail_kelas_guru_page.dart';
 
 class GuruDashboardPage extends StatefulWidget {
   const GuruDashboardPage({super.key});
@@ -45,13 +46,15 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
       kode = 'KLS';
     }
 
-    // Nomor urut kelas
     final nomor = (daftarKelas.length + 1).toString().padLeft(2, '0');
 
     return '$kode-$nomor';
   }
 
-  // Dialog untuk membuat kelas
+  // =========================
+  // BUAT KELAS
+  // =========================
+
   void showBuatKelasDialog() {
     final namaKelasController = TextEditingController();
 
@@ -147,7 +150,6 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
 
                 Navigator.pop(context);
 
-                // Tampilkan kode kelas setelah berhasil dibuat
                 showKodeKelasDialog(
                   namaKelas,
                   kodeKelas,
@@ -178,7 +180,10 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
     );
   }
 
-  // Dialog kode kelas setelah dibuat
+  // =========================
+  // DIALOG KODE KELAS
+  // =========================
+
   void showKodeKelasDialog(
     String namaKelas,
     String kodeKelas,
@@ -197,7 +202,7 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
               Container(
                 width: 70,
                 height: 70,
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                   color: paleBlue,
                   shape: BoxShape.circle,
                 ),
@@ -323,7 +328,10 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
     );
   }
 
-  // Menyalin kode dari kartu kelas
+  // =========================
+  // SALIN KODE
+  // =========================
+
   void salinKode(String kode) {
     Clipboard.setData(
       ClipboardData(text: kode),
@@ -531,9 +539,8 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
         if (daftarKelas.isEmpty)
           buildEmptyClass()
         else
-          ...daftarKelas.asMap().entries.map(
-            (entry) {
-              final kelas = entry.value;
+          ...daftarKelas.map(
+            (kelas) {
               return buildClassCard(
                 kelas['nama'],
                 kelas['kode'],
@@ -561,7 +568,7 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
           Container(
             width: 65,
             height: 65,
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               color: paleBlue,
               shape: BoxShape.circle,
             ),
@@ -613,6 +620,10 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
     );
   }
 
+  // =========================
+  // CARD KELAS
+  // =========================
+
   Widget buildClassCard(
     String nama,
     String kode,
@@ -643,9 +654,11 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
               Container(
                 width: 48,
                 height: 48,
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                   color: paleBlue,
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.all(
+                    Radius.circular(14),
+                  ),
                 ),
                 child: const Icon(
                   Icons.menu_book_rounded,
@@ -756,13 +769,20 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
                 ),
               ),
               const SizedBox(width: 10),
+
+              // =========================
+              // TOMBOL LIHAT KELAS
+              // =========================
               Expanded(
                 child: ElevatedButton(
                   onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text(
-                          'Halaman detail kelas akan dibuat selanjutnya.',
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => DetailKelasGuruPage(
+                          namaKelas: nama,
+                          kodeKelas: kode,
+                          jumlahSiswa: jumlahSiswa,
                         ),
                       ),
                     );
@@ -908,9 +928,11 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
             Container(
               width: 42,
               height: 42,
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 color: paleBlue,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.all(
+                  Radius.circular(12),
+                ),
               ),
               child: Icon(
                 icon,
@@ -1066,7 +1088,7 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
           Container(
             width: 58,
             height: 58,
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               color: paleBlue,
               shape: BoxShape.circle,
             ),
