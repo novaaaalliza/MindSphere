@@ -1,14 +1,23 @@
 import 'package:flutter/material.dart';
+import 'detail_kelas_siswa_page.dart';
 
-class DashboardPage extends StatelessWidget {
+class DashboardPage extends StatefulWidget {
   DashboardPage({super.key});
 
+  @override
+  State<DashboardPage> createState() => _DashboardPageState();
+}
+
+class _DashboardPageState extends State<DashboardPage> {
   final Color royalBlue = const Color(0xFF2166D5);
   final Color deepBlue = const Color(0xFF123B70);
   final Color skyBlue = const Color(0xFF56B4F8);
   final Color paleBlue = const Color(0xFFDCEBFF);
   final Color textBlue = const Color(0xFF18365D);
   final Color mutedBlue = const Color(0xFF7288A8);
+
+  String? namaKelas;
+  String? kodeKelas;
 
   @override
   Widget build(BuildContext context) {
@@ -199,21 +208,156 @@ class DashboardPage extends StatelessWidget {
   // =========================
 
   Widget _buildClassCard(BuildContext context) {
+    if (kodeKelas == null) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(
+            color: paleBlue,
+            width: 1.3,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.blue.withOpacity(0.06),
+              blurRadius: 15,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 45,
+                  height: 45,
+                  decoration: BoxDecoration(
+                    color: paleBlue,
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Icon(
+                    Icons.class_rounded,
+                    color: royalBlue,
+                    size: 25,
+                  ),
+                ),
+                const SizedBox(width: 12),
+
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Kelas Saya',
+                        style: TextStyle(
+                          color: textBlue,
+                          fontSize: 17,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        'Belum bergabung dengan kelas',
+                        style: TextStyle(
+                          color: mutedBlue,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 18),
+
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(15),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF5F9FF),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.info_outline_rounded,
+                    color: royalBlue,
+                    size: 22,
+                  ),
+                  const SizedBox(width: 10),
+
+                  Expanded(
+                    child: Text(
+                      'Masukkan kode kelas dari guru untuk mulai belajar.',
+                      style: TextStyle(
+                        color: textBlue,
+                        fontSize: 12.5,
+                        height: 1.4,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 15),
+
+            SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  _showJoinClassDialog(context);
+                },
+                icon: const Icon(
+                  Icons.add_rounded,
+                  size: 21,
+                ),
+                label: const Text(
+                  'Gabung Kelas',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: royalBlue,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // =========================
+    // JIKA SUDAH BERGABUNG
+    // =========================
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(
-          color: paleBlue,
-          width: 1.3,
+        gradient: LinearGradient(
+          colors: [deepBlue, royalBlue],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
+        borderRadius: BorderRadius.circular(22),
         boxShadow: [
           BoxShadow(
-            color: Colors.blue.withOpacity(0.06),
+            color: royalBlue.withOpacity(0.18),
             blurRadius: 15,
-            offset: const Offset(0, 6),
+            offset: const Offset(0, 7),
           ),
         ],
       ),
@@ -223,16 +367,16 @@ class DashboardPage extends StatelessWidget {
           Row(
             children: [
               Container(
-                width: 45,
-                height: 45,
+                width: 48,
+                height: 48,
                 decoration: BoxDecoration(
-                  color: paleBlue,
-                  borderRadius: BorderRadius.circular(14),
+                  color: Colors.white.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(15),
                 ),
-                child: Icon(
+                child: const Icon(
                   Icons.class_rounded,
-                  color: royalBlue,
-                  size: 25,
+                  color: Colors.white,
+                  size: 27,
                 ),
               ),
               const SizedBox(width: 12),
@@ -241,20 +385,20 @@ class DashboardPage extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    const Text(
                       'Kelas Saya',
                       style: TextStyle(
-                        color: textBlue,
-                        fontSize: 17,
-                        fontWeight: FontWeight.bold,
+                        color: Colors.white70,
+                        fontSize: 12,
                       ),
                     ),
                     const SizedBox(height: 3),
                     Text(
-                      'Belum bergabung dengan kelas',
-                      style: TextStyle(
-                        color: mutedBlue,
-                        fontSize: 12,
+                      namaKelas ?? 'Kelas',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
                   ],
@@ -267,28 +411,40 @@ class DashboardPage extends StatelessWidget {
 
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.all(15),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 14,
+              vertical: 11,
+            ),
             decoration: BoxDecoration(
-              color: const Color(0xFFF5F9FF),
-              borderRadius: BorderRadius.circular(16),
+              color: Colors.white.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(14),
             ),
             child: Row(
               children: [
-                Icon(
-                  Icons.info_outline_rounded,
-                  color: royalBlue,
-                  size: 22,
+                const Icon(
+                  Icons.key_rounded,
+                  color: Colors.white,
+                  size: 20,
                 ),
-                const SizedBox(width: 10),
+                const SizedBox(width: 9),
 
-                Expanded(
-                  child: Text(
-                    'Masukkan kode kelas dari guru untuk mulai belajar.',
-                    style: TextStyle(
-                      color: textBlue,
-                      fontSize: 12.5,
-                      height: 1.4,
-                    ),
+                const Text(
+                  'Kode Kelas',
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 12,
+                  ),
+                ),
+
+                const Spacer(),
+
+                Text(
+                  kodeKelas ?? '-',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1,
                   ),
                 ),
               ],
@@ -299,27 +455,34 @@ class DashboardPage extends StatelessWidget {
 
           SizedBox(
             width: double.infinity,
-            height: 48,
+            height: 45,
             child: ElevatedButton.icon(
               onPressed: () {
-                _showJoinClassDialog(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => DetailKelasSiswaPage(
+                      namaKelas: namaKelas!,
+                      kodeKelas: kodeKelas!,
+                    ),
+                  ),
+                );
               },
               icon: const Icon(
-                Icons.add_rounded,
-                size: 21,
+                Icons.arrow_forward_rounded,
               ),
               label: const Text(
-                'Gabung Kelas',
+                'Masuk Kelas',
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                 ),
               ),
               style: ElevatedButton.styleFrom(
-                backgroundColor: royalBlue,
-                foregroundColor: Colors.white,
+                backgroundColor: Colors.white,
+                foregroundColor: royalBlue,
                 elevation: 0,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(13),
                 ),
               ),
             ),
@@ -339,7 +502,7 @@ class DashboardPage extends StatelessWidget {
 
     showDialog(
       context: context,
-      builder: (context) {
+      builder: (dialogContext) {
         return AlertDialog(
           backgroundColor: Colors.white,
           shape: RoundedRectangleBorder(
@@ -368,9 +531,10 @@ class DashboardPage extends StatelessWidget {
 
               TextField(
                 controller: codeController,
-                textCapitalization: TextCapitalization.characters,
+                textCapitalization:
+                    TextCapitalization.characters,
                 decoration: InputDecoration(
-                  hintText: 'Contoh: PMD-X01',
+                  hintText: 'Contoh: PDX-01',
                   prefixIcon: Icon(
                     Icons.key_rounded,
                     color: royalBlue,
@@ -385,10 +549,11 @@ class DashboardPage extends StatelessWidget {
               ),
             ],
           ),
+
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.pop(context);
+                Navigator.pop(dialogContext);
               },
               child: Text(
                 'Batal',
@@ -400,7 +565,10 @@ class DashboardPage extends StatelessWidget {
 
             ElevatedButton(
               onPressed: () {
-                if (codeController.text.trim().isEmpty) {
+                final kode =
+                    codeController.text.trim().toUpperCase();
+
+                if (kode.isEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
                       content: Text(
@@ -411,12 +579,22 @@ class DashboardPage extends StatelessWidget {
                   return;
                 }
 
-                Navigator.pop(context);
+                // Simpan kelas sementara
+                setState(() {
+                  kodeKelas = kode;
+                  namaKelas = 'Kelas $kode';
+                });
 
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text(
-                      'Kode kelas diterima. Fitur akan terhubung ke database.',
+                // Tutup dialog
+                Navigator.pop(dialogContext);
+
+                // Langsung masuk ke halaman kelas
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => DetailKelasSiswaPage(
+                      namaKelas: namaKelas!,
+                      kodeKelas: kodeKelas!,
                     ),
                   ),
                 );
@@ -424,8 +602,11 @@ class DashboardPage extends StatelessWidget {
               style: ElevatedButton.styleFrom(
                 backgroundColor: royalBlue,
                 foregroundColor: Colors.white,
+                elevation: 0,
               ),
-              child: const Text('Gabung'),
+              child: const Text(
+                'Gabung',
+              ),
             ),
           ],
         );
@@ -522,7 +703,9 @@ class DashboardPage extends StatelessWidget {
           width: 43,
           height: 43,
           decoration: BoxDecoration(
-            color: active ? royalBlue : const Color(0xFFEAF1FC),
+            color: active
+                ? royalBlue
+                : const Color(0xFFEAF1FC),
             shape: BoxShape.circle,
           ),
           child: Icon(
@@ -698,9 +881,9 @@ class DashboardPage extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
+        gradient: const LinearGradient(
           colors: [
-            const Color(0xFFEAF3FF),
+            Color(0xFFEAF3FF),
             Colors.white,
           ],
         ),
@@ -734,7 +917,8 @@ class DashboardPage extends StatelessWidget {
           const SizedBox(height: 18),
 
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            mainAxisAlignment:
+                MainAxisAlignment.spaceBetween,
             children: [
               Text(
                 'Belum ada aktivitas',
@@ -762,7 +946,8 @@ class DashboardPage extends StatelessWidget {
               value: 0,
               minHeight: 9,
               backgroundColor: const Color(0xFFE0EAF7),
-              valueColor: AlwaysStoppedAnimation<Color>(
+              valueColor:
+                  AlwaysStoppedAnimation<Color>(
                 royalBlue,
               ),
             ),
@@ -793,7 +978,8 @@ class DashboardPage extends StatelessWidget {
     String value,
   ) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment:
+          CrossAxisAlignment.start,
       children: [
         Text(
           value,
@@ -831,7 +1017,8 @@ class DashboardPage extends StatelessWidget {
         ),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment:
+            CrossAxisAlignment.start,
         children: [
           Row(
             children: [
@@ -840,7 +1027,8 @@ class DashboardPage extends StatelessWidget {
                 height: 43,
                 decoration: BoxDecoration(
                   color: const Color(0xFFFFF4D9),
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius:
+                      BorderRadius.circular(14),
                 ),
                 child: const Icon(
                   Icons.emoji_events_outlined,
@@ -852,7 +1040,8 @@ class DashboardPage extends StatelessWidget {
 
               Expanded(
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment:
+                      CrossAxisAlignment.start,
                   children: [
                     Text(
                       'Pencapaian Kelas',
@@ -886,7 +1075,8 @@ class DashboardPage extends StatelessWidget {
             ),
             decoration: BoxDecoration(
               color: const Color(0xFFF7FAFF),
-              borderRadius: BorderRadius.circular(15),
+              borderRadius:
+                  BorderRadius.circular(15),
             ),
             child: Column(
               children: [
