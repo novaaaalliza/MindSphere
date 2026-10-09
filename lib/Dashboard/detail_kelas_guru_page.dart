@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../data/materi_data.dart';
+import 'tantangan_guru_page.dart';
 
 class DetailKelasGuruPage extends StatefulWidget {
   final String namaKelas;
@@ -172,7 +173,7 @@ class _DetailKelasGuruPageState
             const SizedBox(height: 25),
 
             // =========================
-            // MENU TANTANGAN
+            // PEMBELAJARAN
             // =========================
 
             const Text(
@@ -186,6 +187,7 @@ class _DetailKelasGuruPageState
 
             const SizedBox(height: 15),
 
+            // TANTANGAN
             _buildFeatureCard(
               icon: Icons.flag_rounded,
               iconColor: const Color(0xFFE0A500),
@@ -193,16 +195,21 @@ class _DetailKelasGuruPageState
               subtitle:
                   'Buat dan kelola tantangan untuk siswa',
               onTap: () {
-                _showTantangan();
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => TantanganGuruPage(
+                      namaKelas: widget.namaKelas,
+                      kodeKelas: widget.kodeKelas,
+                    ),
+                  ),
+                );
               },
             ),
 
             const SizedBox(height: 12),
 
-            // =========================
-            // MENU HASIL
-            // =========================
-
+            // HASIL
             _buildFeatureCard(
               icon: Icons.assessment_rounded,
               iconColor: skyBlue,
@@ -353,7 +360,9 @@ class _DetailKelasGuruPageState
 
   Widget buildMateri() {
     final daftarMateriKelas =
-        MateriData.getMateriByKelas(widget.kodeKelas);
+        MateriData.getMateriByKelas(
+      widget.kodeKelas,
+    );
 
     if (daftarMateriKelas.isEmpty) {
       return Container(
@@ -562,7 +571,9 @@ class _DetailKelasGuruPageState
 
   Widget buildRingkasan() {
     final jumlahMateri =
-        MateriData.getMateriByKelas(widget.kodeKelas).length;
+        MateriData.getMateriByKelas(
+      widget.kodeKelas,
+    ).length;
 
     return Container(
       width: double.infinity,
@@ -692,8 +703,7 @@ class _DetailKelasGuruPageState
                       judulController,
                   decoration:
                       InputDecoration(
-                    labelText:
-                        'Judul Materi',
+                    labelText: 'Judul Materi',
                     prefixIcon:
                         const Icon(Icons.title),
                     border:
@@ -712,12 +722,10 @@ class _DetailKelasGuruPageState
                   maxLines: 2,
                   decoration:
                       InputDecoration(
-                    labelText:
-                        'Deskripsi',
+                    labelText: 'Deskripsi',
                     prefixIcon:
                         const Icon(
-                      Icons
-                          .description_outlined,
+                      Icons.description_outlined,
                     ),
                     border:
                         OutlineInputBorder(
@@ -730,19 +738,15 @@ class _DetailKelasGuruPageState
                 ),
                 const SizedBox(height: 13),
                 TextField(
-                  controller:
-                      isiController,
+                  controller: isiController,
                   maxLines: 5,
                   decoration:
                       InputDecoration(
-                    labelText:
-                        'Isi Materi',
-                    alignLabelWithHint:
-                        true,
+                    labelText: 'Isi Materi',
+                    alignLabelWithHint: true,
                     prefixIcon:
                         const Icon(
-                      Icons
-                          .menu_book_outlined,
+                      Icons.menu_book_outlined,
                     ),
                     border:
                         OutlineInputBorder(
@@ -795,8 +799,7 @@ class _DetailKelasGuruPageState
                 }
 
                 setState(() {
-                  MateriData.daftarMateri
-                      .add({
+                  MateriData.daftarMateri.add({
                     'kodeKelas':
                         widget.kodeKelas,
                     'judul': judul,
