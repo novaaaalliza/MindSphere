@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'register_page.dart';
-import 'dashboard_page.dart';
+import 'Dashboard/dashboard_page.dart';
 import 'Dashboard/guru_dashboard_page.dart';
 
 class LoginPage extends StatefulWidget {
@@ -156,7 +156,7 @@ class _LoginPageState extends State<LoginPage> {
                     ),
 
                     // =================================================
-                    // ILUSTRASI MINDSHPERE
+                    // ILUSTRASI MINDSPHERE
                     // =================================================
 
                     Center(
@@ -763,7 +763,7 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   // ============================================================
-  // ICON MELAYANG MINDSHPERE
+  // ICON MELAYANG MINDSPHERE
   // ============================================================
 
   Widget _mindSphereFloatingIcon({
