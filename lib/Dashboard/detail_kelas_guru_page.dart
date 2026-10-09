@@ -25,6 +25,33 @@ class _DetailKelasGuruPageState extends State<DetailKelasGuruPage> {
 
   int selectedMenu = 0;
 
+  // =========================
+  // DATA MATERI SEMENTARA
+  // =========================
+
+  final List<Map<String, String>> daftarMateri = [];
+
+  // =========================
+  // CONTROLLER FORM MATERI
+  // =========================
+
+  final TextEditingController judulController =
+      TextEditingController();
+
+  final TextEditingController deskripsiController =
+      TextEditingController();
+
+  final TextEditingController isiController =
+      TextEditingController();
+
+  @override
+  void dispose() {
+    judulController.dispose();
+    deskripsiController.dispose();
+    isiController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -157,7 +184,7 @@ class _DetailKelasGuruPageState extends State<DetailKelasGuruPage> {
               const SizedBox(width: 25),
               buildHeaderStat(
                 Icons.menu_book_rounded,
-                '0',
+                '${daftarMateri.length}',
                 'Materi',
               ),
               const SizedBox(width: 25),
@@ -349,7 +376,7 @@ class _DetailKelasGuruPageState extends State<DetailKelasGuruPage> {
               child: buildSmallCard(
                 Icons.menu_book_rounded,
                 'Materi',
-                '0',
+                '${daftarMateri.length}',
               ),
             ),
             const SizedBox(width: 12),
@@ -391,21 +418,367 @@ class _DetailKelasGuruPageState extends State<DetailKelasGuruPage> {
   // =========================
 
   Widget buildMateri() {
-    return buildEmptySection(
-      icon: Icons.menu_book_rounded,
-      title: 'Belum Ada Materi',
-      description:
-          'Tambahkan materi pembelajaran yang akan dipelajari siswa di kelas ini.',
-      buttonText: 'Tambah Materi',
-      onPressed: () {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Fitur tambah materi akan dibuat selanjutnya.',
+    if (daftarMateri.isEmpty) {
+      return buildEmptySection(
+        icon: Icons.menu_book_rounded,
+        title: 'Belum Ada Materi',
+        description:
+            'Tambahkan materi pembelajaran yang akan dipelajari siswa di kelas ini.',
+        buttonText: 'Tambah Materi',
+        onPressed: () {
+          showTambahMateriDialog();
+        },
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'Materi Pembelajaran',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: textBlue,
+              ),
+            ),
+            ElevatedButton.icon(
+              onPressed: () {
+                showTambahMateriDialog();
+              },
+              icon: const Icon(
+                Icons.add_rounded,
+                size: 18,
+              ),
+              label: const Text('Tambah'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: royalBlue,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 10,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 14),
+        ...List.generate(
+          daftarMateri.length,
+          (index) => buildMateriCard(
+            index,
+            daftarMateri[index],
+          ),
+        ),
+      ],
+    );
+  }
+
+  // =========================
+  // CARD MATERI
+  // =========================
+
+  Widget buildMateriCard(
+    int index,
+    Map<String, String> materi,
+  ) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(17),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(19),
+        border: Border.all(
+          color: const Color(0xFFE2E9F3),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 45,
+                height: 45,
+                decoration: BoxDecoration(
+                  color: paleBlue,
+                  borderRadius: BorderRadius.circular(13),
+                ),
+                child: const Icon(
+                  Icons.menu_book_rounded,
+                  color: royalBlue,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  materi['judul'] ?? '',
+                  style: const TextStyle(
+                    color: textBlue,
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              PopupMenuButton<String>(
+                icon: const Icon(
+                  Icons.more_vert_rounded,
+                  color: mutedBlue,
+                ),
+                onSelected: (value) {
+                  if (value == 'hapus') {
+                    setState(() {
+                      daftarMateri.removeAt(index);
+                    });
+
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          'Materi berhasil dihapus.',
+                        ),
+                      ),
+                    );
+                  }
+                },
+                itemBuilder: (context) => const [
+                  PopupMenuItem(
+                    value: 'hapus',
+                    child: Text('Hapus Materi'),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            materi['deskripsi'] ?? '',
+            style: const TextStyle(
+              color: mutedBlue,
+              fontSize: 12,
+              height: 1.4,
             ),
           ),
+          const SizedBox(height: 12),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(13),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF6F9FE),
+              borderRadius: BorderRadius.circular(13),
+            ),
+            child: Text(
+              materi['isi'] ?? '',
+              style: const TextStyle(
+                color: textBlue,
+                fontSize: 12,
+                height: 1.5,
+              ),
+              maxLines: 4,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // =========================
+  // FORM TAMBAH MATERI
+  // =========================
+
+  void showTambahMateriDialog() {
+    judulController.clear();
+    deskripsiController.clear();
+    isiController.clear();
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(22),
+          ),
+          title: const Text(
+            'Tambah Materi',
+            style: TextStyle(
+              color: textBlue,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                buildFormField(
+                  controller: judulController,
+                  label: 'Judul Materi',
+                  hint: 'Contoh: Pengenalan Komputer',
+                  icon: Icons.title_rounded,
+                ),
+                const SizedBox(height: 14),
+                buildFormField(
+                  controller: deskripsiController,
+                  label: 'Deskripsi',
+                  hint: 'Deskripsi singkat materi',
+                  icon: Icons.description_rounded,
+                  maxLines: 2,
+                ),
+                const SizedBox(height: 14),
+                buildFormField(
+                  controller: isiController,
+                  label: 'Isi Materi',
+                  hint: 'Tulis materi pembelajaran di sini...',
+                  icon: Icons.menu_book_rounded,
+                  maxLines: 6,
+                ),
+              ],
+            ),
+          ),
+          actionsPadding: const EdgeInsets.fromLTRB(
+            20,
+            0,
+            20,
+            18,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(dialogContext);
+              },
+              child: const Text(
+                'Batal',
+                style: TextStyle(
+                  color: mutedBlue,
+                ),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                tambahMateri(dialogContext);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: royalBlue,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: const Text(
+                'Simpan Materi',
+              ),
+            ),
+          ],
         );
       },
+    );
+  }
+
+  // =========================
+  // INPUT FORM
+  // =========================
+
+  Widget buildFormField({
+    required TextEditingController controller,
+    required String label,
+    required String hint,
+    required IconData icon,
+    int maxLines = 1,
+  }) {
+    return TextField(
+      controller: controller,
+      maxLines: maxLines,
+      style: const TextStyle(
+        color: textBlue,
+        fontSize: 13,
+      ),
+      decoration: InputDecoration(
+        labelText: label,
+        hintText: hint,
+        prefixIcon: Icon(
+          icon,
+          color: royalBlue,
+          size: 20,
+        ),
+        labelStyle: const TextStyle(
+          color: mutedBlue,
+        ),
+        hintStyle: const TextStyle(
+          color: Color(0xFF9AA9BD),
+          fontSize: 12,
+        ),
+        filled: true,
+        fillColor: const Color(0xFFF6F9FE),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(13),
+          borderSide: const BorderSide(
+            color: Color(0xFFE2E9F3),
+          ),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(13),
+          borderSide: const BorderSide(
+            color: Color(0xFFE2E9F3),
+          ),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(13),
+          borderSide: const BorderSide(
+            color: royalBlue,
+            width: 1.5,
+          ),
+        ),
+      ),
+    );
+  }
+
+  // =========================
+  // SIMPAN MATERI
+  // =========================
+
+  void tambahMateri(BuildContext dialogContext) {
+    final judul = judulController.text.trim();
+    final deskripsi = deskripsiController.text.trim();
+    final isi = isiController.text.trim();
+
+    if (judul.isEmpty ||
+        deskripsi.isEmpty ||
+        isi.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Semua bagian materi harus diisi.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      daftarMateri.add({
+        'judul': judul,
+        'deskripsi': deskripsi,
+        'isi': isi,
+      });
+    });
+
+    Navigator.pop(dialogContext);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          'Materi berhasil ditambahkan.',
+        ),
+      ),
     );
   }
 
@@ -538,7 +911,7 @@ class _DetailKelasGuruPageState extends State<DetailKelasGuruPage> {
   }
 
   // =========================
-  // KOMPONEN
+  // KOMPONEN INFO
   // =========================
 
   Widget buildInfoCard({
@@ -601,6 +974,10 @@ class _DetailKelasGuruPageState extends State<DetailKelasGuruPage> {
     );
   }
 
+  // =========================
+  // SMALL CARD
+  // =========================
+
   Widget buildSmallCard(
     IconData icon,
     String title,
@@ -646,6 +1023,10 @@ class _DetailKelasGuruPageState extends State<DetailKelasGuruPage> {
       ),
     );
   }
+
+  // =========================
+  // EMPTY SECTION
+  // =========================
 
   Widget buildEmptySection({
     required IconData icon,
