@@ -1,10 +1,5 @@
 class TantanganData {
-  // Menyimpan semua tantangan/kuis yang dibuat oleh guru
   static final List<Map<String, dynamic>> daftarTantangan = [];
-
-  // =========================================================
-  // MENGAMBIL TANTANGAN BERDASARKAN KODE KELAS
-  // =========================================================
 
   static List<Map<String, dynamic>> getTantanganByKelas(
     String kodeKelas,
@@ -16,10 +11,6 @@ class TantanganData {
         .toList();
   }
 
-  // =========================================================
-  // MENAMBAHKAN TANTANGAN BARU
-  // =========================================================
-
   static void tambahTantangan({
     required String kodeKelas,
     required String judul,
@@ -29,25 +20,15 @@ class TantanganData {
       'kodeKelas': kodeKelas,
       'judul': judul,
       'deskripsi': deskripsi,
-
-      // Semua soal dalam satu tantangan disimpan di sini
       'soal': <Map<String, dynamic>>[],
     });
   }
-
-  // =========================================================
-  // MENGHAPUS TANTANGAN
-  // =========================================================
 
   static void hapusTantangan(
     Map<String, dynamic> tantangan,
   ) {
     daftarTantangan.remove(tantangan);
   }
-
-  // =========================================================
-  // MENAMBAHKAN SOAL PILIHAN GANDA
-  // =========================================================
 
   static void tambahSoalPilihanGanda({
     required Map<String, dynamic> tantangan,
@@ -65,10 +46,6 @@ class TantanganData {
       'jawabanBenar': jawabanBenar,
     });
   }
-
-  // =========================================================
-  // MENAMBAHKAN SOAL MENJODOHKAN
-  // =========================================================
 
   static void tambahSoalMenjodohkan({
     required Map<String, dynamic> tantangan,
@@ -89,10 +66,6 @@ class TantanganData {
     });
   }
 
-  // =========================================================
-  // MENAMBAHKAN SOAL IDENTIFIKASI GAMBAR
-  // =========================================================
-
   static void tambahSoalIdentifikasiGambar({
     required Map<String, dynamic> tantangan,
     required String pertanyaan,
@@ -112,10 +85,6 @@ class TantanganData {
     });
   }
 
-  // =========================================================
-  // MENAMBAHKAN SOAL JAWABAN SINGKAT
-  // =========================================================
-
   static void tambahSoalJawabanSingkat({
     required Map<String, dynamic> tantangan,
     required String pertanyaan,
@@ -130,10 +99,6 @@ class TantanganData {
       'jawabanBenar': jawabanBenar,
     });
   }
-
-  // =========================================================
-  // MENAMBAHKAN SOAL SUSUN LANGKAH
-  // =========================================================
 
   static void tambahSoalSusunLangkah({
     required Map<String, dynamic> tantangan,
@@ -152,10 +117,6 @@ class TantanganData {
     });
   }
 
-  // =========================================================
-  // MENGHAPUS SOAL
-  // =========================================================
-
   static void hapusSoal({
     required Map<String, dynamic> tantangan,
     required int index,
@@ -168,10 +129,6 @@ class TantanganData {
     }
   }
 
-  // =========================================================
-  // MENGAMBIL JUMLAH SOAL
-  // =========================================================
-
   static int jumlahSoal(
     Map<String, dynamic> tantangan,
   ) {
@@ -180,10 +137,6 @@ class TantanganData {
 
     return soal.length;
   }
-
-  // =========================================================
-  // MENGAMBIL JENIS SOAL
-  // =========================================================
 
   static String getNamaTipeSoal(
     String tipe,
