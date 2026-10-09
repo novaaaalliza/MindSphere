@@ -3,84 +3,63 @@ import 'package:flutter/material.dart';
 class DashboardPage extends StatelessWidget {
   DashboardPage({super.key});
 
-  static const Color primaryBlue = Color(0xFF2166D5);
-  static const Color lightBlue = Color(0xFF56B4F8);
-  static const Color paleBlue = Color(0xFFEAF6FF);
-  static const Color textBlue = Color(0xFF18365D);
-  static const Color mutedBlue = Color(0xFF7288A8);
-  static const Color softBackground = Color(0xFFF7FBFF);
+  final Color royalBlue = const Color(0xFF2166D5);
+  final Color deepBlue = const Color(0xFF123B70);
+  final Color skyBlue = const Color(0xFF56B4F8);
+  final Color paleBlue = const Color(0xFFDCEBFF);
+  final Color textBlue = const Color(0xFF18365D);
+  final Color mutedBlue = const Color(0xFF7288A8);
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: softBackground,
+      backgroundColor: const Color(0xFFF7FAFF),
       body: SafeArea(
         child: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(20, 18, 20, 30),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildHeader(),
-              const SizedBox(height: 18),
+              const SizedBox(height: 20),
 
               _buildWelcomeCard(),
+              const SizedBox(height: 20),
 
+              _buildClassCard(context),
               const SizedBox(height: 24),
 
               _buildSectionTitle(
                 'Perjalanan Belajar',
-                'Lihat langkah belajarmu hari ini',
+                'Mulai perjalanan belajarmu',
               ),
-
-              const SizedBox(height: 12),
+              const SizedBox(height: 14),
 
               _buildLearningJourney(),
-
               const SizedBox(height: 24),
 
               _buildSectionTitle(
                 'Lanjutkan Belajar',
-                'Teruskan dari materi terakhir',
+                'Materi akan muncul setelah kamu bergabung',
               ),
+              const SizedBox(height: 14),
 
-              const SizedBox(height: 12),
-
-              _buildContinueLearning(),
-
+              _buildEmptyLearningCard(),
               const SizedBox(height: 24),
 
               _buildSectionTitle(
-                'Tantangan Hari Ini',
-                'Uji pemahamanmu dengan tantangan singkat',
+                'Tantangan',
+                'Selesaikan tantangan dari kelasmu',
               ),
+              const SizedBox(height: 14),
 
-              const SizedBox(height: 12),
-
-              _buildChallengeCard(),
-
+              _buildEmptyChallengeCard(),
               const SizedBox(height: 24),
-
-              _buildSectionTitle(
-                'Progress Saya',
-                'Pantau perkembangan belajarmu',
-              ),
-
-              const SizedBox(height: 12),
 
               _buildProgressCard(),
-
               const SizedBox(height: 24),
 
-              _buildSectionTitle(
-                'Pencapaian Kelas',
-                'Lihat pencapaian belajar di kelasmu',
-              ),
-
-              const SizedBox(height: 12),
-
               _buildAchievementCard(),
-
-              const SizedBox(height: 30),
             ],
           ),
         ),
@@ -89,838 +68,488 @@ class DashboardPage extends StatelessWidget {
     );
   }
 
-  // ============================================================
+  // =========================
   // HEADER
-  // ============================================================
+  // =========================
 
   Widget _buildHeader() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 18, 20, 0),
-      child: Row(
-        children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [
-                  lightBlue,
-                  primaryBlue,
-                ],
+    return Row(
+      children: [
+        Container(
+          width: 46,
+          height: 46,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [royalBlue, skyBlue],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(15),
+          ),
+          child: const Icon(
+            Icons.public_rounded,
+            color: Colors.white,
+            size: 27,
+          ),
+        ),
+        const SizedBox(width: 12),
+
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'MindSphere',
+                style: TextStyle(
+                  color: deepBlue,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: primaryBlue.withOpacity(0.18),
-                  blurRadius: 14,
-                  offset: const Offset(0, 6),
+              Text(
+                'Dashboard Siswa',
+                style: TextStyle(
+                  color: mutedBlue,
+                  fontSize: 12,
                 ),
-              ],
-            ),
-            child: const Icon(
-              Icons.public_rounded,
-              color: Colors.white,
-              size: 28,
-            ),
-          ),
-
-          const SizedBox(width: 12),
-
-          const Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'MindSphere',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w800,
-                    color: textBlue,
-                  ),
-                ),
-                SizedBox(height: 2),
-                Text(
-                  'Dashboard Siswa',
-                  style: TextStyle(
-                    fontSize: 11.5,
-                    color: mutedBlue,
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          Container(
-            width: 42,
-            height: 42,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(
-                color: const Color(0xFFE2ECF5),
               ),
-            ),
-            child: const Icon(
-              Icons.notifications_none_rounded,
-              color: textBlue,
-              size: 23,
-            ),
+            ],
           ),
-        ],
-      ),
+        ),
+
+        Container(
+          width: 42,
+          height: 42,
+          decoration: BoxDecoration(
+            color: paleBlue,
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Icon(
+            Icons.notifications_none_rounded,
+            color: royalBlue,
+          ),
+        ),
+      ],
     );
   }
 
-  // ============================================================
-  // WELCOME CARD
-  // ============================================================
+  // =========================
+  // WELCOME
+  // =========================
 
   Widget _buildWelcomeCard() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(22),
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              lightBlue,
-              primaryBlue,
-            ],
-          ),
-          borderRadius: BorderRadius.circular(26),
-          boxShadow: [
-            BoxShadow(
-              color: primaryBlue.withOpacity(0.22),
-              blurRadius: 22,
-              offset: const Offset(0, 10),
-            ),
-          ],
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [deepBlue, royalBlue],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
-        child: Stack(
-          children: [
-            Positioned(
-              right: -20,
-              top: -25,
-              child: Container(
-                width: 110,
-                height: 110,
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.10),
-                  shape: BoxShape.circle,
-                ),
-              ),
-            ),
-
-            Positioned(
-              right: 35,
-              bottom: -45,
-              child: Container(
-                width: 90,
-                height: 90,
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.08),
-                  shape: BoxShape.circle,
-                ),
-              ),
-            ),
-
-            Column(
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
                   'Halo, Siswa! 👋',
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: 22,
-                    fontWeight: FontWeight.w800,
+                    fontSize: 21,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
-
                 const SizedBox(height: 7),
-
                 Text(
-                  'Selamat datang kembali di MindSphere.',
+                  'Siap memulai perjalanan belajar hari ini?',
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.90),
-                    fontSize: 12.5,
-                  ),
-                ),
-
-                const SizedBox(height: 18),
-
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 13,
-                    vertical: 8,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.16),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.auto_awesome_rounded,
-                        color: Colors.white,
-                        size: 17,
-                      ),
-                      SizedBox(width: 7),
-                      Text(
-                        'Yuk lanjutkan perjalanan belajarmu!',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 11.5,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
+                    color: Colors.white.withOpacity(0.85),
+                    fontSize: 13,
+                    height: 1.4,
                   ),
                 ),
               ],
             ),
-          ],
-        ),
+          ),
+
+          Container(
+            width: 62,
+            height: 62,
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.15),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.school_rounded,
+              color: Colors.white,
+              size: 32,
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  // ============================================================
+  // =========================
+  // KELAS SAYA
+  // =========================
+
+  Widget _buildClassCard(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(
+          color: paleBlue,
+          width: 1.3,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.blue.withOpacity(0.06),
+            blurRadius: 15,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 45,
+                height: 45,
+                decoration: BoxDecoration(
+                  color: paleBlue,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Icon(
+                  Icons.class_rounded,
+                  color: royalBlue,
+                  size: 25,
+                ),
+              ),
+              const SizedBox(width: 12),
+
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Kelas Saya',
+                      style: TextStyle(
+                        color: textBlue,
+                        fontSize: 17,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      'Belum bergabung dengan kelas',
+                      style: TextStyle(
+                        color: mutedBlue,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 18),
+
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(15),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF5F9FF),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.info_outline_rounded,
+                  color: royalBlue,
+                  size: 22,
+                ),
+                const SizedBox(width: 10),
+
+                Expanded(
+                  child: Text(
+                    'Masukkan kode kelas dari guru untuk mulai belajar.',
+                    style: TextStyle(
+                      color: textBlue,
+                      fontSize: 12.5,
+                      height: 1.4,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 15),
+
+          SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: ElevatedButton.icon(
+              onPressed: () {
+                _showJoinClassDialog(context);
+              },
+              icon: const Icon(
+                Icons.add_rounded,
+                size: 21,
+              ),
+              label: const Text(
+                'Gabung Kelas',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: royalBlue,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // =========================
+  // DIALOG GABUNG KELAS
+  // =========================
+
+  void _showJoinClassDialog(BuildContext context) {
+    final TextEditingController codeController =
+        TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(22),
+          ),
+          title: Text(
+            'Gabung Kelas',
+            style: TextStyle(
+              color: deepBlue,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Masukkan kode kelas yang diberikan oleh guru.',
+                style: TextStyle(
+                  color: mutedBlue,
+                  fontSize: 13,
+                  height: 1.4,
+                ),
+              ),
+              const SizedBox(height: 18),
+
+              TextField(
+                controller: codeController,
+                textCapitalization: TextCapitalization.characters,
+                decoration: InputDecoration(
+                  hintText: 'Contoh: PMD-X01',
+                  prefixIcon: Icon(
+                    Icons.key_rounded,
+                    color: royalBlue,
+                  ),
+                  filled: true,
+                  fillColor: const Color(0xFFF5F9FF),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: Text(
+                'Batal',
+                style: TextStyle(
+                  color: mutedBlue,
+                ),
+              ),
+            ),
+
+            ElevatedButton(
+              onPressed: () {
+                if (codeController.text.trim().isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        'Kode kelas harus diisi.',
+                      ),
+                    ),
+                  );
+                  return;
+                }
+
+                Navigator.pop(context);
+
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text(
+                      'Kode kelas diterima. Fitur akan terhubung ke database.',
+                    ),
+                  ),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: royalBlue,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Gabung'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // =========================
   // SECTION TITLE
-  // ============================================================
+  // =========================
 
   Widget _buildSectionTitle(
     String title,
     String subtitle,
   ) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w800,
-              color: textBlue,
-            ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: TextStyle(
+            color: textBlue,
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
           ),
-          const SizedBox(height: 3),
-          Text(
-            subtitle,
-            style: const TextStyle(
-              fontSize: 11.5,
-              color: mutedBlue,
-            ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          subtitle,
+          style: TextStyle(
+            color: mutedBlue,
+            fontSize: 12,
+          ),
+        ),
+      ],
+    );
+  }
+
+  // =========================
+  // LEARNING JOURNEY
+  // =========================
+
+  Widget _buildLearningJourney() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(
+          color: paleBlue,
+        ),
+      ),
+      child: Column(
+        children: [
+          _journeyItem(
+            icon: Icons.menu_book_rounded,
+            title: 'Materi',
+            subtitle: 'Belum dimulai',
+            active: false,
+          ),
+
+          _journeyLine(),
+
+          _journeyItem(
+            icon: Icons.explore_rounded,
+            title: 'Eksplorasi',
+            subtitle: 'Belum dimulai',
+            active: false,
+          ),
+
+          _journeyLine(),
+
+          _journeyItem(
+            icon: Icons.flag_rounded,
+            title: 'Tantangan',
+            subtitle: 'Belum dimulai',
+            active: false,
           ),
         ],
       ),
     );
   }
 
-  // ============================================================
-  // LEARNING JOURNEY
-  // ============================================================
-
-  Widget _buildLearningJourney() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.fromLTRB(16, 18, 16, 17),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(22),
-          border: Border.all(
-            color: const Color(0xFFE2ECF5),
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: primaryBlue.withOpacity(0.05),
-              blurRadius: 16,
-              offset: const Offset(0, 7),
-            ),
-          ],
-        ),
-        child: Column(
-          children: [
-            Row(
-              children: [
-                Container(
-                  width: 42,
-                  height: 42,
-                  decoration: BoxDecoration(
-                    color: paleBlue,
-                    borderRadius: BorderRadius.circular(13),
-                  ),
-                  child: const Icon(
-                    Icons.route_rounded,
-                    color: primaryBlue,
-                    size: 23,
-                  ),
-                ),
-
-                const SizedBox(width: 12),
-
-                const Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Perjalanan Belajarmu',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w800,
-                          color: textBlue,
-                        ),
-                      ),
-                      SizedBox(height: 3),
-                      Text(
-                        'Selesaikan setiap langkah secara bertahap',
-                        style: TextStyle(
-                          fontSize: 10.5,
-                          color: mutedBlue,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 22),
-
-            Row(
-              children: [
-                _journeyStep(
-                  icon: Icons.menu_book_rounded,
-                  label: 'Materi',
-                  completed: true,
-                ),
-
-                _journeyLine(completed: true),
-
-                _journeyStep(
-                  icon: Icons.explore_rounded,
-                  label: 'Eksplorasi',
-                  completed: true,
-                ),
-
-                _journeyLine(completed: false),
-
-                _journeyStep(
-                  icon: Icons.flag_rounded,
-                  label: 'Tantangan',
-                  completed: false,
-                  current: true,
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 17),
-
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(
-                horizontal: 13,
-                vertical: 10,
-              ),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF5FAFF),
-                borderRadius: BorderRadius.circular(13),
-              ),
-              child: const Row(
-                children: [
-                  Icon(
-                    Icons.lightbulb_outline_rounded,
-                    color: primaryBlue,
-                    size: 18,
-                  ),
-                  SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'Langkah berikutnya: selesaikan tantanganmu.',
-                      style: TextStyle(
-                        fontSize: 10.5,
-                        fontWeight: FontWeight.w600,
-                        color: textBlue,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _journeyStep({
+  Widget _journeyItem({
     required IconData icon,
-    required String label,
-    required bool completed,
-    bool current = false,
+    required String title,
+    required String subtitle,
+    required bool active,
   }) {
-    return Column(
+    return Row(
       children: [
         Container(
           width: 43,
           height: 43,
           decoration: BoxDecoration(
-            color: completed
-                ? primaryBlue
-                : current
-                    ? paleBlue
-                    : const Color(0xFFF0F4F8),
+            color: active ? royalBlue : const Color(0xFFEAF1FC),
             shape: BoxShape.circle,
-            border: current
-                ? Border.all(
-                    color: primaryBlue,
-                    width: 2,
-                  )
-                : null,
           ),
           child: Icon(
-            completed ? Icons.check_rounded : icon,
-            size: 20,
-            color: completed
-                ? Colors.white
-                : current
-                    ? primaryBlue
-                    : mutedBlue,
+            icon,
+            color: active ? Colors.white : mutedBlue,
+            size: 22,
           ),
         ),
-        const SizedBox(height: 7),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 9.5,
-            fontWeight: current || completed
-                ? FontWeight.w700
-                : FontWeight.w500,
-            color: current || completed ? textBlue : mutedBlue,
-          ),
-        ),
-      ],
-    );
-  }
+        const SizedBox(width: 13),
 
-  Widget _journeyLine({
-    required bool completed,
-  }) {
-    return Expanded(
-      child: Container(
-        height: 3,
-        margin: const EdgeInsets.only(
-          left: 5,
-          right: 5,
-          bottom: 22,
-        ),
-        decoration: BoxDecoration(
-          color: completed
-              ? primaryBlue
-              : const Color(0xFFDDE7F0),
-          borderRadius: BorderRadius.circular(10),
-        ),
-      ),
-    );
-  }
-
-  // ============================================================
-  // CONTINUE LEARNING
-  // ============================================================
-
-  Widget _buildContinueLearning() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(17),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(22),
-          border: Border.all(
-            color: const Color(0xFFE2ECF5),
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: primaryBlue.withOpacity(0.05),
-              blurRadius: 16,
-              offset: const Offset(0, 7),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [
-                        Color(0xFFDDF1FF),
-                        Color(0xFFEAF6FF),
-                      ],
-                    ),
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: const Icon(
-                    Icons.code_rounded,
-                    color: primaryBlue,
-                    size: 25,
-                  ),
-                ),
-
-                const SizedBox(width: 12),
-
-                const Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Pemrograman Dasar',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w800,
-                          color: textBlue,
-                        ),
-                      ),
-                      SizedBox(height: 4),
-                      Text(
-                        'Materi 2 dari 5',
-                        style: TextStyle(
-                          fontSize: 10.5,
-                          color: mutedBlue,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 9,
-                    vertical: 5,
-                  ),
-                  decoration: BoxDecoration(
-                    color: paleBlue,
-                    borderRadius: BorderRadius.circular(9),
-                  ),
-                  child: const Text(
-                    '40%',
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w700,
-                      color: primaryBlue,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 17),
-
-            ClipRRect(
-              borderRadius: BorderRadius.circular(20),
-              child: const LinearProgressIndicator(
-                value: 0.40,
-                minHeight: 8,
-                backgroundColor: Color(0xFFEAF1F7),
-                valueColor: AlwaysStoppedAnimation<Color>(
-                  primaryBlue,
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 13),
-
-            SizedBox(
-              width: double.infinity,
-              height: 43,
-              child: ElevatedButton(
-                onPressed: () {},
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: primaryBlue,
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(13),
-                  ),
-                ),
-                child: const Text(
-                  'Lanjutkan Belajar',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // ============================================================
-  // CHALLENGE
-  // ============================================================
-
-  Widget _buildChallengeCard() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(17),
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xFFEAF6FF),
-              Color(0xFFF7FBFF),
-            ],
-          ),
-          borderRadius: BorderRadius.circular(22),
-          border: Border.all(
-            color: const Color(0xFFD9EAF8),
-          ),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 53,
-              height: 53,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: primaryBlue.withOpacity(0.08),
-                    blurRadius: 10,
-                  ),
-                ],
-              ),
-              child: const Icon(
-                Icons.flag_rounded,
-                color: primaryBlue,
-                size: 27,
-              ),
-            ),
-
-            const SizedBox(width: 13),
-
-            const Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Tantangan Pemrograman Dasar',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w800,
-                      color: textBlue,
-                    ),
-                  ),
-                  SizedBox(height: 5),
-                  Text(
-                    '10 soal • Uji pemahamanmu',
-                    style: TextStyle(
-                      fontSize: 10.5,
-                      color: mutedBlue,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(width: 8),
-
-            Container(
-              width: 38,
-              height: 38,
-              decoration: BoxDecoration(
-                color: primaryBlue,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Icon(
-                Icons.arrow_forward_rounded,
-                color: Colors.white,
-                size: 20,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // ============================================================
-  // PROGRESS
-  // ============================================================
-
-  Widget _buildProgressCard() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(18),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(22),
-          border: Border.all(
-            color: const Color(0xFFE2ECF5),
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: primaryBlue.withOpacity(0.05),
-              blurRadius: 16,
-              offset: const Offset(0, 7),
-            ),
-          ],
-        ),
-        child: Column(
-          children: [
-            Row(
-              children: [
-                Container(
-                  width: 45,
-                  height: 45,
-                  decoration: BoxDecoration(
-                    color: paleBlue,
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: const Icon(
-                    Icons.auto_graph_rounded,
-                    color: primaryBlue,
-                    size: 24,
-                  ),
-                ),
-
-                const SizedBox(width: 12),
-
-                const Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Progress Belajar',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w800,
-                          color: textBlue,
-                        ),
-                      ),
-                      SizedBox(height: 3),
-                      Text(
-                        'Perkembangan belajarmu saat ini',
-                        style: TextStyle(
-                          fontSize: 10.5,
-                          color: mutedBlue,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                const Text(
-                  '35%',
-                  style: TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w800,
-                    color: primaryBlue,
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 16),
-
-            ClipRRect(
-              borderRadius: BorderRadius.circular(20),
-              child: const LinearProgressIndicator(
-                value: 0.35,
-                minHeight: 9,
-                backgroundColor: Color(0xFFEAF1F7),
-                valueColor: AlwaysStoppedAnimation<Color>(
-                  primaryBlue,
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 15),
-
-            Row(
-              children: [
-                Expanded(
-                  child: _progressInfo(
-                    icon: Icons.menu_book_rounded,
-                    value: '8',
-                    label: 'Materi dipelajari',
-                  ),
-                ),
-
-                Container(
-                  width: 1,
-                  height: 35,
-                  color: const Color(0xFFE5EDF4),
-                ),
-
-                Expanded(
-                  child: _progressInfo(
-                    icon: Icons.flag_rounded,
-                    value: '4',
-                    label: 'Tantangan selesai',
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _progressInfo({
-    required IconData icon,
-    required String value,
-    required String label,
-  }) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Icon(
-          icon,
-          color: primaryBlue,
-          size: 18,
-        ),
-        const SizedBox(width: 7),
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              value,
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w800,
+              title,
+              style: TextStyle(
                 color: textBlue,
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
               ),
             ),
+            const SizedBox(height: 3),
             Text(
-              label,
-              style: const TextStyle(
-                fontSize: 8.5,
+              subtitle,
+              style: TextStyle(
                 color: mutedBlue,
+                fontSize: 11,
               ),
             ),
           ],
@@ -929,253 +558,403 @@ class DashboardPage extends StatelessWidget {
     );
   }
 
-  // ============================================================
-  // ACHIEVEMENT
-  // ============================================================
+  Widget _journeyLine() {
+    return Container(
+      margin: const EdgeInsets.only(
+        left: 21,
+        top: 4,
+        bottom: 4,
+      ),
+      width: 2,
+      height: 25,
+      color: paleBlue,
+    );
+  }
 
-  Widget _buildAchievementCard() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(17),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(22),
-          border: Border.all(
-            color: const Color(0xFFE2ECF5),
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: primaryBlue.withOpacity(0.05),
-              blurRadius: 16,
-              offset: const Offset(0, 7),
-            ),
-          ],
+  // =========================
+  // EMPTY LEARNING
+  // =========================
+
+  Widget _buildEmptyLearningCard() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(22),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(
+          color: paleBlue,
         ),
-        child: Column(
-          children: [
-            Row(
+      ),
+      child: Column(
+        children: [
+          Container(
+            width: 58,
+            height: 58,
+            decoration: BoxDecoration(
+              color: paleBlue,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.menu_book_outlined,
+              color: royalBlue,
+              size: 28,
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          Text(
+            'Belum ada materi',
+            style: TextStyle(
+              color: textBlue,
+              fontSize: 15,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+
+          const SizedBox(height: 5),
+
+          Text(
+            'Bergabung dengan kelas terlebih dahulu untuk melihat materi.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: mutedBlue,
+              fontSize: 12,
+              height: 1.4,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // =========================
+  // EMPTY CHALLENGE
+  // =========================
+
+  Widget _buildEmptyChallengeCard() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF5F9FF),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(
+          color: paleBlue,
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 52,
+            height: 52,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Icon(
+              Icons.flag_outlined,
+              color: royalBlue,
+              size: 26,
+            ),
+          ),
+          const SizedBox(width: 13),
+
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  width: 45,
-                  height: 45,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFFF6D9),
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: const Icon(
-                    Icons.emoji_events_rounded,
-                    color: Color(0xFFD79B00),
-                    size: 25,
+                Text(
+                  'Belum ada tantangan',
+                  style: TextStyle(
+                    color: textBlue,
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
-
-                const SizedBox(width: 12),
-
-                const Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Pencapaian Kelas',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w800,
-                          color: textBlue,
-                        ),
-                      ),
-                      SizedBox(height: 3),
-                      Text(
-                        'Hasil pencapaian dari tantangan terakhir',
-                        style: TextStyle(
-                          fontSize: 10,
-                          color: mutedBlue,
-                        ),
-                      ),
-                    ],
+                const SizedBox(height: 4),
+                Text(
+                  'Tantangan akan tersedia setelah kamu bergabung dengan kelas.',
+                  style: TextStyle(
+                    color: mutedBlue,
+                    fontSize: 11.5,
+                    height: 1.4,
                   ),
                 ),
               ],
             ),
+          ),
+        ],
+      ),
+    );
+  }
 
-            const SizedBox(height: 16),
+  // =========================
+  // PROGRESS
+  // =========================
 
-            _achievementRow(
-              position: '1',
-              name: 'Alya',
-              score: '95',
-              icon: Icons.looks_one_rounded,
-            ),
-
-            const SizedBox(height: 9),
-
-            _achievementRow(
-              position: '2',
-              name: 'Budi',
-              score: '90',
-              icon: Icons.looks_two_rounded,
-            ),
-
-            const SizedBox(height: 9),
-
-            _achievementRow(
-              position: '3',
-              name: 'Citra',
-              score: '88',
-              icon: Icons.looks_3_rounded,
-            ),
+  Widget _buildProgressCard() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            const Color(0xFFEAF3FF),
+            Colors.white,
           ],
         ),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(
+          color: paleBlue,
+        ),
       ),
-    );
-  }
-
-  Widget _achievementRow({
-    required String position,
-    required String name,
-    required String score,
-    required IconData icon,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 12,
-        vertical: 10,
-      ),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF8FBFE),
-        borderRadius: BorderRadius.circular(13),
-      ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            icon,
-            color: primaryBlue,
-            size: 22,
-          ),
-
-          const SizedBox(width: 10),
-
-          Expanded(
-            child: Text(
-              name,
-              style: const TextStyle(
-                fontSize: 11.5,
-                fontWeight: FontWeight.w700,
-                color: textBlue,
-              ),
-            ),
-          ),
-
-          Text(
-            score,
-            style: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w800,
-              color: primaryBlue,
-            ),
-          ),
-
-          const SizedBox(width: 4),
-
-          const Text(
-            'nilai',
-            style: TextStyle(
-              fontSize: 9,
-              color: mutedBlue,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ============================================================
-  // BOTTOM NAVIGATION
-  // ============================================================
-
-  Widget _buildBottomNavigation() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 15,
-            offset: const Offset(0, -4),
-          ),
-        ],
-      ),
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: 10,
-            vertical: 8,
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
+          Row(
             children: [
-              _bottomItem(
-                icon: Icons.home_rounded,
-                label: 'Beranda',
-                active: true,
+              Icon(
+                Icons.trending_up_rounded,
+                color: royalBlue,
+                size: 25,
               ),
-              _bottomItem(
-                icon: Icons.menu_book_rounded,
-                label: 'Materi',
-              ),
-              _bottomItem(
-                icon: Icons.flag_rounded,
-                label: 'Tantangan',
-              ),
-              _bottomItem(
-                icon: Icons.auto_graph_rounded,
-                label: 'Progress',
-              ),
-              _bottomItem(
-                icon: Icons.person_rounded,
-                label: 'Profil',
+              const SizedBox(width: 9),
+              Text(
+                'Progress Saya',
+                style: TextStyle(
+                  color: textBlue,
+                  fontSize: 17,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ],
           ),
-        ),
+
+          const SizedBox(height: 18),
+
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Belum ada aktivitas',
+                style: TextStyle(
+                  color: mutedBlue,
+                  fontSize: 12,
+                ),
+              ),
+              Text(
+                '0%',
+                style: TextStyle(
+                  color: royalBlue,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 9),
+
+          ClipRRect(
+            borderRadius: BorderRadius.circular(20),
+            child: LinearProgressIndicator(
+              value: 0,
+              minHeight: 9,
+              backgroundColor: const Color(0xFFE0EAF7),
+              valueColor: AlwaysStoppedAnimation<Color>(
+                royalBlue,
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 14),
+
+          Row(
+            children: [
+              _progressInfo(
+                'Materi',
+                '0',
+              ),
+              const SizedBox(width: 35),
+              _progressInfo(
+                'Tantangan',
+                '0',
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
 
-  Widget _bottomItem({
-    required IconData icon,
-    required String label,
-    bool active = false,
-  }) {
+  Widget _progressInfo(
+    String title,
+    String value,
+  ) {
     return Column(
-      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: 12,
-            vertical: 6,
-          ),
-          decoration: BoxDecoration(
-            color: active ? paleBlue : Colors.transparent,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Icon(
-            icon,
-            size: 21,
-            color: active ? primaryBlue : mutedBlue,
+        Text(
+          value,
+          style: TextStyle(
+            color: textBlue,
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
           ),
         ),
-
         const SizedBox(height: 2),
-
         Text(
-          label,
+          title,
           style: TextStyle(
-            fontSize: 9.5,
-            fontWeight: active ? FontWeight.w700 : FontWeight.w500,
-            color: active ? primaryBlue : mutedBlue,
+            color: mutedBlue,
+            fontSize: 11,
           ),
+        ),
+      ],
+    );
+  }
+
+  // =========================
+  // ACHIEVEMENT
+  // =========================
+
+  Widget _buildAchievementCard() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(
+          color: paleBlue,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 43,
+                height: 43,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFF4D9),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: const Icon(
+                  Icons.emoji_events_outlined,
+                  color: Color(0xFFE0A500),
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 11),
+
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Pencapaian Kelas',
+                      style: TextStyle(
+                        color: textBlue,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      'Hasil akan muncul setelah siswa mengerjakan tantangan.',
+                      style: TextStyle(
+                        color: mutedBlue,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 18),
+
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(
+              vertical: 16,
+              horizontal: 14,
+            ),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF7FAFF),
+              borderRadius: BorderRadius.circular(15),
+            ),
+            child: Column(
+              children: [
+                Icon(
+                  Icons.emoji_events_outlined,
+                  color: mutedBlue,
+                  size: 30,
+                ),
+                const SizedBox(height: 7),
+                Text(
+                  'Belum ada hasil',
+                  style: TextStyle(
+                    color: textBlue,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  'Belum ada siswa yang menyelesaikan tantangan.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: mutedBlue,
+                    fontSize: 10.5,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // =========================
+  // BOTTOM NAVIGATION
+  // =========================
+
+  Widget _buildBottomNavigation() {
+    return BottomNavigationBar(
+      currentIndex: 0,
+      type: BottomNavigationBarType.fixed,
+      backgroundColor: Colors.white,
+      selectedItemColor: royalBlue,
+      unselectedItemColor: mutedBlue,
+      elevation: 10,
+      selectedFontSize: 11,
+      unselectedFontSize: 10,
+      items: const [
+        BottomNavigationBarItem(
+          icon: Icon(Icons.home_rounded),
+          label: 'Beranda',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.menu_book_rounded),
+          label: 'Materi',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.flag_rounded),
+          label: 'Tantangan',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.trending_up_rounded),
+          label: 'Progress',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.person_rounded),
+          label: 'Profil',
         ),
       ],
     );
