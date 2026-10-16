@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'detail_kelas_guru_page.dart';
+import 'kelola_materi_page.dart';
+import 'kelola_tantangan_page.dart';
 
 class GuruDashboardPage extends StatefulWidget {
   const GuruDashboardPage({super.key});
@@ -769,10 +771,6 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
                 ),
               ),
               const SizedBox(width: 10),
-
-              // =========================
-              // TOMBOL LIHAT KELAS
-              // =========================
               Expanded(
                 child: ElevatedButton(
                   onPressed: () {
@@ -825,6 +823,8 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
           ),
         ),
         const SizedBox(height: 12),
+
+        // BARIS PERTAMA
         Row(
           children: [
             Expanded(
@@ -833,11 +833,10 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
                 title: 'Kelola Materi',
                 subtitle: 'Tambah dan atur materi',
                 onTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text(
-                        'Halaman Kelola Materi akan dibuat selanjutnya.',
-                      ),
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const KelolaMateriPage(),
                     ),
                   );
                 },
@@ -850,11 +849,11 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
                 title: 'Kelola Tantangan',
                 subtitle: 'Buat kuis dan soal',
                 onTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text(
-                        'Halaman Kelola Tantangan akan dibuat selanjutnya.',
-                      ),
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          const KelolaTantanganPage(),
                     ),
                   );
                 },
@@ -862,7 +861,10 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
             ),
           ],
         ),
+
         const SizedBox(height: 12),
+
+        // BARIS KEDUA
         Row(
           children: [
             Expanded(
@@ -903,6 +905,10 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
       ],
     );
   }
+
+  // =========================
+  // MENU CARD
+  // =========================
 
   Widget buildMenuCard({
     required IconData icon,
