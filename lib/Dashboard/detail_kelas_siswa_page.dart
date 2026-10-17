@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'data_global.dart';
+import 'kerjakan_tantangan_page.dart';
 
 class DetailKelasSiswaPage extends StatefulWidget {
   final String namaKelas;
@@ -60,8 +61,7 @@ class _DetailKelasSiswaPageState
   @override
   Widget build(BuildContext context) {
     final jumlahMateri = daftarMateriKelas.length;
-    final jumlahTantangan =
-        daftarTantanganKelas.length;
+    final jumlahTantangan = daftarTantanganKelas.length;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF7FAFF),
@@ -95,8 +95,7 @@ class _DetailKelasSiswaPageState
           30,
         ),
         child: Column(
-          crossAxisAlignment:
-              CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildClassHeader(),
 
@@ -131,8 +130,7 @@ class _DetailKelasSiswaPageState
               icon: Icons.menu_book_rounded,
               iconColor: royalBlue,
               title: 'Materi',
-              subtitle:
-                  '$jumlahMateri materi tersedia',
+              subtitle: '$jumlahMateri materi tersedia',
               onTap: _showMateriPage,
             ),
 
@@ -146,8 +144,7 @@ class _DetailKelasSiswaPageState
               icon: Icons.explore_rounded,
               iconColor: skyBlue,
               title: 'Eksplorasi',
-              subtitle:
-                  'Jelajahi pembelajaran lebih lanjut',
+              subtitle: 'Jelajahi pembelajaran lebih lanjut',
               onTap: _showEksplorasiPage,
             ),
 
@@ -159,8 +156,7 @@ class _DetailKelasSiswaPageState
 
             _buildMenuCard(
               icon: Icons.flag_rounded,
-              iconColor:
-                  const Color(0xFFE0A500),
+              iconColor: const Color(0xFFE0A500),
               title: 'Tantangan',
               subtitle: jumlahTantangan == 0
                   ? 'Belum ada tantangan'
@@ -206,8 +202,7 @@ class _DetailKelasSiswaPageState
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius:
-            BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
             color: royalBlue.withOpacity(0.18),
@@ -217,8 +212,7 @@ class _DetailKelasSiswaPageState
         ],
       ),
       child: Column(
-        crossAxisAlignment:
-            CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
@@ -226,10 +220,8 @@ class _DetailKelasSiswaPageState
                 width: 52,
                 height: 52,
                 decoration: BoxDecoration(
-                  color: Colors.white
-                      .withOpacity(0.15),
-                  borderRadius:
-                      BorderRadius.circular(16),
+                  color: Colors.white.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(16),
                 ),
                 child: const Icon(
                   Icons.class_rounded,
@@ -257,16 +249,13 @@ class _DetailKelasSiswaPageState
 
           Container(
             width: double.infinity,
-            padding:
-                const EdgeInsets.symmetric(
+            padding: const EdgeInsets.symmetric(
               horizontal: 15,
               vertical: 12,
             ),
             decoration: BoxDecoration(
-              color: Colors.white
-                  .withOpacity(0.12),
-              borderRadius:
-                  BorderRadius.circular(15),
+              color: Colors.white.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(15),
             ),
             child: Row(
               children: [
@@ -318,22 +307,19 @@ class _DetailKelasSiswaPageState
   }) {
     return InkWell(
       onTap: onTap,
-      borderRadius:
-          BorderRadius.circular(20),
+      borderRadius: BorderRadius.circular(20),
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.all(17),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius:
-              BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: paleBlue,
           ),
           boxShadow: [
             BoxShadow(
-              color:
-                  Colors.blue.withOpacity(0.04),
+              color: Colors.blue.withOpacity(0.04),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -346,8 +332,7 @@ class _DetailKelasSiswaPageState
               height: 48,
               decoration: BoxDecoration(
                 color: paleBlue,
-                borderRadius:
-                    BorderRadius.circular(15),
+                borderRadius: BorderRadius.circular(15),
               ),
               child: Icon(
                 icon,
@@ -360,16 +345,14 @@ class _DetailKelasSiswaPageState
 
             Expanded(
               child: Column(
-                crossAxisAlignment:
-                    CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     title,
                     style: TextStyle(
                       color: textBlue,
                       fontSize: 15,
-                      fontWeight:
-                          FontWeight.bold,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
 
@@ -407,8 +390,7 @@ class _DetailKelasSiswaPageState
       MaterialPageRoute(
         builder: (_) => MateriSiswaPage(
           namaKelas: widget.namaKelas,
-          daftarMateri:
-              daftarMateriKelas,
+          daftarMateri: daftarMateriKelas,
         ),
       ),
     );
@@ -424,8 +406,7 @@ class _DetailKelasSiswaPageState
       MaterialPageRoute(
         builder: (_) => EksplorasiSiswaPage(
           namaKelas: widget.namaKelas,
-          daftarMateri:
-              daftarMateriKelas,
+          daftarMateri: daftarMateriKelas,
         ),
       ),
     );
@@ -441,8 +422,8 @@ class _DetailKelasSiswaPageState
       MaterialPageRoute(
         builder: (_) => TantanganSiswaPage(
           namaKelas: widget.namaKelas,
-          daftarTantangan:
-              daftarTantanganKelas,
+          kodeKelas: widget.kodeKelas,
+          daftarTantangan: daftarTantanganKelas,
         ),
       ),
     );
@@ -453,52 +434,41 @@ class _DetailKelasSiswaPageState
   // ============================================================
 
   Widget _buildProgressCard() {
-    final int jumlahMateri =
-        daftarMateriKelas.length;
+    final int jumlahMateri = daftarMateriKelas.length;
 
-    final int jumlahTantangan =
-        daftarTantanganKelas.length;
+    final int jumlahTantangan = daftarTantanganKelas.length;
 
     final int jumlahTantanganSelesai =
         daftarTantanganKelas.where(
       (tantangan) {
         final String judul =
-            tantangan['judul']
-                    ?.toString() ??
-                '';
+            tantangan['judul']?.toString() ?? '';
 
         return daftarHasilKelas.any(
           (hasil) =>
-              hasil['judulTantangan']
-                      ?.toString() ==
-                  judul,
+              hasil['judulTantangan']?.toString() == judul,
         );
       },
     ).length;
 
-    final double progress =
-        jumlahTantangan == 0
-            ? 0
-            : jumlahTantanganSelesai /
-                jumlahTantangan;
+    final double progress = jumlahTantangan == 0
+        ? 0
+        : jumlahTantanganSelesai / jumlahTantangan;
 
-    final int persen =
-        (progress * 100).round();
+    final int persen = (progress * 100).round();
 
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius:
-            BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(22),
         border: Border.all(
           color: paleBlue,
         ),
       ),
       child: Column(
-        crossAxisAlignment:
-            CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
@@ -515,8 +485,7 @@ class _DetailKelasSiswaPageState
                 style: TextStyle(
                   color: textBlue,
                   fontSize: 16,
-                  fontWeight:
-                      FontWeight.bold,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
             ],
@@ -543,8 +512,7 @@ class _DetailKelasSiswaPageState
                 style: TextStyle(
                   color: royalBlue,
                   fontSize: 16,
-                  fontWeight:
-                      FontWeight.bold,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
             ],
@@ -553,17 +521,13 @@ class _DetailKelasSiswaPageState
           const SizedBox(height: 9),
 
           ClipRRect(
-            borderRadius:
-                BorderRadius.circular(20),
-            child:
-                LinearProgressIndicator(
+            borderRadius: BorderRadius.circular(20),
+            child: LinearProgressIndicator(
               value: progress,
               minHeight: 9,
-              backgroundColor:
-                  const Color(0xFFE0EAF7),
+              backgroundColor: const Color(0xFFE0EAF7),
               valueColor:
-                  AlwaysStoppedAnimation<
-                      Color>(
+                  AlwaysStoppedAnimation<Color>(
                 royalBlue,
               ),
             ),
@@ -592,8 +556,7 @@ class _DetailKelasSiswaPageState
               _progressItem(
                 Icons.check_circle_rounded,
                 'Selesai',
-                jumlahTantanganSelesai
-                    .toString(),
+                jumlahTantanganSelesai.toString(),
               ),
             ],
           ),
@@ -618,16 +581,14 @@ class _DetailKelasSiswaPageState
         const SizedBox(width: 7),
 
         Column(
-          crossAxisAlignment:
-              CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               value,
               style: TextStyle(
                 color: textBlue,
                 fontSize: 15,
-                fontWeight:
-                    FontWeight.bold,
+                fontWeight: FontWeight.bold,
               ),
             ),
 
@@ -651,8 +612,7 @@ class _DetailKelasSiswaPageState
 
 class MateriSiswaPage extends StatelessWidget {
   final String namaKelas;
-  final List<Map<String, String>>
-      daftarMateri;
+  final List<Map<String, String>> daftarMateri;
 
   const MateriSiswaPage({
     super.key,
@@ -660,28 +620,16 @@ class MateriSiswaPage extends StatelessWidget {
     required this.daftarMateri,
   });
 
-  static const Color royalBlue =
-      Color(0xFF2166D5);
-
-  static const Color skyBlue =
-      Color(0xFF56B4F8);
-
-  static const Color paleBlue =
-      Color(0xFFDCEBFF);
-
-  static const Color textBlue =
-      Color(0xFF18365D);
-
-  static const Color mutedBlue =
-      Color(0xFF7288A8);
+  static const Color royalBlue = Color(0xFF2166D5);
+  static const Color skyBlue = Color(0xFF56B4F8);
+  static const Color paleBlue = Color(0xFFDCEBFF);
+  static const Color textBlue = Color(0xFF18365D);
+  static const Color mutedBlue = Color(0xFF7288A8);
 
   @override
-  Widget build(
-    BuildContext context,
-  ) {
+  Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor:
-          const Color(0xFFF7FAFF),
+      backgroundColor: const Color(0xFFF7FAFF),
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
@@ -705,14 +653,10 @@ class MateriSiswaPage extends StatelessWidget {
       body: daftarMateri.isEmpty
           ? _buildEmpty()
           : ListView.builder(
-              padding:
-                  const EdgeInsets.all(20),
-              itemCount:
-                  daftarMateri.length,
-              itemBuilder:
-                  (context, index) {
-                final materi =
-                    daftarMateri[index];
+              padding: const EdgeInsets.all(20),
+              itemCount: daftarMateri.length,
+              itemBuilder: (context, index) {
+                final materi = daftarMateri[index];
 
                 return _buildMateriCard(
                   context,
@@ -729,14 +673,12 @@ class MateriSiswaPage extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.all(30),
         child: Column(
-          mainAxisAlignment:
-              MainAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
               width: 75,
               height: 75,
-              decoration:
-                  const BoxDecoration(
+              decoration: const BoxDecoration(
                 color: paleBlue,
                 shape: BoxShape.circle,
               ),
@@ -754,8 +696,7 @@ class MateriSiswaPage extends StatelessWidget {
               style: TextStyle(
                 color: textBlue,
                 fontSize: 18,
-                fontWeight:
-                    FontWeight.bold,
+                fontWeight: FontWeight.bold,
               ),
             ),
 
@@ -781,79 +722,59 @@ class MateriSiswaPage extends StatelessWidget {
     int index,
   ) {
     return Container(
-      margin:
-          const EdgeInsets.only(
-        bottom: 14,
-      ),
-      padding:
-          const EdgeInsets.all(17),
+      margin: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.all(17),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius:
-            BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: paleBlue,
         ),
         boxShadow: [
           BoxShadow(
-            color:
-                Colors.blue.withOpacity(0.04),
+            color: Colors.blue.withOpacity(0.04),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
         ],
       ),
       child: InkWell(
-        borderRadius:
-            BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(20),
         onTap: () {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (_) =>
-                  BacaMateriPage(
-                judul:
-                    materi['judul'] ?? '',
-                deskripsi:
-                    materi['deskripsi'] ??
-                        '',
+              builder: (_) => BacaMateriPage(
+                judul: materi['judul'] ?? '',
+                deskripsi: materi['deskripsi'] ?? '',
                 isi: materi['isi'] ?? '',
-                link:
-                    materi['link'] ?? '',
+                link: materi['link'] ?? '',
               ),
             ),
           );
         },
         child: Row(
-          crossAxisAlignment:
-              CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Container(
               width: 50,
               height: 50,
-              decoration:
-                  BoxDecoration(
-                gradient:
-                    const LinearGradient(
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
                   colors: [
                     royalBlue,
                     skyBlue,
                   ],
                 ),
-                borderRadius:
-                    BorderRadius.circular(
-                  15,
-                ),
+                borderRadius: BorderRadius.circular(15),
               ),
               child: Center(
                 child: Text(
                   '${index + 1}',
-                  style:
-                      const TextStyle(
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 18,
-                    fontWeight:
-                        FontWeight.bold,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
@@ -864,30 +785,24 @@ class MateriSiswaPage extends StatelessWidget {
             Expanded(
               child: Column(
                 crossAxisAlignment:
-                    CrossAxisAlignment
-                        .start,
+                    CrossAxisAlignment.start,
                 children: [
                   Text(
                     materi['judul'] ?? '',
-                    style:
-                        const TextStyle(
+                    style: const TextStyle(
                       color: textBlue,
                       fontSize: 15,
-                      fontWeight:
-                          FontWeight.bold,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
 
                   const SizedBox(height: 6),
 
                   Text(
-                    materi['deskripsi'] ??
-                        '',
+                    materi['deskripsi'] ?? '',
                     maxLines: 2,
-                    overflow:
-                        TextOverflow.ellipsis,
-                    style:
-                        const TextStyle(
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
                       color: mutedBlue,
                       fontSize: 12,
                       height: 1.4,
@@ -908,13 +823,10 @@ class MateriSiswaPage extends StatelessWidget {
 
                       const Text(
                         'Baca materi',
-                        style:
-                            TextStyle(
-                          color:
-                              royalBlue,
+                        style: TextStyle(
+                          color: royalBlue,
                           fontSize: 11,
-                          fontWeight:
-                              FontWeight.bold,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
                     ],
@@ -952,25 +864,15 @@ class BacaMateriPage extends StatelessWidget {
     required this.link,
   });
 
-  static const Color royalBlue =
-      Color(0xFF2166D5);
-
-  static const Color paleBlue =
-      Color(0xFFDCEBFF);
-
-  static const Color textBlue =
-      Color(0xFF18365D);
-
-  static const Color mutedBlue =
-      Color(0xFF7288A8);
+  static const Color royalBlue = Color(0xFF2166D5);
+  static const Color paleBlue = Color(0xFFDCEBFF);
+  static const Color textBlue = Color(0xFF18365D);
+  static const Color mutedBlue = Color(0xFF7288A8);
 
   @override
-  Widget build(
-    BuildContext context,
-  ) {
+  Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor:
-          const Color(0xFFF7FAFF),
+      backgroundColor: const Color(0xFFF7FAFF),
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
@@ -992,28 +894,22 @@ class BacaMateriPage extends StatelessWidget {
         ),
       ),
       body: SingleChildScrollView(
-        padding:
-            const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment:
               CrossAxisAlignment.start,
           children: [
             Container(
               width: double.infinity,
-              padding:
-                  const EdgeInsets.all(22),
+              padding: const EdgeInsets.all(22),
               decoration: BoxDecoration(
-                gradient:
-                    const LinearGradient(
+                gradient: const LinearGradient(
                   colors: [
                     royalBlue,
                     Color(0xFF56B4F8),
                   ],
                 ),
-                borderRadius:
-                    BorderRadius.circular(
-                  23,
-                ),
+                borderRadius: BorderRadius.circular(23),
               ),
               child: const Icon(
                 Icons.menu_book_rounded,
@@ -1029,8 +925,7 @@ class BacaMateriPage extends StatelessWidget {
               style: const TextStyle(
                 color: textBlue,
                 fontSize: 23,
-                fontWeight:
-                    FontWeight.bold,
+                fontWeight: FontWeight.bold,
               ),
             ),
 
@@ -1049,14 +944,10 @@ class BacaMateriPage extends StatelessWidget {
 
             Container(
               width: double.infinity,
-              padding:
-                  const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius:
-                    BorderRadius.circular(
-                  20,
-                ),
+                borderRadius: BorderRadius.circular(20),
                 border: Border.all(
                   color: paleBlue,
                 ),
@@ -1082,16 +973,10 @@ class BacaMateriPage extends StatelessWidget {
 
               Container(
                 width: double.infinity,
-                padding:
-                    const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: const Color(
-                    0xFFF5F9FF,
-                  ),
-                  borderRadius:
-                      BorderRadius.circular(
-                    17,
-                  ),
+                  color: const Color(0xFFF5F9FF),
+                  borderRadius: BorderRadius.circular(17),
                   border: Border.all(
                     color: paleBlue,
                   ),
@@ -1101,18 +986,13 @@ class BacaMateriPage extends StatelessWidget {
                     Container(
                       width: 42,
                       height: 42,
-                      decoration:
-                          BoxDecoration(
+                      decoration: BoxDecoration(
                         color: paleBlue,
                         borderRadius:
-                            BorderRadius
-                                .circular(
-                          12,
-                        ),
+                            BorderRadius.circular(12),
                       ),
                       child: const Icon(
-                        Icons
-                            .play_circle_outline_rounded,
+                        Icons.play_circle_outline_rounded,
                         color: royalBlue,
                       ),
                     ),
@@ -1122,39 +1002,27 @@ class BacaMateriPage extends StatelessWidget {
                     Expanded(
                       child: Column(
                         crossAxisAlignment:
-                            CrossAxisAlignment
-                                .start,
+                            CrossAxisAlignment.start,
                         children: [
                           const Text(
                             'Materi Tambahan',
-                            style:
-                                TextStyle(
-                              color:
-                                  textBlue,
-                              fontSize:
-                                  13,
-                              fontWeight:
-                                  FontWeight
-                                      .bold,
+                            style: TextStyle(
+                              color: textBlue,
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
 
-                          const SizedBox(
-                            height: 3,
-                          ),
+                          const SizedBox(height: 3),
 
                           Text(
                             link,
                             maxLines: 1,
                             overflow:
-                                TextOverflow
-                                    .ellipsis,
-                            style:
-                                const TextStyle(
-                              color:
-                                  mutedBlue,
-                              fontSize:
-                                  10.5,
+                                TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: mutedBlue,
+                              fontSize: 10.5,
                             ),
                           ),
                         ],
@@ -1163,8 +1031,7 @@ class BacaMateriPage extends StatelessWidget {
 
                     IconButton(
                       onPressed: () {
-                        ScaffoldMessenger
-                                .of(context)
+                        ScaffoldMessenger.of(context)
                             .showSnackBar(
                           const SnackBar(
                             content: Text(
@@ -1173,10 +1040,8 @@ class BacaMateriPage extends StatelessWidget {
                           ),
                         );
                       },
-                      icon:
-                          const Icon(
-                        Icons
-                            .open_in_new_rounded,
+                      icon: const Icon(
+                        Icons.open_in_new_rounded,
                         color: royalBlue,
                       ),
                     ),
@@ -1189,11 +1054,9 @@ class BacaMateriPage extends StatelessWidget {
 
             SizedBox(
               width: double.infinity,
-              child:
-                  ElevatedButton.icon(
+              child: ElevatedButton.icon(
                 onPressed: () {
-                  ScaffoldMessenger
-                          .of(context)
+                  ScaffoldMessenger.of(context)
                       .showSnackBar(
                     const SnackBar(
                       content: Text(
@@ -1203,29 +1066,21 @@ class BacaMateriPage extends StatelessWidget {
                   );
                 },
                 icon: const Icon(
-                  Icons
-                      .check_circle_outline_rounded,
+                  Icons.check_circle_outline_rounded,
                 ),
                 label: const Text(
                   'Tandai Sudah Dipelajari',
                 ),
-                style:
-                    ElevatedButton.styleFrom(
-                  backgroundColor:
-                      royalBlue,
-                  foregroundColor:
-                      Colors.white,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: royalBlue,
+                  foregroundColor: Colors.white,
                   elevation: 0,
-                  padding:
-                      const EdgeInsets
-                          .symmetric(
+                  padding: const EdgeInsets.symmetric(
                     vertical: 14,
                   ),
-                  shape:
-                      RoundedRectangleBorder(
+                  shape: RoundedRectangleBorder(
                     borderRadius:
-                        BorderRadius
-                            .circular(14),
+                        BorderRadius.circular(14),
                   ),
                 ),
               ),
@@ -1241,11 +1096,9 @@ class BacaMateriPage extends StatelessWidget {
 // EKSPLORASI SISWA
 // ============================================================
 
-class EksplorasiSiswaPage
-    extends StatelessWidget {
+class EksplorasiSiswaPage extends StatelessWidget {
   final String namaKelas;
-  final List<Map<String, String>>
-      daftarMateri;
+  final List<Map<String, String>> daftarMateri;
 
   const EksplorasiSiswaPage({
     super.key,
@@ -1254,12 +1107,9 @@ class EksplorasiSiswaPage
   });
 
   @override
-  Widget build(
-    BuildContext context,
-  ) {
+  Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor:
-          const Color(0xFFF7FAFF),
+      backgroundColor: const Color(0xFFF7FAFF),
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
@@ -1290,72 +1140,48 @@ class EksplorasiSiswaPage
               ),
             )
           : ListView.builder(
-              padding:
-                  const EdgeInsets.all(20),
-              itemCount:
-                  daftarMateri.length,
-              itemBuilder:
-                  (context, index) {
-                final materi =
-                    daftarMateri[index];
+              padding: const EdgeInsets.all(20),
+              itemCount: daftarMateri.length,
+              itemBuilder: (context, index) {
+                final materi = daftarMateri[index];
 
                 return Card(
                   margin:
-                      const EdgeInsets.only(
-                    bottom: 12,
-                  ),
+                      const EdgeInsets.only(bottom: 12),
                   elevation: 0,
-                  shape:
-                      RoundedRectangleBorder(
+                  shape: RoundedRectangleBorder(
                     borderRadius:
-                        BorderRadius.circular(
-                      18,
-                    ),
+                        BorderRadius.circular(18),
                     side: const BorderSide(
-                      color:
-                          Color(0xFFDCEBFF),
+                      color: Color(0xFFDCEBFF),
                     ),
                   ),
                   child: ListTile(
                     contentPadding:
-                        const EdgeInsets.all(
-                      14,
-                    ),
+                        const EdgeInsets.all(14),
                     leading: const Icon(
-                      Icons
-                          .explore_rounded,
-                      color:
-                          Color(0xFF56B4F8),
+                      Icons.explore_rounded,
+                      color: Color(0xFF56B4F8),
                     ),
                     title: Text(
                       materi['judul'] ?? '',
-                      style:
-                          const TextStyle(
-                        color:
-                            Color(0xFF18365D),
-                        fontWeight:
-                            FontWeight.bold,
+                      style: const TextStyle(
+                        color: Color(0xFF18365D),
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
-                    subtitle:
-                        const Padding(
-                      padding:
-                          EdgeInsets.only(
-                        top: 5,
-                      ),
+                    subtitle: const Padding(
+                      padding: EdgeInsets.only(top: 5),
                       child: Text(
                         'Jelajahi materi pembelajaran',
                         style: TextStyle(
-                          color:
-                              Color(0xFF7288A8),
+                          color: Color(0xFF7288A8),
                           fontSize: 11,
                         ),
                       ),
                     ),
-                    trailing:
-                        const Icon(
-                      Icons
-                          .arrow_forward_ios_rounded,
+                    trailing: const Icon(
+                      Icons.arrow_forward_ios_rounded,
                       size: 15,
                     ),
                     onTap: () {
@@ -1365,21 +1191,11 @@ class EksplorasiSiswaPage
                           builder: (_) =>
                               BacaMateriPage(
                             judul:
-                                materi[
-                                        'judul'] ??
-                                    '',
+                                materi['judul'] ?? '',
                             deskripsi:
-                                materi[
-                                        'deskripsi'] ??
-                                    '',
-                            isi:
-                                materi[
-                                        'isi'] ??
-                                    '',
-                            link:
-                                materi[
-                                        'link'] ??
-                                    '',
+                                materi['deskripsi'] ?? '',
+                            isi: materi['isi'] ?? '',
+                            link: materi['link'] ?? '',
                           ),
                         ),
                       );
@@ -1396,37 +1212,27 @@ class EksplorasiSiswaPage
 // TANTANGAN SISWA
 // ============================================================
 
-class TantanganSiswaPage
-    extends StatelessWidget {
+class TantanganSiswaPage extends StatelessWidget {
   final String namaKelas;
-  final List<Map<String, dynamic>>
-      daftarTantangan;
+  final String kodeKelas;
+  final List<Map<String, dynamic>> daftarTantangan;
 
   const TantanganSiswaPage({
     super.key,
     required this.namaKelas,
+    required this.kodeKelas,
     required this.daftarTantangan,
   });
 
-  static const Color royalBlue =
-      Color(0xFF2166D5);
-
-  static const Color paleBlue =
-      Color(0xFFDCEBFF);
-
-  static const Color textBlue =
-      Color(0xFF18365D);
-
-  static const Color mutedBlue =
-      Color(0xFF7288A8);
+  static const Color royalBlue = Color(0xFF2166D5);
+  static const Color paleBlue = Color(0xFFDCEBFF);
+  static const Color textBlue = Color(0xFF18365D);
+  static const Color mutedBlue = Color(0xFF7288A8);
 
   @override
-  Widget build(
-    BuildContext context,
-  ) {
+  Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor:
-          const Color(0xFFF7FAFF),
+      backgroundColor: const Color(0xFFF7FAFF),
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
@@ -1450,12 +1256,9 @@ class TantanganSiswaPage
       body: daftarTantangan.isEmpty
           ? _buildEmpty()
           : ListView.builder(
-              padding:
-                  const EdgeInsets.all(20),
-              itemCount:
-                  daftarTantangan.length,
-              itemBuilder:
-                  (context, index) {
+              padding: const EdgeInsets.all(20),
+              itemCount: daftarTantangan.length,
+              itemBuilder: (context, index) {
                 final tantangan =
                     daftarTantangan[index];
 
@@ -1480,8 +1283,7 @@ class TantanganSiswaPage
             Container(
               width: 75,
               height: 75,
-              decoration:
-                  const BoxDecoration(
+              decoration: const BoxDecoration(
                 color: paleBlue,
                 shape: BoxShape.circle,
               ),
@@ -1499,8 +1301,7 @@ class TantanganSiswaPage
               style: TextStyle(
                 color: textBlue,
                 fontSize: 18,
-                fontWeight:
-                    FontWeight.bold,
+                fontWeight: FontWeight.bold,
               ),
             ),
 
@@ -1526,46 +1327,33 @@ class TantanganSiswaPage
     int index,
   ) {
     final String judul =
-        tantangan['judul']
-                ?.toString() ??
-            'Tantangan';
+        tantangan['judul']?.toString() ?? 'Tantangan';
 
     final String deskripsi =
-        tantangan['deskripsi']
-                ?.toString() ??
-            '';
+        tantangan['deskripsi']?.toString() ?? '';
 
     final List soal =
-        (tantangan['soal']
-                as List?) ??
-            [];
+        (tantangan['soal'] as List?) ?? [];
 
     return Container(
-      margin:
-          const EdgeInsets.only(
-        bottom: 14,
-      ),
-      padding:
-          const EdgeInsets.all(17),
+      margin: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.all(17),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius:
-            BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: paleBlue,
         ),
         boxShadow: [
           BoxShadow(
-            color:
-                Colors.blue.withOpacity(0.04),
+            color: Colors.blue.withOpacity(0.04),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
         ],
       ),
       child: InkWell(
-        borderRadius:
-            BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(20),
         onTap: () {
           _showChallengeInfo(
             context,
@@ -1582,19 +1370,15 @@ class TantanganSiswaPage
               decoration: BoxDecoration(
                 color: royalBlue,
                 borderRadius:
-                    BorderRadius.circular(
-                  16,
-                ),
+                    BorderRadius.circular(16),
               ),
               child: Center(
                 child: Text(
                   '${index + 1}',
-                  style:
-                      const TextStyle(
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 18,
-                    fontWeight:
-                        FontWeight.bold,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
@@ -1605,17 +1389,14 @@ class TantanganSiswaPage
             Expanded(
               child: Column(
                 crossAxisAlignment:
-                    CrossAxisAlignment
-                        .start,
+                    CrossAxisAlignment.start,
                 children: [
                   Text(
                     judul,
-                    style:
-                        const TextStyle(
+                    style: const TextStyle(
                       color: textBlue,
                       fontSize: 15,
-                      fontWeight:
-                          FontWeight.bold,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
 
@@ -1628,8 +1409,7 @@ class TantanganSiswaPage
                     maxLines: 2,
                     overflow:
                         TextOverflow.ellipsis,
-                    style:
-                        const TextStyle(
+                    style: const TextStyle(
                       color: mutedBlue,
                       fontSize: 12,
                       height: 1.4,
@@ -1640,12 +1420,10 @@ class TantanganSiswaPage
 
                   Text(
                     '${soal.length} soal',
-                    style:
-                        const TextStyle(
+                    style: const TextStyle(
                       color: royalBlue,
                       fontSize: 11,
-                      fontWeight:
-                          FontWeight.bold,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
                 ],
@@ -1667,27 +1445,19 @@ class TantanganSiswaPage
     Map<String, dynamic> tantangan,
   ) {
     final String judul =
-        tantangan['judul']
-                ?.toString() ??
-            'Tantangan';
+        tantangan['judul']?.toString() ?? 'Tantangan';
 
     final String deskripsi =
-        tantangan['deskripsi']
-                ?.toString() ??
-            '';
+        tantangan['deskripsi']?.toString() ?? '';
 
     final List soal =
-        (tantangan['soal']
-                as List?) ??
-            [];
+        (tantangan['soal'] as List?) ?? [];
 
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.white,
-      shape:
-          const RoundedRectangleBorder(
-        borderRadius:
-            BorderRadius.vertical(
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
           top: Radius.circular(25),
         ),
       ),
@@ -1695,19 +1465,16 @@ class TantanganSiswaPage
         return Padding(
           padding: const EdgeInsets.all(22),
           child: Column(
-            mainAxisSize:
-                MainAxisSize.min,
+            mainAxisSize: MainAxisSize.min,
             crossAxisAlignment:
                 CrossAxisAlignment.start,
             children: [
               Text(
                 judul,
-                style:
-                    const TextStyle(
+                style: const TextStyle(
                   color: textBlue,
                   fontSize: 20,
-                  fontWeight:
-                      FontWeight.bold,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
 
@@ -1717,8 +1484,7 @@ class TantanganSiswaPage
                 deskripsi.isEmpty
                     ? 'Tantangan pembelajaran dari guru.'
                     : deskripsi,
-                style:
-                    const TextStyle(
+                style: const TextStyle(
                   color: mutedBlue,
                   fontSize: 13,
                   height: 1.5,
@@ -1729,19 +1495,11 @@ class TantanganSiswaPage
 
               Container(
                 width: double.infinity,
-                padding:
-                    const EdgeInsets.all(
-                  15,
-                ),
-                decoration:
-                    BoxDecoration(
-                  color: const Color(
-                    0xFFF5F9FF,
-                  ),
+                padding: const EdgeInsets.all(15),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF5F9FF),
                   borderRadius:
-                      BorderRadius.circular(
-                    15,
-                  ),
+                      BorderRadius.circular(15),
                 ),
                 child: Row(
                   children: [
@@ -1749,16 +1507,14 @@ class TantanganSiswaPage
                       Icons.quiz_rounded,
                       color: royalBlue,
                     ),
-                    const SizedBox(
-                      width: 10,
-                    ),
+
+                    const SizedBox(width: 10),
+
                     Text(
                       '${soal.length} soal tersedia',
-                      style:
-                          const TextStyle(
+                      style: const TextStyle(
                         color: textBlue,
-                        fontWeight:
-                            FontWeight.w600,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ],
@@ -1769,46 +1525,45 @@ class TantanganSiswaPage
 
               SizedBox(
                 width: double.infinity,
-                child:
-                    ElevatedButton(
-                  onPressed: () {
-                    Navigator.pop(
-                      context,
-                    );
+                child: ElevatedButton(
+                  onPressed: soal.isEmpty
+                      ? null
+                      : () {
+                          Navigator.pop(context);
 
-                    ScaffoldMessenger
-                            .of(context)
-                        .showSnackBar(
-                      const SnackBar(
-                        content: Text(
-                          'Halaman pengerjaan tantangan akan kita sambungkan berikutnya.',
-                        ),
-                      ),
-                    );
-                  },
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  KerjakanTantanganPage(
+                                tantangan: tantangan,
+                                namaKelas: namaKelas,
+                                kodeKelas: kodeKelas,
+                              ),
+                            ),
+                          );
+                        },
                   style:
-                      ElevatedButton
-                          .styleFrom(
-                    backgroundColor:
-                        royalBlue,
-                    foregroundColor:
-                        Colors.white,
+                      ElevatedButton.styleFrom(
+                    backgroundColor: royalBlue,
+                    foregroundColor: Colors.white,
+                    disabledBackgroundColor:
+                        Colors.grey.shade300,
                     elevation: 0,
                     padding:
-                        const EdgeInsets
-                            .symmetric(
+                        const EdgeInsets.symmetric(
                       vertical: 14,
                     ),
                     shape:
                         RoundedRectangleBorder(
                       borderRadius:
-                          BorderRadius.circular(
-                        14,
-                      ),
+                          BorderRadius.circular(14),
                     ),
                   ),
-                  child: const Text(
-                    'Mulai Tantangan',
+                  child: Text(
+                    soal.isEmpty
+                        ? 'Belum Ada Soal'
+                        : 'Mulai Tantangan',
                   ),
                 ),
               ),
