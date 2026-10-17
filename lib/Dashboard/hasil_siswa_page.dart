@@ -1,5 +1,18 @@
 import 'package:flutter/material.dart';
 
+// ============================================================
+// DATA HASIL SISWA BERSAMA
+// ============================================================
+//
+// Data ini sementara masih disimpan selama aplikasi berjalan.
+// Nanti bisa dihubungkan ke database.
+//
+// Halaman siswa yang menyelesaikan tantangan dapat menambahkan
+// hasil ke daftar ini.
+// Halaman guru akan membaca data yang sama.
+//
+final List<Map<String, dynamic>> daftarHasilGlobal = [];
+
 class HasilSiswaPage extends StatefulWidget {
   final String namaKelas;
   final String kodeKelas;
@@ -16,23 +29,11 @@ class HasilSiswaPage extends StatefulWidget {
 
 class _HasilSiswaPageState extends State<HasilSiswaPage> {
   // ============================================================
-  // DATA SEMENTARA
-  // ============================================================
-  //
-  // Besok bagian ini yang nantinya diganti / dihubungkan
-  // dengan database.
-  //
-  // Struktur data sengaja dibuat lengkap agar mudah dipindahkan
-  // ke database.
-  //
-  final List<Map<String, dynamic>> daftarHasil = [];
-
-  // ============================================================
-  // FILTER HASIL
+  // FILTER HASIL BERDASARKAN KELAS
   // ============================================================
 
   List<Map<String, dynamic>> get hasilKelas {
-    return daftarHasil
+    return daftarHasilGlobal
         .where(
           (hasil) =>
               hasil['kodeKelas'] == widget.kodeKelas &&
@@ -42,38 +43,65 @@ class _HasilSiswaPageState extends State<HasilSiswaPage> {
   }
 
   // ============================================================
-  // STATISTIK
+  // JUMLAH SISWA
   // ============================================================
 
   int get jumlahSiswa {
     final siswa = <String>{};
 
     for (final hasil in hasilKelas) {
-      siswa.add(hasil['namaSiswa'] ?? '');
+      final nama = hasil['namaSiswa']?.toString() ?? '';
+
+      if (nama.isNotEmpty) {
+        siswa.add(nama);
+      }
     }
 
-    siswa.remove('');
     return siswa.length;
   }
 
+  // ============================================================
+  // RATA-RATA NILAI
+  // ============================================================
+
   double get rataRata {
-    if (hasilKelas.isEmpty) return 0;
+    if (hasilKelas.isEmpty) {
+      return 0;
+    }
 
     double total = 0;
 
     for (final hasil in hasilKelas) {
-      total += (hasil['nilai'] ?? 0).toDouble();
+      final nilai = hasil['nilai'];
+
+      if (nilai is num) {
+        total += nilai.toDouble();
+      }
     }
 
     return total / hasilKelas.length;
   }
 
-  int get nilaiTertinggi {
-    if (hasilKelas.isEmpty) return 0;
+  // ============================================================
+  // NILAI TERTINGGI
+  // ============================================================
 
-    return hasilKelas
-        .map((hasil) => (hasil['nilai'] ?? 0) as int)
-        .reduce((a, b) => a > b ? a : b);
+  int get nilaiTertinggi {
+    if (hasilKelas.isEmpty) {
+      return 0;
+    }
+
+    int tertinggi = 0;
+
+    for (final hasil in hasilKelas) {
+      final nilai = hasil['nilai'];
+
+      if (nilai is num && nilai.toInt() > tertinggi) {
+        tertinggi = nilai.toInt();
+      }
+    }
+
+    return tertinggi;
   }
 
   // ============================================================
@@ -204,7 +232,7 @@ class _HasilSiswaPageState extends State<HasilSiswaPage> {
           const SizedBox(height: 26),
 
           // ========================================================
-          // JUDUL DAFTAR
+          // DAFTAR HASIL
           // ========================================================
 
           const Text(
@@ -217,10 +245,6 @@ class _HasilSiswaPageState extends State<HasilSiswaPage> {
           ),
 
           const SizedBox(height: 12),
-
-          // ========================================================
-          // DATA HASIL
-          // ========================================================
 
           if (hasilKelas.isEmpty)
             _buildEmptyState()
@@ -356,9 +380,17 @@ class _HasilSiswaPageState extends State<HasilSiswaPage> {
   // ============================================================
 
   Widget _buildResultCard(Map<String, dynamic> hasil) {
-    final int nilai = hasil['nilai'] ?? 0;
-    final int benar = hasil['benar'] ?? 0;
-    final int salah = hasil['salah'] ?? 0;
+    final int nilai = hasil['nilai'] is num
+        ? (hasil['nilai'] as num).toInt()
+        : 0;
+
+    final int benar = hasil['benar'] is num
+        ? (hasil['benar'] as num).toInt()
+        : 0;
+
+    final int salah = hasil['salah'] is num
+        ? (hasil['salah'] as num).toInt()
+        : 0;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
@@ -401,7 +433,7 @@ class _HasilSiswaPageState extends State<HasilSiswaPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      hasil['namaSiswa'] ?? '-',
+                      hasil['namaSiswa']?.toString() ?? '-',
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -410,7 +442,7 @@ class _HasilSiswaPageState extends State<HasilSiswaPage> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      hasil['judulTantangan'] ?? '-',
+                      hasil['judulTantangan']?.toString() ?? '-',
                       style: const TextStyle(
                         fontSize: 13,
                         color: Color(0xFF7288A8),
@@ -481,7 +513,7 @@ class _HasilSiswaPageState extends State<HasilSiswaPage> {
               ),
               const SizedBox(width: 6),
               Text(
-                hasil['tanggal'] ?? 'Belum ada tanggal',
+                hasil['tanggal']?.toString() ?? 'Belum ada tanggal',
                 style: const TextStyle(
                   color: Color(0xFF7288A8),
                   fontSize: 12,

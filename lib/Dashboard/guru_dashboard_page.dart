@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+
 import 'detail_kelas_guru_page.dart';
 import 'kelola_materi_page.dart';
 import 'kelola_tantangan_page.dart';
+import 'hasil_siswa_page.dart';
+import 'profil_guru_page.dart';
 
 class GuruDashboardPage extends StatefulWidget {
   const GuruDashboardPage({super.key});
@@ -25,7 +28,10 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
   static const Color textBlue = Color(0xFF18365D);
   static const Color mutedBlue = Color(0xFF7288A8);
 
-  // Membuat kode kelas otomatis
+  // ============================================================
+  // KODE KELAS OTOMATIS
+  // ============================================================
+
   String generateKodeKelas(String namaKelas) {
     final words = namaKelas
         .trim()
@@ -53,16 +59,16 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
     return '$kode-$nomor';
   }
 
-  // =========================
+  // ============================================================
   // BUAT KELAS
-  // =========================
+  // ============================================================
 
   void showBuatKelasDialog() {
     final namaKelasController = TextEditingController();
 
     showDialog(
       context: context,
-      builder: (context) {
+      builder: (dialogContext) {
         return AlertDialog(
           backgroundColor: Colors.white,
           shape: RoundedRectangleBorder(
@@ -118,7 +124,7 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.pop(context);
+                Navigator.pop(dialogContext);
               },
               child: const Text(
                 'Batal',
@@ -150,7 +156,7 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
                   });
                 });
 
-                Navigator.pop(context);
+                Navigator.pop(dialogContext);
 
                 showKodeKelasDialog(
                   namaKelas,
@@ -182,9 +188,9 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
     );
   }
 
-  // =========================
+  // ============================================================
   // DIALOG KODE KELAS
-  // =========================
+  // ============================================================
 
   void showKodeKelasDialog(
     String namaKelas,
@@ -192,7 +198,7 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
   ) {
     showDialog(
       context: context,
-      builder: (context) {
+      builder: (dialogContext) {
         return AlertDialog(
           backgroundColor: Colors.white,
           shape: RoundedRectangleBorder(
@@ -305,7 +311,7 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: () {
-                  Navigator.pop(context);
+                  Navigator.pop(dialogContext);
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: royalBlue,
@@ -330,9 +336,9 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
     );
   }
 
-  // =========================
+  // ============================================================
   // SALIN KODE
-  // =========================
+  // ============================================================
 
   void salinKode(String kode) {
     Clipboard.setData(
@@ -346,9 +352,126 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
     );
   }
 
-  // =========================
+  // ============================================================
+  // NAVIGASI MENU
+  // ============================================================
+
+  void bukaMateri() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const KelolaMateriPage(),
+      ),
+    );
+  }
+
+  void bukaTantangan() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const KelolaTantanganPage(),
+      ),
+    );
+  }
+
+  void bukaHasil() {
+    if (daftarKelas.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Buat kelas terlebih dahulu untuk melihat hasil siswa.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    final kelas = daftarKelas.first;
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => HasilSiswaPage(
+          namaKelas: kelas['nama'],
+          kodeKelas: kelas['kode'],
+        ),
+      ),
+    );
+  }
+
+  void bukaProfil() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const ProfilGuruPage(),
+      ),
+    );
+  }
+
+  void bukaNotifikasi() {
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(22),
+          ),
+          title: Row(
+            children: [
+              const Icon(
+                Icons.notifications_rounded,
+                color: royalBlue,
+              ),
+              const SizedBox(width: 10),
+              const Text(
+                'Notifikasi',
+                style: TextStyle(
+                  color: textBlue,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          content: const Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.notifications_none_rounded,
+                color: mutedBlue,
+                size: 45,
+              ),
+              SizedBox(height: 10),
+              Text(
+                'Belum ada notifikasi baru.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: mutedBlue,
+                  fontSize: 13,
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(dialogContext);
+              },
+              child: const Text(
+                'Tutup',
+                style: TextStyle(
+                  color: royalBlue,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // ============================================================
   // HEADER
-  // =========================
+  // ============================================================
 
   Widget buildHeader() {
     return Row(
@@ -396,25 +519,28 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
             ],
           ),
         ),
-        Container(
-          width: 42,
-          height: 42,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(13),
-          ),
-          child: const Icon(
-            Icons.notifications_none_rounded,
-            color: textBlue,
+        GestureDetector(
+          onTap: bukaNotifikasi,
+          child: Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(13),
+            ),
+            child: const Icon(
+              Icons.notifications_none_rounded,
+              color: textBlue,
+            ),
           ),
         ),
       ],
     );
   }
 
-  // =========================
+  // ============================================================
   // WELCOME CARD
-  // =========================
+  // ============================================================
 
   Widget buildWelcomeCard() {
     return Container(
@@ -504,9 +630,9 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
     );
   }
 
-  // =========================
+  // ============================================================
   // KELAS SAYA
-  // =========================
+  // ============================================================
 
   Widget buildKelasSaya() {
     return Column(
@@ -622,9 +748,9 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
     );
   }
 
-  // =========================
+  // ============================================================
   // CARD KELAS
-  // =========================
+  // ============================================================
 
   Widget buildClassCard(
     String nama,
@@ -806,9 +932,9 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
     );
   }
 
-  // =========================
+  // ============================================================
   // KELOLA PEMBELAJARAN
-  // =========================
+  // ============================================================
 
   Widget buildKelolaPembelajaran() {
     return Column(
@@ -824,7 +950,6 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
         ),
         const SizedBox(height: 12),
 
-        // BARIS PERTAMA
         Row(
           children: [
             Expanded(
@@ -832,14 +957,7 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
                 icon: Icons.menu_book_rounded,
                 title: 'Kelola Materi',
                 subtitle: 'Tambah dan atur materi',
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const KelolaMateriPage(),
-                    ),
-                  );
-                },
+                onTap: bukaMateri,
               ),
             ),
             const SizedBox(width: 12),
@@ -848,15 +966,7 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
                 icon: Icons.quiz_rounded,
                 title: 'Kelola Tantangan',
                 subtitle: 'Buat kuis dan soal',
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) =>
-                          const KelolaTantanganPage(),
-                    ),
-                  );
-                },
+                onTap: bukaTantangan,
               ),
             ),
           ],
@@ -864,7 +974,6 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
 
         const SizedBox(height: 12),
 
-        // BARIS KEDUA
         Row(
           children: [
             Expanded(
@@ -872,15 +981,7 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
                 icon: Icons.bar_chart_rounded,
                 title: 'Hasil Siswa',
                 subtitle: 'Lihat perkembangan siswa',
-                onTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text(
-                        'Halaman Hasil Siswa akan dibuat selanjutnya.',
-                      ),
-                    ),
-                  );
-                },
+                onTap: bukaHasil,
               ),
             ),
             const SizedBox(width: 12),
@@ -889,15 +990,7 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
                 icon: Icons.person_rounded,
                 title: 'Profil',
                 subtitle: 'Kelola profil guru',
-                onTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text(
-                        'Halaman Profil akan dibuat selanjutnya.',
-                      ),
-                    ),
-                  );
-                },
+                onTap: bukaProfil,
               ),
             ),
           ],
@@ -906,9 +999,9 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
     );
   }
 
-  // =========================
+  // ============================================================
   // MENU CARD
-  // =========================
+  // ============================================================
 
   Widget buildMenuCard({
     required IconData icon,
@@ -970,9 +1063,9 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
     );
   }
 
-  // =========================
+  // ============================================================
   // RINGKASAN
-  // =========================
+  // ============================================================
 
   Widget buildRingkasan() {
     return Column(
@@ -1074,9 +1167,9 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
     );
   }
 
-  // =========================
+  // ============================================================
   // AKTIVITAS
-  // =========================
+  // ============================================================
 
   Widget buildAktivitas() {
     return Container(
@@ -1128,9 +1221,9 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
     );
   }
 
-  // =========================
+  // ============================================================
   // BOTTOM NAVIGATION
-  // =========================
+  // ============================================================
 
   Widget buildBottomNavigation() {
     return Container(
@@ -1195,6 +1288,27 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
         setState(() {
           selectedIndex = index;
         });
+
+        switch (index) {
+          case 0:
+            break;
+
+          case 1:
+            bukaMateri();
+            break;
+
+          case 2:
+            bukaTantangan();
+            break;
+
+          case 3:
+            bukaHasil();
+            break;
+
+          case 4:
+            bukaProfil();
+            break;
+        }
       },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
@@ -1230,9 +1344,9 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
     );
   }
 
-  // =========================
+  // ============================================================
   // BUILD
-  // =========================
+  // ============================================================
 
   @override
   Widget build(BuildContext context) {
