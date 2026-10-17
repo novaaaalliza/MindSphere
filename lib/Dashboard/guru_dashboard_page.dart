@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'data_global.dart';
 import 'detail_kelas_guru_page.dart';
 import 'kelola_materi_page.dart';
 import 'kelola_tantangan_page.dart';
@@ -16,9 +17,6 @@ class GuruDashboardPage extends StatefulWidget {
 
 class _GuruDashboardPageState extends State<GuruDashboardPage> {
   int selectedIndex = 0;
-
-  // Menyimpan daftar kelas yang dibuat guru
-  final List<Map<String, dynamic>> daftarKelas = [];
 
   // Warna utama MindSphere
   static const Color royalBlue = Color(0xFF2166D5);
@@ -54,9 +52,37 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
       kode = 'KLS';
     }
 
-    final nomor = (daftarKelas.length + 1).toString().padLeft(2, '0');
+    final nomor =
+        (daftarKelasGlobal.length + 1).toString().padLeft(2, '0');
 
     return '$kode-$nomor';
+  }
+
+  // ============================================================
+  // JUMLAH SISWA
+  // ============================================================
+
+  int jumlahSiswaKelas(String kodeKelas, String namaKelas) {
+    return daftarSiswaGlobal.where((siswa) {
+      return siswa['kodeKelas'] == kodeKelas &&
+          siswa['namaKelas'] == namaKelas;
+    }).length;
+  }
+
+  // ============================================================
+  // JUMLAH MATERI
+  // ============================================================
+
+  int jumlahMateri() {
+    return daftarMateriGlobal.length;
+  }
+
+  // ============================================================
+  // JUMLAH TANTANGAN
+  // ============================================================
+
+  int jumlahTantangan() {
+    return daftarTantanganGlobal.length;
   }
 
   // ============================================================
@@ -149,7 +175,7 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
                 final kodeKelas = generateKodeKelas(namaKelas);
 
                 setState(() {
-                  daftarKelas.add({
+                  daftarKelasGlobal.add({
                     'nama': namaKelas,
                     'kode': kodeKelas,
                     'jumlahSiswa': 0,
@@ -375,7 +401,7 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
   }
 
   void bukaHasil() {
-    if (daftarKelas.isEmpty) {
+    if (daftarKelasGlobal.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
@@ -386,14 +412,14 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
       return;
     }
 
-    final kelas = daftarKelas.first;
+    final kelas = daftarKelasGlobal.first;
 
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => HasilSiswaPage(
-          namaKelas: kelas['nama'],
-          kodeKelas: kelas['kode'],
+          namaKelas: kelas['nama']?.toString() ?? '',
+          kodeKelas: kelas['kode']?.toString() ?? '',
         ),
       ),
     );
@@ -664,15 +690,23 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
           ],
         ),
         const SizedBox(height: 10),
-        if (daftarKelas.isEmpty)
+        if (daftarKelasGlobal.isEmpty)
           buildEmptyClass()
         else
-          ...daftarKelas.map(
+          ...daftarKelasGlobal.map(
             (kelas) {
+              final nama = kelas['nama']?.toString() ?? '';
+              final kode = kelas['kode']?.toString() ?? '';
+
+              final jumlahSiswa = jumlahSiswaKelas(
+                kode,
+                nama,
+              );
+
               return buildClassCard(
-                kelas['nama'],
-                kelas['kode'],
-                kelas['jumlahSiswa'],
+                nama,
+                kode,
+                jumlahSiswa,
               );
             },
           ),
@@ -909,7 +943,9 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
                           jumlahSiswa: jumlahSiswa,
                         ),
                       ),
-                    );
+                    ).then((_) {
+                      setState(() {});
+                    });
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: royalBlue,
@@ -949,7 +985,6 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
           ),
         ),
         const SizedBox(height: 12),
-
         Row(
           children: [
             Expanded(
@@ -971,9 +1006,7 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
             ),
           ],
         ),
-
         const SizedBox(height: 12),
-
         Row(
           children: [
             Expanded(
@@ -1094,7 +1127,7 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
               child: buildStatCard(
                 icon: Icons.menu_book_rounded,
                 title: 'Materi',
-                value: '0',
+                value: jumlahMateri().toString(),
               ),
             ),
             const SizedBox(width: 10),
@@ -1102,7 +1135,7 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
               child: buildStatCard(
                 icon: Icons.quiz_rounded,
                 title: 'Tantangan',
-                value: '0',
+                value: jumlahTantangan().toString(),
               ),
             ),
           ],
@@ -1112,13 +1145,7 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
   }
 
   int totalSiswa() {
-    int total = 0;
-
-    for (final kelas in daftarKelas) {
-      total += kelas['jumlahSiswa'] as int;
-    }
-
-    return total;
+    return daftarSiswaGlobal.length;
   }
 
   Widget buildStatCard({
@@ -1292,19 +1319,15 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
         switch (index) {
           case 0:
             break;
-
           case 1:
             bukaMateri();
             break;
-
           case 2:
             bukaTantangan();
             break;
-
           case 3:
             bukaHasil();
             break;
-
           case 4:
             bukaProfil();
             break;

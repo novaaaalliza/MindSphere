@@ -1,17 +1,5 @@
 import 'package:flutter/material.dart';
-
-// ============================================================
-// DATA HASIL SISWA BERSAMA
-// ============================================================
-//
-// Data ini sementara masih disimpan selama aplikasi berjalan.
-// Nanti bisa dihubungkan ke database.
-//
-// Halaman siswa yang menyelesaikan tantangan dapat menambahkan
-// hasil ke daftar ini.
-// Halaman guru akan membaca data yang sama.
-//
-final List<Map<String, dynamic>> daftarHasilGlobal = [];
+import 'data_global.dart';
 
 class HasilSiswaPage extends StatefulWidget {
   final String namaKelas;
