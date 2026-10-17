@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'data_global.dart';
 import 'kelola_materi_page.dart';
 import 'kelola_tantangan_page.dart';
 import 'daftar_siswa_page.dart';
@@ -19,15 +20,55 @@ class DetailKelasGuruPage extends StatefulWidget {
   });
 
   @override
-  State<DetailKelasGuruPage> createState() => _DetailKelasGuruPageState();
+  State<DetailKelasGuruPage> createState() =>
+      _DetailKelasGuruPageState();
 }
 
-class _DetailKelasGuruPageState extends State<DetailKelasGuruPage> {
+class _DetailKelasGuruPageState
+    extends State<DetailKelasGuruPage> {
   static const Color royalBlue = Color(0xFF2166D5);
   static const Color skyBlue = Color(0xFF56B4F8);
   static const Color paleBlue = Color(0xFFDCEBFF);
   static const Color textBlue = Color(0xFF18365D);
   static const Color mutedBlue = Color(0xFF7288A8);
+
+  // ============================================================
+  // DATA KELAS
+  // ============================================================
+
+  int get jumlahSiswaKelas {
+    return daftarSiswaGlobal
+        .where(
+          (siswa) =>
+              siswa['kodeKelas'] == widget.kodeKelas &&
+              siswa['namaKelas'] == widget.namaKelas,
+        )
+        .length;
+  }
+
+  int get jumlahMateriKelas {
+    return ambilMateriKelas(
+      widget.kodeKelas,
+      widget.namaKelas,
+    ).length;
+  }
+
+  int get jumlahTantanganKelas {
+    return ambilTantanganKelas(
+      widget.kodeKelas,
+      widget.namaKelas,
+    ).length;
+  }
+
+  int get jumlahHasilKelas {
+    return hasilSiswaDiKelas(
+      widget.kodeKelas,
+    ).length;
+  }
+
+  // ============================================================
+  // BUILD
+  // ============================================================
 
   @override
   Widget build(BuildContext context) {
@@ -58,9 +99,10 @@ class _DetailKelasGuruPageState extends State<DetailKelasGuruPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // =========================
+            // ====================================================
             // HEADER KELAS
-            // =========================
+            // ====================================================
+
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(22),
@@ -98,7 +140,9 @@ class _DetailKelasGuruPageState extends State<DetailKelasGuruPage> {
                       size: 30,
                     ),
                   ),
+
                   const SizedBox(height: 18),
+
                   Text(
                     widget.namaKelas,
                     style: const TextStyle(
@@ -107,7 +151,9 @@ class _DetailKelasGuruPageState extends State<DetailKelasGuruPage> {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
+
                   const SizedBox(height: 7),
+
                   Text(
                     'Kode Kelas: ${widget.kodeKelas}',
                     style: const TextStyle(
@@ -121,9 +167,10 @@ class _DetailKelasGuruPageState extends State<DetailKelasGuruPage> {
 
             const SizedBox(height: 22),
 
-            // =========================
+            // ====================================================
             // RINGKASAN KELAS
-            // =========================
+            // ====================================================
+
             const Text(
               'Ringkasan Kelas',
               style: TextStyle(
@@ -141,15 +188,17 @@ class _DetailKelasGuruPageState extends State<DetailKelasGuruPage> {
                   child: buildInfoCard(
                     icon: Icons.people_alt_rounded,
                     title: 'Siswa',
-                    value: widget.jumlahSiswa.toString(),
+                    value: jumlahSiswaKelas.toString(),
                   ),
                 ),
+
                 const SizedBox(width: 12),
+
                 Expanded(
                   child: buildInfoCard(
                     icon: Icons.menu_book_rounded,
                     title: 'Materi',
-                    value: '—',
+                    value: jumlahMateriKelas.toString(),
                   ),
                 ),
               ],
@@ -163,15 +212,17 @@ class _DetailKelasGuruPageState extends State<DetailKelasGuruPage> {
                   child: buildInfoCard(
                     icon: Icons.quiz_rounded,
                     title: 'Tantangan',
-                    value: '—',
+                    value: jumlahTantanganKelas.toString(),
                   ),
                 ),
+
                 const SizedBox(width: 12),
+
                 Expanded(
                   child: buildInfoCard(
                     icon: Icons.bar_chart_rounded,
                     title: 'Hasil',
-                    value: '—',
+                    value: jumlahHasilKelas.toString(),
                   ),
                 ),
               ],
@@ -179,9 +230,10 @@ class _DetailKelasGuruPageState extends State<DetailKelasGuruPage> {
 
             const SizedBox(height: 26),
 
-            // =========================
+            // ====================================================
             // KELOLA KELAS
-            // =========================
+            // ====================================================
+
             const Text(
               'Kelola Kelas',
               style: TextStyle(
@@ -193,15 +245,16 @@ class _DetailKelasGuruPageState extends State<DetailKelasGuruPage> {
 
             const SizedBox(height: 12),
 
-            // =========================
+            // ====================================================
             // DAFTAR SISWA
-            // =========================
+            // ====================================================
+
             buildMenuItem(
               icon: Icons.people_alt_rounded,
               title: 'Daftar Siswa',
               subtitle: 'Lihat siswa yang bergabung di kelas',
-              onTap: () {
-                Navigator.push(
+              onTap: () async {
+                await Navigator.push(
                   context,
                   MaterialPageRoute(
                     builder: (context) => DaftarSiswaPage(
@@ -210,18 +263,21 @@ class _DetailKelasGuruPageState extends State<DetailKelasGuruPage> {
                     ),
                   ),
                 );
+
+                setState(() {});
               },
             ),
 
-            // =========================
+            // ====================================================
             // MATERI KELAS
-            // =========================
+            // ====================================================
+
             buildMenuItem(
               icon: Icons.menu_book_rounded,
               title: 'Materi Kelas',
               subtitle: 'Kelola materi pembelajaran kelas',
-              onTap: () {
-                Navigator.push(
+              onTap: () async {
+                await Navigator.push(
                   context,
                   MaterialPageRoute(
                     builder: (context) => KelolaMateriPage(
@@ -230,18 +286,21 @@ class _DetailKelasGuruPageState extends State<DetailKelasGuruPage> {
                     ),
                   ),
                 );
+
+                setState(() {});
               },
             ),
 
-            // =========================
+            // ====================================================
             // TANTANGAN KELAS
-            // =========================
+            // ====================================================
+
             buildMenuItem(
               icon: Icons.quiz_rounded,
               title: 'Tantangan Kelas',
               subtitle: 'Kelola soal tantangan untuk siswa',
-              onTap: () {
-                Navigator.push(
+              onTap: () async {
+                await Navigator.push(
                   context,
                   MaterialPageRoute(
                     builder: (context) => KelolaTantanganPage(
@@ -250,18 +309,21 @@ class _DetailKelasGuruPageState extends State<DetailKelasGuruPage> {
                     ),
                   ),
                 );
+
+                setState(() {});
               },
             ),
 
-            // =========================
+            // ====================================================
             // HASIL SISWA
-            // =========================
+            // ====================================================
+
             buildMenuItem(
               icon: Icons.bar_chart_rounded,
               title: 'Hasil Siswa',
               subtitle: 'Lihat perkembangan dan hasil siswa',
-              onTap: () {
-                Navigator.push(
+              onTap: () async {
+                await Navigator.push(
                   context,
                   MaterialPageRoute(
                     builder: (context) => HasilSiswaPage(
@@ -270,14 +332,17 @@ class _DetailKelasGuruPageState extends State<DetailKelasGuruPage> {
                     ),
                   ),
                 );
+
+                setState(() {});
               },
             ),
 
             const SizedBox(height: 20),
 
-            // =========================
+            // ====================================================
             // KODE KELAS
-            // =========================
+            // ====================================================
+
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(20),
@@ -295,7 +360,9 @@ class _DetailKelasGuruPageState extends State<DetailKelasGuruPage> {
                     color: royalBlue,
                     size: 30,
                   ),
+
                   const SizedBox(height: 10),
+
                   const Text(
                     'Kode Kelas',
                     style: TextStyle(
@@ -303,7 +370,9 @@ class _DetailKelasGuruPageState extends State<DetailKelasGuruPage> {
                       color: mutedBlue,
                     ),
                   ),
+
                   const SizedBox(height: 6),
+
                   Text(
                     widget.kodeKelas,
                     style: const TextStyle(
@@ -313,7 +382,9 @@ class _DetailKelasGuruPageState extends State<DetailKelasGuruPage> {
                       color: textBlue,
                     ),
                   ),
+
                   const SizedBox(height: 14),
+
                   OutlinedButton.icon(
                     onPressed: () {
                       Clipboard.setData(
@@ -322,7 +393,8 @@ class _DetailKelasGuruPageState extends State<DetailKelasGuruPage> {
                         ),
                       );
 
-                      ScaffoldMessenger.of(context).showSnackBar(
+                      ScaffoldMessenger.of(context)
+                          .showSnackBar(
                         const SnackBar(
                           content: Text(
                             'Kode kelas berhasil disalin.',
@@ -345,7 +417,8 @@ class _DetailKelasGuruPageState extends State<DetailKelasGuruPage> {
                         vertical: 11,
                       ),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius:
+                            BorderRadius.circular(12),
                       ),
                     ),
                   ),
@@ -358,9 +431,9 @@ class _DetailKelasGuruPageState extends State<DetailKelasGuruPage> {
     );
   }
 
-  // =========================
+  // ============================================================
   // INFO CARD
-  // =========================
+  // ============================================================
 
   Widget buildInfoCard({
     required IconData icon,
@@ -377,7 +450,8 @@ class _DetailKelasGuruPageState extends State<DetailKelasGuruPage> {
         ),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment:
+            CrossAxisAlignment.start,
         children: [
           Container(
             width: 42,
@@ -392,7 +466,9 @@ class _DetailKelasGuruPageState extends State<DetailKelasGuruPage> {
               size: 22,
             ),
           ),
+
           const SizedBox(height: 12),
+
           Text(
             value,
             style: const TextStyle(
@@ -401,7 +477,9 @@ class _DetailKelasGuruPageState extends State<DetailKelasGuruPage> {
               color: textBlue,
             ),
           ),
+
           const SizedBox(height: 3),
+
           Text(
             title,
             style: const TextStyle(
@@ -414,9 +492,9 @@ class _DetailKelasGuruPageState extends State<DetailKelasGuruPage> {
     );
   }
 
-  // =========================
+  // ============================================================
   // MENU ITEM
-  // =========================
+  // ============================================================
 
   Widget buildMenuItem({
     required IconData icon,
@@ -447,7 +525,8 @@ class _DetailKelasGuruPageState extends State<DetailKelasGuruPage> {
                   height: 48,
                   decoration: BoxDecoration(
                     color: paleBlue,
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius:
+                        BorderRadius.circular(14),
                   ),
                   child: Icon(
                     icon,
@@ -455,10 +534,13 @@ class _DetailKelasGuruPageState extends State<DetailKelasGuruPage> {
                     size: 24,
                   ),
                 ),
+
                 const SizedBox(width: 14),
+
                 Expanded(
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment:
+                        CrossAxisAlignment.start,
                     children: [
                       Text(
                         title,
@@ -468,7 +550,9 @@ class _DetailKelasGuruPageState extends State<DetailKelasGuruPage> {
                           color: textBlue,
                         ),
                       ),
+
                       const SizedBox(height: 4),
+
                       Text(
                         subtitle,
                         style: const TextStyle(
@@ -480,6 +564,7 @@ class _DetailKelasGuruPageState extends State<DetailKelasGuruPage> {
                     ],
                   ),
                 ),
+
                 const Icon(
                   Icons.arrow_forward_ios_rounded,
                   size: 16,
