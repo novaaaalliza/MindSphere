@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'kelola_materi_page.dart';
 import 'kelola_tantangan_page.dart';
 import 'daftar_siswa_page.dart';
+import 'hasil_siswa_page.dart';
 
 class DetailKelasGuruPage extends StatefulWidget {
   final String namaKelas;
