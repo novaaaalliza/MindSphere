@@ -1,10 +1,5 @@
 import 'package:flutter/material.dart';
-
-// =======================================================
-// DATA TANTANGAN BERSAMA
-// =======================================================
-
-final List<Map<String, dynamic>> daftarTantanganGlobal = [];
+import 'data_global.dart';
 
 // =======================================================
 // KELOLA TANTANGAN
@@ -85,10 +80,6 @@ class _KelolaTantanganPageState extends State<KelolaTantanganPage> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // =================================================
-                // KELAS
-                // =================================================
-
                 TextField(
                   controller: namaKelasController,
                   enabled: !sedangDiDalamKelas,
@@ -131,10 +122,6 @@ class _KelolaTantanganPageState extends State<KelolaTantanganPage> {
 
                 const SizedBox(height: 14),
 
-                // =================================================
-                // JUDUL
-                // =================================================
-
                 TextField(
                   controller: judulController,
                   decoration: InputDecoration(
@@ -154,10 +141,6 @@ class _KelolaTantanganPageState extends State<KelolaTantanganPage> {
                 ),
 
                 const SizedBox(height: 14),
-
-                // =================================================
-                // DESKRIPSI
-                // =================================================
 
                 TextField(
                   controller: deskripsiController,
@@ -666,7 +649,6 @@ class _KelolaTantanganPageState extends State<KelolaTantanganPage> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF6F9FE),
-
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
@@ -684,7 +666,6 @@ class _KelolaTantanganPageState extends State<KelolaTantanganPage> {
                 fontWeight: FontWeight.bold,
               ),
             ),
-
             if (sedangDiDalamKelas)
               Text(
                 widget.namaKelas!,
@@ -696,7 +677,6 @@ class _KelolaTantanganPageState extends State<KelolaTantanganPage> {
           ],
         ),
       ),
-
       body: tantangan.isEmpty
           ? buildEmptyState()
           : ListView.builder(
@@ -713,7 +693,6 @@ class _KelolaTantanganPageState extends State<KelolaTantanganPage> {
                 );
               },
             ),
-
       floatingActionButton: FloatingActionButton.extended(
         onPressed: showTambahTantanganDialog,
         backgroundColor: royalBlue,

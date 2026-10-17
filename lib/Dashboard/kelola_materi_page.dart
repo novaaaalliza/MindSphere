@@ -15,13 +15,6 @@ class KelolaMateriPage extends StatefulWidget {
   State<KelolaMateriPage> createState() => _KelolaMateriPageState();
 }
 
-// =======================================================
-// DATA MATERI BERSAMA
-// =======================================================
-// Data ini digunakan bersama oleh halaman Kelola Materi
-// selama aplikasi sedang berjalan.
-final List<Map<String, String>> daftarMateriGlobal = [];
-
 class _KelolaMateriPageState extends State<KelolaMateriPage> {
   bool get sedangDiDalamKelas =>
       widget.namaKelas != null && widget.kodeKelas != null;
