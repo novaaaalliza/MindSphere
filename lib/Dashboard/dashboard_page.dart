@@ -314,7 +314,8 @@ class _DashboardPageState extends State<DashboardPage> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment:
+                        CrossAxisAlignment.start,
                     children: [
                       Text(
                         'Kelas Saya',
@@ -438,7 +439,8 @@ class _DashboardPageState extends State<DashboardPage> {
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment:
+                      CrossAxisAlignment.start,
                   children: [
                     const Text(
                       'Kelas Saya',
@@ -645,15 +647,8 @@ class _DashboardPageState extends State<DashboardPage> {
                   return;
                 }
 
-                Map<String, dynamic>? kelas;
-
-                try {
-                  kelas = daftarKelasGlobal.firstWhere(
-                    (item) => item['kode'] == kode,
-                  );
-                } catch (_) {
-                  kelas = null;
-                }
+                // Mencari kelas berdasarkan kode.
+                final kelas = cariKelasDenganKode(kode);
 
                 if (kelas == null) {
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -666,9 +661,23 @@ class _DashboardPageState extends State<DashboardPage> {
                   return;
                 }
 
+                final String namaKelasBaru =
+                    kelas['nama']?.toString() ?? '';
+
+                final String kodeKelasBaru =
+                    kelas['kode']?.toString() ?? '';
+
+                // Menyimpan siswa ke daftar siswa kelas.
+                tambahSiswaKeKelas(
+                  namaKelas: namaKelasBaru,
+                  kodeKelas: kodeKelasBaru,
+                );
+
+                // Menyimpan kelas yang sedang digunakan
+                // pada dashboard siswa.
                 setState(() {
-                  kodeKelas = kelas!['kode']?.toString();
-                  namaKelas = kelas['nama']?.toString();
+                  namaKelas = namaKelasBaru;
+                  kodeKelas = kodeKelasBaru;
                 });
 
                 Navigator.pop(dialogContext);
@@ -1106,9 +1115,7 @@ class _DashboardPageState extends State<DashboardPage> {
                       CrossAxisAlignment.start,
                   children: [
                     Text(
-                      kodeKelas == null
-                          ? 'Belum ada tantangan'
-                          : 'Belum ada tantangan',
+                      'Belum ada tantangan',
                       style: TextStyle(
                         color: textBlue,
                         fontSize: 14,
@@ -1149,9 +1156,9 @@ class _DashboardPageState extends State<DashboardPage> {
         width: double.infinity,
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          gradient: LinearGradient(
+          gradient: const LinearGradient(
             colors: [
-              const Color(0xFFEAF3FF),
+              Color(0xFFEAF3FF),
               Colors.white,
             ],
           ),
@@ -1230,13 +1237,15 @@ class _DashboardPageState extends State<DashboardPage> {
     final int jumlahMateri = materiKelas.length;
     final int jumlahTantangan = tantanganKelas.length;
 
-    final int jumlahTantanganSelesai = tantanganKelas.where((tantangan) {
+    final int jumlahTantanganSelesai =
+        tantanganKelas.where((tantangan) {
       final String judul =
           tantangan['judul']?.toString() ?? '';
 
       return hasilKelas.any(
         (hasil) =>
-            hasil['judulTantangan']?.toString() == judul,
+            hasil['judulTantangan']?.toString() == judul &&
+            hasil['namaSiswa'] == namaSiswaAktif,
       );
     }).length;
 
