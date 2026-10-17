@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import '../data/materi_data.dart';
+
+import 'data_global.dart';
 
 class DetailKelasSiswaPage extends StatefulWidget {
   final String namaKelas;
@@ -25,10 +26,42 @@ class _DetailKelasSiswaPageState
   final Color textBlue = const Color(0xFF18365D);
   final Color mutedBlue = const Color(0xFF7288A8);
 
+  // ============================================================
+  // DATA KELAS
+  // ============================================================
+
+  List<Map<String, String>> get daftarMateriKelas {
+    return ambilMateriKelas(
+      widget.kodeKelas,
+      widget.namaKelas,
+    );
+  }
+
+  List<Map<String, dynamic>> get daftarTantanganKelas {
+    return ambilTantanganKelas(
+      widget.kodeKelas,
+      widget.namaKelas,
+    );
+  }
+
+  List<Map<String, dynamic>> get daftarHasilKelas {
+    return hasilSiswaDiKelas(widget.kodeKelas)
+        .where(
+          (hasil) =>
+              hasil['namaSiswa'] == namaSiswaAktif,
+        )
+        .toList();
+  }
+
+  // ============================================================
+  // BUILD
+  // ============================================================
+
   @override
   Widget build(BuildContext context) {
-    final jumlahMateri =
-        MateriData.getMateriByKelas(widget.kodeKelas).length;
+    final jumlahMateri = daftarMateriKelas.length;
+    final jumlahTantangan =
+        daftarTantanganKelas.length;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF7FAFF),
@@ -55,9 +88,15 @@ class _DetailKelasSiswaPageState
         ),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(20, 10, 20, 30),
+        padding: const EdgeInsets.fromLTRB(
+          20,
+          10,
+          20,
+          30,
+        ),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment:
+              CrossAxisAlignment.start,
           children: [
             _buildClassHeader(),
 
@@ -84,9 +123,9 @@ class _DetailKelasSiswaPageState
 
             const SizedBox(height: 15),
 
-            // =========================
+            // ==================================================
             // MATERI
-            // =========================
+            // ==================================================
 
             _buildMenuCard(
               icon: Icons.menu_book_rounded,
@@ -94,16 +133,14 @@ class _DetailKelasSiswaPageState
               title: 'Materi',
               subtitle:
                   '$jumlahMateri materi tersedia',
-              onTap: () {
-                _showMateriPage();
-              },
+              onTap: _showMateriPage,
             ),
 
             const SizedBox(height: 12),
 
-            // =========================
+            // ==================================================
             // EKSPLORASI
-            // =========================
+            // ==================================================
 
             _buildMenuCard(
               icon: Icons.explore_rounded,
@@ -111,30 +148,24 @@ class _DetailKelasSiswaPageState
               title: 'Eksplorasi',
               subtitle:
                   'Jelajahi pembelajaran lebih lanjut',
-              onTap: () {
-                _showMessage(
-                  'Fitur eksplorasi akan dibuat setelah materi.',
-                );
-              },
+              onTap: _showEksplorasiPage,
             ),
 
             const SizedBox(height: 12),
 
-            // =========================
+            // ==================================================
             // TANTANGAN
-            // =========================
+            // ==================================================
 
             _buildMenuCard(
               icon: Icons.flag_rounded,
-              iconColor: const Color(0xFFE0A500),
+              iconColor:
+                  const Color(0xFFE0A500),
               title: 'Tantangan',
-              subtitle:
-                  'Kerjakan tantangan dari guru',
-              onTap: () {
-                _showMessage(
-                  'Belum ada tantangan yang tersedia.',
-                );
-              },
+              subtitle: jumlahTantangan == 0
+                  ? 'Belum ada tantangan'
+                  : '$jumlahTantangan tantangan tersedia',
+              onTap: _showTantanganPage,
             ),
 
             const SizedBox(height: 24),
@@ -157,9 +188,9 @@ class _DetailKelasSiswaPageState
     );
   }
 
-  // =========================
+  // ============================================================
   // HEADER KELAS
-  // =========================
+  // ============================================================
 
   Widget _buildClassHeader() {
     return Container(
@@ -175,7 +206,8 @@ class _DetailKelasSiswaPageState
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(24),
+        borderRadius:
+            BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
             color: royalBlue.withOpacity(0.18),
@@ -185,7 +217,8 @@ class _DetailKelasSiswaPageState
         ],
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment:
+            CrossAxisAlignment.start,
         children: [
           Row(
             children: [
@@ -193,8 +226,10 @@ class _DetailKelasSiswaPageState
                 width: 52,
                 height: 52,
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(16),
+                  color: Colors.white
+                      .withOpacity(0.15),
+                  borderRadius:
+                      BorderRadius.circular(16),
                 ),
                 child: const Icon(
                   Icons.class_rounded,
@@ -202,7 +237,9 @@ class _DetailKelasSiswaPageState
                   size: 29,
                 ),
               ),
+
               const SizedBox(width: 13),
+
               Expanded(
                 child: Text(
                   widget.namaKelas,
@@ -220,13 +257,16 @@ class _DetailKelasSiswaPageState
 
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.symmetric(
+            padding:
+                const EdgeInsets.symmetric(
               horizontal: 15,
               vertical: 12,
             ),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.12),
-              borderRadius: BorderRadius.circular(15),
+              color: Colors.white
+                  .withOpacity(0.12),
+              borderRadius:
+                  BorderRadius.circular(15),
             ),
             child: Row(
               children: [
@@ -235,7 +275,9 @@ class _DetailKelasSiswaPageState
                   color: Colors.white,
                   size: 20,
                 ),
+
                 const SizedBox(width: 9),
+
                 const Text(
                   'Kode Kelas',
                   style: TextStyle(
@@ -243,7 +285,9 @@ class _DetailKelasSiswaPageState
                     fontSize: 12,
                   ),
                 ),
+
                 const Spacer(),
+
                 Text(
                   widget.kodeKelas,
                   style: const TextStyle(
@@ -261,9 +305,9 @@ class _DetailKelasSiswaPageState
     );
   }
 
-  // =========================
+  // ============================================================
   // MENU KELAS
-  // =========================
+  // ============================================================
 
   Widget _buildMenuCard({
     required IconData icon,
@@ -274,19 +318,22 @@ class _DetailKelasSiswaPageState
   }) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(20),
+      borderRadius:
+          BorderRadius.circular(20),
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.all(17),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius:
+              BorderRadius.circular(20),
           border: Border.all(
             color: paleBlue,
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.blue.withOpacity(0.04),
+              color:
+                  Colors.blue.withOpacity(0.04),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -299,7 +346,8 @@ class _DetailKelasSiswaPageState
               height: 48,
               decoration: BoxDecoration(
                 color: paleBlue,
-                borderRadius: BorderRadius.circular(15),
+                borderRadius:
+                    BorderRadius.circular(15),
               ),
               child: Icon(
                 icon,
@@ -320,7 +368,8 @@ class _DetailKelasSiswaPageState
                     style: TextStyle(
                       color: textBlue,
                       fontSize: 15,
-                      fontWeight: FontWeight.bold,
+                      fontWeight:
+                          FontWeight.bold,
                     ),
                   ),
 
@@ -348,36 +397,101 @@ class _DetailKelasSiswaPageState
     );
   }
 
-  // =========================
-  // HALAMAN DAFTAR MATERI
-  // =========================
+  // ============================================================
+  // HALAMAN MATERI
+  // ============================================================
 
   void _showMateriPage() {
-    final daftarMateriKelas =
-        MateriData.getMateriByKelas(widget.kodeKelas);
-
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (_) => MateriSiswaPage(
           namaKelas: widget.namaKelas,
-          daftarMateri: daftarMateriKelas,
+          daftarMateri:
+              daftarMateriKelas,
         ),
       ),
     );
   }
 
-  // =========================
+  // ============================================================
+  // HALAMAN EKSPLORASI
+  // ============================================================
+
+  void _showEksplorasiPage() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => EksplorasiSiswaPage(
+          namaKelas: widget.namaKelas,
+          daftarMateri:
+              daftarMateriKelas,
+        ),
+      ),
+    );
+  }
+
+  // ============================================================
+  // HALAMAN TANTANGAN
+  // ============================================================
+
+  void _showTantanganPage() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => TantanganSiswaPage(
+          namaKelas: widget.namaKelas,
+          daftarTantangan:
+              daftarTantanganKelas,
+        ),
+      ),
+    );
+  }
+
+  // ============================================================
   // PROGRESS
-  // =========================
+  // ============================================================
 
   Widget _buildProgressCard() {
+    final int jumlahMateri =
+        daftarMateriKelas.length;
+
+    final int jumlahTantangan =
+        daftarTantanganKelas.length;
+
+    final int jumlahTantanganSelesai =
+        daftarTantanganKelas.where(
+      (tantangan) {
+        final String judul =
+            tantangan['judul']
+                    ?.toString() ??
+                '';
+
+        return daftarHasilKelas.any(
+          (hasil) =>
+              hasil['judulTantangan']
+                      ?.toString() ==
+                  judul,
+        );
+      },
+    ).length;
+
+    final double progress =
+        jumlahTantangan == 0
+            ? 0
+            : jumlahTantanganSelesai /
+                jumlahTantangan;
+
+    final int persen =
+        (progress * 100).round();
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(22),
+        borderRadius:
+            BorderRadius.circular(22),
         border: Border.all(
           color: paleBlue,
         ),
@@ -401,7 +515,8 @@ class _DetailKelasSiswaPageState
                 style: TextStyle(
                   color: textBlue,
                   fontSize: 16,
-                  fontWeight: FontWeight.bold,
+                  fontWeight:
+                      FontWeight.bold,
                 ),
               ),
             ],
@@ -414,7 +529,9 @@ class _DetailKelasSiswaPageState
                 MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Belum ada aktivitas',
+                jumlahTantangan == 0
+                    ? 'Belum ada aktivitas'
+                    : '$jumlahTantanganSelesai dari $jumlahTantangan tantangan selesai',
                 style: TextStyle(
                   color: mutedBlue,
                   fontSize: 12,
@@ -422,11 +539,12 @@ class _DetailKelasSiswaPageState
               ),
 
               Text(
-                '0%',
+                '$persen%',
                 style: TextStyle(
                   color: royalBlue,
                   fontSize: 16,
-                  fontWeight: FontWeight.bold,
+                  fontWeight:
+                      FontWeight.bold,
                 ),
               ),
             ],
@@ -437,13 +555,15 @@ class _DetailKelasSiswaPageState
           ClipRRect(
             borderRadius:
                 BorderRadius.circular(20),
-            child: LinearProgressIndicator(
-              value: 0,
+            child:
+                LinearProgressIndicator(
+              value: progress,
               minHeight: 9,
               backgroundColor:
                   const Color(0xFFE0EAF7),
               valueColor:
-                  AlwaysStoppedAnimation<Color>(
+                  AlwaysStoppedAnimation<
+                      Color>(
                 royalBlue,
               ),
             ),
@@ -456,7 +576,7 @@ class _DetailKelasSiswaPageState
               _progressItem(
                 Icons.menu_book_rounded,
                 'Materi',
-                '0',
+                jumlahMateri.toString(),
               ),
 
               const SizedBox(width: 35),
@@ -464,7 +584,16 @@ class _DetailKelasSiswaPageState
               _progressItem(
                 Icons.flag_rounded,
                 'Tantangan',
-                '0',
+                jumlahTantangan.toString(),
+              ),
+
+              const SizedBox(width: 35),
+
+              _progressItem(
+                Icons.check_circle_rounded,
+                'Selesai',
+                jumlahTantanganSelesai
+                    .toString(),
               ),
             ],
           ),
@@ -497,7 +626,8 @@ class _DetailKelasSiswaPageState
               style: TextStyle(
                 color: textBlue,
                 fontSize: 15,
-                fontWeight: FontWeight.bold,
+                fontWeight:
+                    FontWeight.bold,
               ),
             ),
 
@@ -513,27 +643,16 @@ class _DetailKelasSiswaPageState
       ],
     );
   }
-
-  // =========================
-  // PESAN
-  // =========================
-
-  void _showMessage(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-      ),
-    );
-  }
 }
 
-// =====================================================
-// HALAMAN MATERI SISWA
-// =====================================================
+// ============================================================
+// HALAMAN DAFTAR MATERI SISWA
+// ============================================================
 
 class MateriSiswaPage extends StatelessWidget {
   final String namaKelas;
-  final List<Map<String, String>> daftarMateri;
+  final List<Map<String, String>>
+      daftarMateri;
 
   const MateriSiswaPage({
     super.key,
@@ -541,16 +660,28 @@ class MateriSiswaPage extends StatelessWidget {
     required this.daftarMateri,
   });
 
-  static const Color royalBlue = Color(0xFF2166D5);
-  static const Color skyBlue = Color(0xFF56B4F8);
-  static const Color paleBlue = Color(0xFFDCEBFF);
-  static const Color textBlue = Color(0xFF18365D);
-  static const Color mutedBlue = Color(0xFF7288A8);
+  static const Color royalBlue =
+      Color(0xFF2166D5);
+
+  static const Color skyBlue =
+      Color(0xFF56B4F8);
+
+  static const Color paleBlue =
+      Color(0xFFDCEBFF);
+
+  static const Color textBlue =
+      Color(0xFF18365D);
+
+  static const Color mutedBlue =
+      Color(0xFF7288A8);
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(
+    BuildContext context,
+  ) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF7FAFF),
+      backgroundColor:
+          const Color(0xFFF7FAFF),
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
@@ -574,10 +705,14 @@ class MateriSiswaPage extends StatelessWidget {
       body: daftarMateri.isEmpty
           ? _buildEmpty()
           : ListView.builder(
-              padding: const EdgeInsets.all(20),
-              itemCount: daftarMateri.length,
-              itemBuilder: (context, index) {
-                final materi = daftarMateri[index];
+              padding:
+                  const EdgeInsets.all(20),
+              itemCount:
+                  daftarMateri.length,
+              itemBuilder:
+                  (context, index) {
+                final materi =
+                    daftarMateri[index];
 
                 return _buildMateriCard(
                   context,
@@ -588,10 +723,6 @@ class MateriSiswaPage extends StatelessWidget {
             ),
     );
   }
-
-  // =========================
-  // EMPTY
-  // =========================
 
   Widget _buildEmpty() {
     return Center(
@@ -604,7 +735,8 @@ class MateriSiswaPage extends StatelessWidget {
             Container(
               width: 75,
               height: 75,
-              decoration: const BoxDecoration(
+              decoration:
+                  const BoxDecoration(
                 color: paleBlue,
                 shape: BoxShape.circle,
               ),
@@ -622,7 +754,8 @@ class MateriSiswaPage extends StatelessWidget {
               style: TextStyle(
                 color: textBlue,
                 fontSize: 18,
-                fontWeight: FontWeight.bold,
+                fontWeight:
+                    FontWeight.bold,
               ),
             ),
 
@@ -642,43 +775,51 @@ class MateriSiswaPage extends StatelessWidget {
     );
   }
 
-  // =========================
-  // CARD MATERI
-  // =========================
-
   Widget _buildMateriCard(
     BuildContext context,
     Map<String, String> materi,
     int index,
   ) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 14),
-      padding: const EdgeInsets.all(17),
+      margin:
+          const EdgeInsets.only(
+        bottom: 14,
+      ),
+      padding:
+          const EdgeInsets.all(17),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius:
+            BorderRadius.circular(20),
         border: Border.all(
           color: paleBlue,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.blue.withOpacity(0.04),
+            color:
+                Colors.blue.withOpacity(0.04),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
         ],
       ),
       child: InkWell(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius:
+            BorderRadius.circular(20),
         onTap: () {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (_) => BacaMateriPage(
-                judul: materi['judul'] ?? '',
+              builder: (_) =>
+                  BacaMateriPage(
+                judul:
+                    materi['judul'] ?? '',
                 deskripsi:
-                    materi['deskripsi'] ?? '',
+                    materi['deskripsi'] ??
+                        '',
                 isi: materi['isi'] ?? '',
+                link:
+                    materi['link'] ?? '',
               ),
             ),
           );
@@ -690,23 +831,29 @@ class MateriSiswaPage extends StatelessWidget {
             Container(
               width: 50,
               height: 50,
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
+              decoration:
+                  BoxDecoration(
+                gradient:
+                    const LinearGradient(
                   colors: [
                     royalBlue,
                     skyBlue,
                   ],
                 ),
                 borderRadius:
-                    BorderRadius.circular(15),
+                    BorderRadius.circular(
+                  15,
+                ),
               ),
               child: Center(
                 child: Text(
                   '${index + 1}',
-                  style: const TextStyle(
+                  style:
+                      const TextStyle(
                     color: Colors.white,
                     fontSize: 18,
-                    fontWeight: FontWeight.bold,
+                    fontWeight:
+                        FontWeight.bold,
                   ),
                 ),
               ),
@@ -717,25 +864,30 @@ class MateriSiswaPage extends StatelessWidget {
             Expanded(
               child: Column(
                 crossAxisAlignment:
-                    CrossAxisAlignment.start,
+                    CrossAxisAlignment
+                        .start,
                 children: [
                   Text(
                     materi['judul'] ?? '',
-                    style: const TextStyle(
+                    style:
+                        const TextStyle(
                       color: textBlue,
                       fontSize: 15,
-                      fontWeight: FontWeight.bold,
+                      fontWeight:
+                          FontWeight.bold,
                     ),
                   ),
 
                   const SizedBox(height: 6),
 
                   Text(
-                    materi['deskripsi'] ?? '',
+                    materi['deskripsi'] ??
+                        '',
                     maxLines: 2,
                     overflow:
                         TextOverflow.ellipsis,
-                    style: const TextStyle(
+                    style:
+                        const TextStyle(
                       color: mutedBlue,
                       fontSize: 12,
                       height: 1.4,
@@ -744,18 +896,22 @@ class MateriSiswaPage extends StatelessWidget {
 
                   const SizedBox(height: 9),
 
-                  const Row(
+                  Row(
                     children: [
-                      Icon(
+                      const Icon(
                         Icons.menu_book_rounded,
                         size: 15,
                         color: royalBlue,
                       ),
-                      SizedBox(width: 5),
-                      Text(
+
+                      const SizedBox(width: 5),
+
+                      const Text(
                         'Baca materi',
-                        style: TextStyle(
-                          color: royalBlue,
+                        style:
+                            TextStyle(
+                          color:
+                              royalBlue,
                           fontSize: 11,
                           fontWeight:
                               FontWeight.bold,
@@ -778,31 +934,43 @@ class MateriSiswaPage extends StatelessWidget {
   }
 }
 
-// =====================================================
+// ============================================================
 // HALAMAN BACA MATERI
-// =====================================================
+// ============================================================
 
 class BacaMateriPage extends StatelessWidget {
   final String judul;
   final String deskripsi;
   final String isi;
+  final String link;
 
   const BacaMateriPage({
     super.key,
     required this.judul,
     required this.deskripsi,
     required this.isi,
+    required this.link,
   });
 
-  static const Color royalBlue = Color(0xFF2166D5);
-  static const Color paleBlue = Color(0xFFDCEBFF);
-  static const Color textBlue = Color(0xFF18365D);
-  static const Color mutedBlue = Color(0xFF7288A8);
+  static const Color royalBlue =
+      Color(0xFF2166D5);
+
+  static const Color paleBlue =
+      Color(0xFFDCEBFF);
+
+  static const Color textBlue =
+      Color(0xFF18365D);
+
+  static const Color mutedBlue =
+      Color(0xFF7288A8);
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(
+    BuildContext context,
+  ) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF7FAFF),
+      backgroundColor:
+          const Color(0xFFF7FAFF),
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
@@ -824,23 +992,28 @@ class BacaMateriPage extends StatelessWidget {
         ),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
+        padding:
+            const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment:
               CrossAxisAlignment.start,
           children: [
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.all(22),
+              padding:
+                  const EdgeInsets.all(22),
               decoration: BoxDecoration(
-                gradient: const LinearGradient(
+                gradient:
+                    const LinearGradient(
                   colors: [
                     royalBlue,
                     Color(0xFF56B4F8),
                   ],
                 ),
                 borderRadius:
-                    BorderRadius.circular(23),
+                    BorderRadius.circular(
+                  23,
+                ),
               ),
               child: const Icon(
                 Icons.menu_book_rounded,
@@ -856,7 +1029,8 @@ class BacaMateriPage extends StatelessWidget {
               style: const TextStyle(
                 color: textBlue,
                 fontSize: 23,
-                fontWeight: FontWeight.bold,
+                fontWeight:
+                    FontWeight.bold,
               ),
             ),
 
@@ -875,17 +1049,22 @@ class BacaMateriPage extends StatelessWidget {
 
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.all(20),
+              padding:
+                  const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius:
-                    BorderRadius.circular(20),
+                    BorderRadius.circular(
+                  20,
+                ),
                 border: Border.all(
                   color: paleBlue,
                 ),
               ),
               child: Text(
-                isi,
+                isi.isEmpty
+                    ? 'Belum ada isi materi.'
+                    : isi,
                 style: const TextStyle(
                   color: textBlue,
                   fontSize: 14,
@@ -894,13 +1073,127 @@ class BacaMateriPage extends StatelessWidget {
               ),
             ),
 
+            // ==================================================
+            // LINK TAMBAHAN
+            // ==================================================
+
+            if (link.isNotEmpty) ...[
+              const SizedBox(height: 18),
+
+              Container(
+                width: double.infinity,
+                padding:
+                    const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: const Color(
+                    0xFFF5F9FF,
+                  ),
+                  borderRadius:
+                      BorderRadius.circular(
+                    17,
+                  ),
+                  border: Border.all(
+                    color: paleBlue,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 42,
+                      height: 42,
+                      decoration:
+                          BoxDecoration(
+                        color: paleBlue,
+                        borderRadius:
+                            BorderRadius
+                                .circular(
+                          12,
+                        ),
+                      ),
+                      child: const Icon(
+                        Icons
+                            .play_circle_outline_rounded,
+                        color: royalBlue,
+                      ),
+                    ),
+
+                    const SizedBox(width: 11),
+
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment:
+                            CrossAxisAlignment
+                                .start,
+                        children: [
+                          const Text(
+                            'Materi Tambahan',
+                            style:
+                                TextStyle(
+                              color:
+                                  textBlue,
+                              fontSize:
+                                  13,
+                              fontWeight:
+                                  FontWeight
+                                      .bold,
+                            ),
+                          ),
+
+                          const SizedBox(
+                            height: 3,
+                          ),
+
+                          Text(
+                            link,
+                            maxLines: 1,
+                            overflow:
+                                TextOverflow
+                                    .ellipsis,
+                            style:
+                                const TextStyle(
+                              color:
+                                  mutedBlue,
+                              fontSize:
+                                  10.5,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    IconButton(
+                      onPressed: () {
+                        ScaffoldMessenger
+                                .of(context)
+                            .showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'Link materi tambahan siap dibuka.',
+                            ),
+                          ),
+                        );
+                      },
+                      icon:
+                          const Icon(
+                        Icons
+                            .open_in_new_rounded,
+                        color: royalBlue,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+
             const SizedBox(height: 25),
 
             SizedBox(
               width: double.infinity,
-              child: ElevatedButton.icon(
+              child:
+                  ElevatedButton.icon(
                 onPressed: () {
-                  ScaffoldMessenger.of(context)
+                  ScaffoldMessenger
+                          .of(context)
                       .showSnackBar(
                     const SnackBar(
                       content: Text(
@@ -910,22 +1203,29 @@ class BacaMateriPage extends StatelessWidget {
                   );
                 },
                 icon: const Icon(
-                  Icons.check_circle_outline_rounded,
+                  Icons
+                      .check_circle_outline_rounded,
                 ),
                 label: const Text(
                   'Tandai Sudah Dipelajari',
                 ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: royalBlue,
-                  foregroundColor: Colors.white,
+                style:
+                    ElevatedButton.styleFrom(
+                  backgroundColor:
+                      royalBlue,
+                  foregroundColor:
+                      Colors.white,
                   elevation: 0,
                   padding:
-                      const EdgeInsets.symmetric(
+                      const EdgeInsets
+                          .symmetric(
                     vertical: 14,
                   ),
-                  shape: RoundedRectangleBorder(
+                  shape:
+                      RoundedRectangleBorder(
                     borderRadius:
-                        BorderRadius.circular(14),
+                        BorderRadius
+                            .circular(14),
                   ),
                 ),
               ),
@@ -933,6 +1233,591 @@ class BacaMateriPage extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+// ============================================================
+// EKSPLORASI SISWA
+// ============================================================
+
+class EksplorasiSiswaPage
+    extends StatelessWidget {
+  final String namaKelas;
+  final List<Map<String, String>>
+      daftarMateri;
+
+  const EksplorasiSiswaPage({
+    super.key,
+    required this.namaKelas,
+    required this.daftarMateri,
+  });
+
+  @override
+  Widget build(
+    BuildContext context,
+  ) {
+    return Scaffold(
+      backgroundColor:
+          const Color(0xFFF7FAFF),
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          onPressed: () {
+            Navigator.pop(context);
+          },
+          icon: const Icon(
+            Icons.arrow_back_rounded,
+            color: Color(0xFF18365D),
+          ),
+        ),
+        title: const Text(
+          'Eksplorasi',
+          style: TextStyle(
+            color: Color(0xFF18365D),
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+      body: daftarMateri.isEmpty
+          ? const Center(
+              child: Text(
+                'Belum ada materi untuk dieksplorasi.',
+                style: TextStyle(
+                  color: Color(0xFF7288A8),
+                ),
+              ),
+            )
+          : ListView.builder(
+              padding:
+                  const EdgeInsets.all(20),
+              itemCount:
+                  daftarMateri.length,
+              itemBuilder:
+                  (context, index) {
+                final materi =
+                    daftarMateri[index];
+
+                return Card(
+                  margin:
+                      const EdgeInsets.only(
+                    bottom: 12,
+                  ),
+                  elevation: 0,
+                  shape:
+                      RoundedRectangleBorder(
+                    borderRadius:
+                        BorderRadius.circular(
+                      18,
+                    ),
+                    side: const BorderSide(
+                      color:
+                          Color(0xFFDCEBFF),
+                    ),
+                  ),
+                  child: ListTile(
+                    contentPadding:
+                        const EdgeInsets.all(
+                      14,
+                    ),
+                    leading: const Icon(
+                      Icons
+                          .explore_rounded,
+                      color:
+                          Color(0xFF56B4F8),
+                    ),
+                    title: Text(
+                      materi['judul'] ?? '',
+                      style:
+                          const TextStyle(
+                        color:
+                            Color(0xFF18365D),
+                        fontWeight:
+                            FontWeight.bold,
+                      ),
+                    ),
+                    subtitle:
+                        const Padding(
+                      padding:
+                          EdgeInsets.only(
+                        top: 5,
+                      ),
+                      child: Text(
+                        'Jelajahi materi pembelajaran',
+                        style: TextStyle(
+                          color:
+                              Color(0xFF7288A8),
+                          fontSize: 11,
+                        ),
+                      ),
+                    ),
+                    trailing:
+                        const Icon(
+                      Icons
+                          .arrow_forward_ios_rounded,
+                      size: 15,
+                    ),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              BacaMateriPage(
+                            judul:
+                                materi[
+                                        'judul'] ??
+                                    '',
+                            deskripsi:
+                                materi[
+                                        'deskripsi'] ??
+                                    '',
+                            isi:
+                                materi[
+                                        'isi'] ??
+                                    '',
+                            link:
+                                materi[
+                                        'link'] ??
+                                    '',
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                );
+              },
+            ),
+    );
+  }
+}
+
+// ============================================================
+// TANTANGAN SISWA
+// ============================================================
+
+class TantanganSiswaPage
+    extends StatelessWidget {
+  final String namaKelas;
+  final List<Map<String, dynamic>>
+      daftarTantangan;
+
+  const TantanganSiswaPage({
+    super.key,
+    required this.namaKelas,
+    required this.daftarTantangan,
+  });
+
+  static const Color royalBlue =
+      Color(0xFF2166D5);
+
+  static const Color paleBlue =
+      Color(0xFFDCEBFF);
+
+  static const Color textBlue =
+      Color(0xFF18365D);
+
+  static const Color mutedBlue =
+      Color(0xFF7288A8);
+
+  @override
+  Widget build(
+    BuildContext context,
+  ) {
+    return Scaffold(
+      backgroundColor:
+          const Color(0xFFF7FAFF),
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          onPressed: () {
+            Navigator.pop(context);
+          },
+          icon: const Icon(
+            Icons.arrow_back_rounded,
+            color: textBlue,
+          ),
+        ),
+        title: const Text(
+          'Tantangan',
+          style: TextStyle(
+            color: textBlue,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+      body: daftarTantangan.isEmpty
+          ? _buildEmpty()
+          : ListView.builder(
+              padding:
+                  const EdgeInsets.all(20),
+              itemCount:
+                  daftarTantangan.length,
+              itemBuilder:
+                  (context, index) {
+                final tantangan =
+                    daftarTantangan[index];
+
+                return _buildChallengeCard(
+                  context,
+                  tantangan,
+                  index,
+                );
+              },
+            ),
+    );
+  }
+
+  Widget _buildEmpty() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(30),
+        child: Column(
+          mainAxisAlignment:
+              MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 75,
+              height: 75,
+              decoration:
+                  const BoxDecoration(
+                color: paleBlue,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.flag_rounded,
+                color: royalBlue,
+                size: 38,
+              ),
+            ),
+
+            const SizedBox(height: 18),
+
+            const Text(
+              'Belum Ada Tantangan',
+              style: TextStyle(
+                color: textBlue,
+                fontSize: 18,
+                fontWeight:
+                    FontWeight.bold,
+              ),
+            ),
+
+            const SizedBox(height: 8),
+
+            const Text(
+              'Guru belum menambahkan tantangan untuk kelas ini.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: mutedBlue,
+                fontSize: 13,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildChallengeCard(
+    BuildContext context,
+    Map<String, dynamic> tantangan,
+    int index,
+  ) {
+    final String judul =
+        tantangan['judul']
+                ?.toString() ??
+            'Tantangan';
+
+    final String deskripsi =
+        tantangan['deskripsi']
+                ?.toString() ??
+            '';
+
+    final List soal =
+        (tantangan['soal']
+                as List?) ??
+            [];
+
+    return Container(
+      margin:
+          const EdgeInsets.only(
+        bottom: 14,
+      ),
+      padding:
+          const EdgeInsets.all(17),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius:
+            BorderRadius.circular(20),
+        border: Border.all(
+          color: paleBlue,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color:
+                Colors.blue.withOpacity(0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: InkWell(
+        borderRadius:
+            BorderRadius.circular(20),
+        onTap: () {
+          _showChallengeInfo(
+            context,
+            tantangan,
+          );
+        },
+        child: Row(
+          crossAxisAlignment:
+              CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 52,
+              height: 52,
+              decoration: BoxDecoration(
+                color: royalBlue,
+                borderRadius:
+                    BorderRadius.circular(
+                  16,
+                ),
+              ),
+              child: Center(
+                child: Text(
+                  '${index + 1}',
+                  style:
+                      const TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight:
+                        FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+
+            const SizedBox(width: 13),
+
+            Expanded(
+              child: Column(
+                crossAxisAlignment:
+                    CrossAxisAlignment
+                        .start,
+                children: [
+                  Text(
+                    judul,
+                    style:
+                        const TextStyle(
+                      color: textBlue,
+                      fontSize: 15,
+                      fontWeight:
+                          FontWeight.bold,
+                    ),
+                  ),
+
+                  const SizedBox(height: 5),
+
+                  Text(
+                    deskripsi.isEmpty
+                        ? 'Tantangan pembelajaran'
+                        : deskripsi,
+                    maxLines: 2,
+                    overflow:
+                        TextOverflow.ellipsis,
+                    style:
+                        const TextStyle(
+                      color: mutedBlue,
+                      fontSize: 12,
+                      height: 1.4,
+                    ),
+                  ),
+
+                  const SizedBox(height: 8),
+
+                  Text(
+                    '${soal.length} soal',
+                    style:
+                        const TextStyle(
+                      color: royalBlue,
+                      fontSize: 11,
+                      fontWeight:
+                          FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const Icon(
+              Icons.chevron_right_rounded,
+              color: mutedBlue,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showChallengeInfo(
+    BuildContext context,
+    Map<String, dynamic> tantangan,
+  ) {
+    final String judul =
+        tantangan['judul']
+                ?.toString() ??
+            'Tantangan';
+
+    final String deskripsi =
+        tantangan['deskripsi']
+                ?.toString() ??
+            '';
+
+    final List soal =
+        (tantangan['soal']
+                as List?) ??
+            [];
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape:
+          const RoundedRectangleBorder(
+        borderRadius:
+            BorderRadius.vertical(
+          top: Radius.circular(25),
+        ),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: const EdgeInsets.all(22),
+          child: Column(
+            mainAxisSize:
+                MainAxisSize.min,
+            crossAxisAlignment:
+                CrossAxisAlignment.start,
+            children: [
+              Text(
+                judul,
+                style:
+                    const TextStyle(
+                  color: textBlue,
+                  fontSize: 20,
+                  fontWeight:
+                      FontWeight.bold,
+                ),
+              ),
+
+              const SizedBox(height: 8),
+
+              Text(
+                deskripsi.isEmpty
+                    ? 'Tantangan pembelajaran dari guru.'
+                    : deskripsi,
+                style:
+                    const TextStyle(
+                  color: mutedBlue,
+                  fontSize: 13,
+                  height: 1.5,
+                ),
+              ),
+
+              const SizedBox(height: 15),
+
+              Container(
+                width: double.infinity,
+                padding:
+                    const EdgeInsets.all(
+                  15,
+                ),
+                decoration:
+                    BoxDecoration(
+                  color: const Color(
+                    0xFFF5F9FF,
+                  ),
+                  borderRadius:
+                      BorderRadius.circular(
+                    15,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.quiz_rounded,
+                      color: royalBlue,
+                    ),
+                    const SizedBox(
+                      width: 10,
+                    ),
+                    Text(
+                      '${soal.length} soal tersedia',
+                      style:
+                          const TextStyle(
+                        color: textBlue,
+                        fontWeight:
+                            FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 18),
+
+              SizedBox(
+                width: double.infinity,
+                child:
+                    ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(
+                      context,
+                    );
+
+                    ScaffoldMessenger
+                            .of(context)
+                        .showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          'Halaman pengerjaan tantangan akan kita sambungkan berikutnya.',
+                        ),
+                      ),
+                    );
+                  },
+                  style:
+                      ElevatedButton
+                          .styleFrom(
+                    backgroundColor:
+                        royalBlue,
+                    foregroundColor:
+                        Colors.white,
+                    elevation: 0,
+                    padding:
+                        const EdgeInsets
+                            .symmetric(
+                      vertical: 14,
+                    ),
+                    shape:
+                        RoundedRectangleBorder(
+                      borderRadius:
+                          BorderRadius.circular(
+                        14,
+                      ),
+                    ),
+                  ),
+                  child: const Text(
+                    'Mulai Tantangan',
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 8),
+            ],
+          ),
+        );
+      },
     );
   }
 }
