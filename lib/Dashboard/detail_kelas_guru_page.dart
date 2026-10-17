@@ -261,10 +261,12 @@ class _DetailKelasGuruPageState extends State<DetailKelasGuruPage> {
               title: 'Hasil Siswa',
               subtitle: 'Lihat perkembangan dan hasil siswa',
               onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text(
-                      'Halaman Hasil Siswa akan dibuat selanjutnya.',
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => HasilSiswaPage(
+                      namaKelas: widget.namaKelas,
+                      kodeKelas: widget.kodeKelas,
                     ),
                   ),
                 );
