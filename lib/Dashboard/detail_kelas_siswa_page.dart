@@ -55,6 +55,24 @@ class _DetailKelasSiswaPageState
   }
 
   // ============================================================
+  // MEMBUAT ID MATERI
+  // ============================================================
+
+  String _idMateri(
+    Map<String, String> materi,
+  ) {
+    final id = materi['id'];
+
+    if (id != null && id.isNotEmpty) {
+      return id;
+    }
+
+    final judul = materi['judul'] ?? 'materi';
+
+    return '${widget.kodeKelas}_$judul';
+  }
+
+  // ============================================================
   // BUILD
   // ============================================================
 
@@ -390,10 +408,13 @@ class _DetailKelasSiswaPageState
       MaterialPageRoute(
         builder: (_) => MateriSiswaPage(
           namaKelas: widget.namaKelas,
+          kodeKelas: widget.kodeKelas,
           daftarMateri: daftarMateriKelas,
         ),
       ),
-    );
+    ).then((_) {
+      setState(() {});
+    });
   }
 
   // ============================================================
@@ -406,10 +427,13 @@ class _DetailKelasSiswaPageState
       MaterialPageRoute(
         builder: (_) => EksplorasiSiswaPage(
           namaKelas: widget.namaKelas,
+          kodeKelas: widget.kodeKelas,
           daftarMateri: daftarMateriKelas,
         ),
       ),
-    );
+    ).then((_) {
+      setState(() {});
+    });
   }
 
   // ============================================================
@@ -426,7 +450,9 @@ class _DetailKelasSiswaPageState
           daftarTantangan: daftarTantanganKelas,
         ),
       ),
-    );
+    ).then((_) {
+      setState(() {});
+    });
   }
 
   // ============================================================
@@ -435,8 +461,11 @@ class _DetailKelasSiswaPageState
 
   Widget _buildProgressCard() {
     final int jumlahMateri = daftarMateriKelas.length;
-
     final int jumlahTantangan = daftarTantanganKelas.length;
+
+    final int materiSelesai = jumlahMateriSelesai(
+      kodeKelas: widget.kodeKelas,
+    );
 
     final int jumlahTantanganSelesai =
         daftarTantanganKelas.where(
@@ -451,9 +480,15 @@ class _DetailKelasSiswaPageState
       },
     ).length;
 
-    final double progress = jumlahTantangan == 0
+    final int totalAktivitas =
+        jumlahMateri + jumlahTantangan;
+
+    final int aktivitasSelesai =
+        materiSelesai + jumlahTantanganSelesai;
+
+    final double progress = totalAktivitas == 0
         ? 0
-        : jumlahTantanganSelesai / jumlahTantangan;
+        : aktivitasSelesai / totalAktivitas;
 
     final int persen = (progress * 100).round();
 
@@ -498,9 +533,9 @@ class _DetailKelasSiswaPageState
                 MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                jumlahTantangan == 0
+                totalAktivitas == 0
                     ? 'Belum ada aktivitas'
-                    : '$jumlahTantanganSelesai dari $jumlahTantangan tantangan selesai',
+                    : '$aktivitasSelesai dari $totalAktivitas aktivitas selesai',
                 style: TextStyle(
                   color: mutedBlue,
                   fontSize: 12,
@@ -540,23 +575,23 @@ class _DetailKelasSiswaPageState
               _progressItem(
                 Icons.menu_book_rounded,
                 'Materi',
-                jumlahMateri.toString(),
+                '$materiSelesai/$jumlahMateri',
               ),
 
-              const SizedBox(width: 35),
+              const SizedBox(width: 25),
 
               _progressItem(
                 Icons.flag_rounded,
                 'Tantangan',
-                jumlahTantangan.toString(),
+                '$jumlahTantanganSelesai/$jumlahTantangan',
               ),
 
-              const SizedBox(width: 35),
+              const SizedBox(width: 25),
 
               _progressItem(
                 Icons.check_circle_rounded,
                 'Selesai',
-                jumlahTantanganSelesai.toString(),
+                aktivitasSelesai.toString(),
               ),
             ],
           ),
@@ -570,38 +605,44 @@ class _DetailKelasSiswaPageState
     String title,
     String value,
   ) {
-    return Row(
-      children: [
-        Icon(
-          icon,
-          color: royalBlue,
-          size: 20,
-        ),
+    return Expanded(
+      child: Row(
+        children: [
+          Icon(
+            icon,
+            color: royalBlue,
+            size: 20,
+          ),
 
-        const SizedBox(width: 7),
+          const SizedBox(width: 6),
 
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              value,
-              style: TextStyle(
-                color: textBlue,
-                fontSize: 15,
-                fontWeight: FontWeight.bold,
-              ),
+          Expanded(
+            child: Column(
+              crossAxisAlignment:
+                  CrossAxisAlignment.start,
+              children: [
+                Text(
+                  value,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: textBlue,
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+
+                Text(
+                  title,
+                  style: TextStyle(
+                    color: mutedBlue,
+                    fontSize: 10.5,
+                  ),
+                ),
+              ],
             ),
-
-            Text(
-              title,
-              style: TextStyle(
-                color: mutedBlue,
-                fontSize: 10.5,
-              ),
-            ),
-          ],
-        ),
-      ],
+          ),
+        ],
+      ),
     );
   }
 }
@@ -612,11 +653,13 @@ class _DetailKelasSiswaPageState
 
 class MateriSiswaPage extends StatelessWidget {
   final String namaKelas;
+  final String kodeKelas;
   final List<Map<String, String>> daftarMateri;
 
   const MateriSiswaPage({
     super.key,
     required this.namaKelas,
+    required this.kodeKelas,
     required this.daftarMateri,
   });
 
@@ -625,6 +668,18 @@ class MateriSiswaPage extends StatelessWidget {
   static const Color paleBlue = Color(0xFFDCEBFF);
   static const Color textBlue = Color(0xFF18365D);
   static const Color mutedBlue = Color(0xFF7288A8);
+
+  String _idMateri(Map<String, String> materi) {
+    final id = materi['id'];
+
+    if (id != null && id.isNotEmpty) {
+      return id;
+    }
+
+    final judul = materi['judul'] ?? 'materi';
+
+    return '${kodeKelas}_$judul';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -658,9 +713,12 @@ class MateriSiswaPage extends StatelessWidget {
               itemBuilder: (context, index) {
                 final materi = daftarMateri[index];
 
+                final idMateri = _idMateri(materi);
+
                 return _buildMateriCard(
                   context,
                   materi,
+                  idMateri,
                   index,
                 );
               },
@@ -673,7 +731,8 @@ class MateriSiswaPage extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.all(30),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisAlignment:
+              MainAxisAlignment.center,
           children: [
             Container(
               width: 75,
@@ -719,8 +778,14 @@ class MateriSiswaPage extends StatelessWidget {
   Widget _buildMateriCard(
     BuildContext context,
     Map<String, String> materi,
+    String idMateri,
     int index,
   ) {
+    final bool sudahSelesai = materiSudahSelesai(
+      idMateri: idMateri,
+      kodeKelas: kodeKelas,
+    );
+
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
       padding: const EdgeInsets.all(17),
@@ -728,7 +793,9 @@ class MateriSiswaPage extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: paleBlue,
+          color: sudahSelesai
+              ? const Color(0xFFB9E6C5)
+              : paleBlue,
         ),
         boxShadow: [
           BoxShadow(
@@ -749,12 +816,15 @@ class MateriSiswaPage extends StatelessWidget {
                 deskripsi: materi['deskripsi'] ?? '',
                 isi: materi['isi'] ?? '',
                 link: materi['link'] ?? '',
+                idMateri: idMateri,
+                kodeKelas: kodeKelas,
               ),
             ),
           );
         },
         child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment:
+              CrossAxisAlignment.start,
           children: [
             Container(
               width: 50,
@@ -766,7 +836,8 @@ class MateriSiswaPage extends StatelessWidget {
                     skyBlue,
                   ],
                 ),
-                borderRadius: BorderRadius.circular(15),
+                borderRadius:
+                    BorderRadius.circular(15),
               ),
               child: Center(
                 child: Text(
@@ -801,7 +872,8 @@ class MateriSiswaPage extends StatelessWidget {
                   Text(
                     materi['deskripsi'] ?? '',
                     maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
+                    overflow:
+                        TextOverflow.ellipsis,
                     style: const TextStyle(
                       color: mutedBlue,
                       fontSize: 12,
@@ -813,18 +885,26 @@ class MateriSiswaPage extends StatelessWidget {
 
                   Row(
                     children: [
-                      const Icon(
-                        Icons.menu_book_rounded,
+                      Icon(
+                        sudahSelesai
+                            ? Icons.check_circle_rounded
+                            : Icons.menu_book_rounded,
                         size: 15,
-                        color: royalBlue,
+                        color: sudahSelesai
+                            ? Colors.green
+                            : royalBlue,
                       ),
 
                       const SizedBox(width: 5),
 
-                      const Text(
-                        'Baca materi',
+                      Text(
+                        sudahSelesai
+                            ? 'Sudah dipelajari'
+                            : 'Baca materi',
                         style: TextStyle(
-                          color: royalBlue,
+                          color: sudahSelesai
+                              ? Colors.green
+                              : royalBlue,
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
                         ),
@@ -850,11 +930,13 @@ class MateriSiswaPage extends StatelessWidget {
 // HALAMAN BACA MATERI
 // ============================================================
 
-class BacaMateriPage extends StatelessWidget {
+class BacaMateriPage extends StatefulWidget {
   final String judul;
   final String deskripsi;
   final String isi;
   final String link;
+  final String idMateri;
+  final String kodeKelas;
 
   const BacaMateriPage({
     super.key,
@@ -862,12 +944,65 @@ class BacaMateriPage extends StatelessWidget {
     required this.deskripsi,
     required this.isi,
     required this.link,
+    required this.idMateri,
+    required this.kodeKelas,
   });
 
+  @override
+  State<BacaMateriPage> createState() =>
+      _BacaMateriPageState();
+}
+
+class _BacaMateriPageState
+    extends State<BacaMateriPage> {
   static const Color royalBlue = Color(0xFF2166D5);
   static const Color paleBlue = Color(0xFFDCEBFF);
   static const Color textBlue = Color(0xFF18365D);
   static const Color mutedBlue = Color(0xFF7288A8);
+
+  // ============================================================
+  // STATUS MATERI
+  // ============================================================
+
+  bool get sudahSelesai {
+    return materiSudahSelesai(
+      idMateri: widget.idMateri,
+      kodeKelas: widget.kodeKelas,
+    );
+  }
+
+  // ============================================================
+  // MENANDAI MATERI SELESAI
+  // ============================================================
+
+  void _tandaiSudahDipahami() {
+    if (sudahSelesai) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Materi ini sudah ditandai selesai.',
+          ),
+        ),
+      );
+
+      return;
+    }
+
+    tandaiMateriSelesai(
+      idMateri: widget.idMateri,
+      kodeKelas: widget.kodeKelas,
+    );
+
+    setState(() {});
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          'Materi berhasil ditandai sudah dipelajari.',
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -909,7 +1044,8 @@ class BacaMateriPage extends StatelessWidget {
                     Color(0xFF56B4F8),
                   ],
                 ),
-                borderRadius: BorderRadius.circular(23),
+                borderRadius:
+                    BorderRadius.circular(23),
               ),
               child: const Icon(
                 Icons.menu_book_rounded,
@@ -921,7 +1057,7 @@ class BacaMateriPage extends StatelessWidget {
             const SizedBox(height: 22),
 
             Text(
-              judul,
+              widget.judul,
               style: const TextStyle(
                 color: textBlue,
                 fontSize: 23,
@@ -932,7 +1068,7 @@ class BacaMateriPage extends StatelessWidget {
             const SizedBox(height: 10),
 
             Text(
-              deskripsi,
+              widget.deskripsi,
               style: const TextStyle(
                 color: mutedBlue,
                 fontSize: 13,
@@ -947,15 +1083,16 @@ class BacaMateriPage extends StatelessWidget {
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
+                borderRadius:
+                    BorderRadius.circular(20),
                 border: Border.all(
                   color: paleBlue,
                 ),
               ),
               child: Text(
-                isi.isEmpty
+                widget.isi.isEmpty
                     ? 'Belum ada isi materi.'
-                    : isi,
+                    : widget.isi,
                 style: const TextStyle(
                   color: textBlue,
                   fontSize: 14,
@@ -968,7 +1105,7 @@ class BacaMateriPage extends StatelessWidget {
             // LINK TAMBAHAN
             // ==================================================
 
-            if (link.isNotEmpty) ...[
+            if (widget.link.isNotEmpty) ...[
               const SizedBox(height: 18),
 
               Container(
@@ -976,7 +1113,8 @@ class BacaMateriPage extends StatelessWidget {
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: const Color(0xFFF5F9FF),
-                  borderRadius: BorderRadius.circular(17),
+                  borderRadius:
+                      BorderRadius.circular(17),
                   border: Border.all(
                     color: paleBlue,
                   ),
@@ -1016,7 +1154,7 @@ class BacaMateriPage extends StatelessWidget {
                           const SizedBox(height: 3),
 
                           Text(
-                            link,
+                            widget.link,
                             maxLines: 1,
                             overflow:
                                 TextOverflow.ellipsis,
@@ -1052,39 +1190,88 @@ class BacaMateriPage extends StatelessWidget {
 
             const SizedBox(height: 25),
 
+            // ==================================================
+            // TOMBOL SELESAI
+            // ==================================================
+
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
-                onPressed: () {
-                  ScaffoldMessenger.of(context)
-                      .showSnackBar(
-                    const SnackBar(
-                      content: Text(
-                        'Materi selesai dipelajari.',
-                      ),
-                    ),
-                  );
-                },
-                icon: const Icon(
-                  Icons.check_circle_outline_rounded,
+                onPressed: sudahSelesai
+                    ? null
+                    : _tandaiSudahDipahami,
+                icon: Icon(
+                  sudahSelesai
+                      ? Icons.check_circle_rounded
+                      : Icons.check_circle_outline_rounded,
                 ),
-                label: const Text(
-                  'Tandai Sudah Dipelajari',
+                label: Text(
+                  sudahSelesai
+                      ? 'Sudah Dipelajari'
+                      : 'Tandai Sudah Dipelajari',
                 ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: royalBlue,
                   foregroundColor: Colors.white,
+                  disabledBackgroundColor:
+                      const Color(0xFFB8DEC1),
+                  disabledForegroundColor:
+                      Colors.white,
                   elevation: 0,
-                  padding: const EdgeInsets.symmetric(
+                  padding:
+                      const EdgeInsets.symmetric(
                     vertical: 14,
                   ),
-                  shape: RoundedRectangleBorder(
+                  shape:
+                      RoundedRectangleBorder(
                     borderRadius:
                         BorderRadius.circular(14),
                   ),
                 ),
               ),
             ),
+
+            const SizedBox(height: 12),
+
+            if (sudahSelesai)
+              Container(
+                width: double.infinity,
+                padding:
+                    const EdgeInsets.symmetric(
+                  horizontal: 15,
+                  vertical: 12,
+                ),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEAF8EE),
+                  borderRadius:
+                      BorderRadius.circular(14),
+                  border: Border.all(
+                    color: const Color(0xFFC7E8CE),
+                  ),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(
+                      Icons.check_circle_rounded,
+                      color: Colors.green,
+                      size: 20,
+                    ),
+
+                    SizedBox(width: 9),
+
+                    Expanded(
+                      child: Text(
+                        'Materi ini sudah tercatat sebagai materi yang selesai dipelajari.',
+                        style: TextStyle(
+                          color: Color(0xFF367347),
+                          fontSize: 12,
+                          height: 1.4,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
           ],
         ),
       ),
@@ -1098,13 +1285,27 @@ class BacaMateriPage extends StatelessWidget {
 
 class EksplorasiSiswaPage extends StatelessWidget {
   final String namaKelas;
+  final String kodeKelas;
   final List<Map<String, String>> daftarMateri;
 
   const EksplorasiSiswaPage({
     super.key,
     required this.namaKelas,
+    required this.kodeKelas,
     required this.daftarMateri,
   });
+
+  String _idMateri(Map<String, String> materi) {
+    final id = materi['id'];
+
+    if (id != null && id.isNotEmpty) {
+      return id;
+    }
+
+    final judul = materi['judul'] ?? 'materi';
+
+    return '${kodeKelas}_$judul';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -1143,25 +1344,44 @@ class EksplorasiSiswaPage extends StatelessWidget {
               padding: const EdgeInsets.all(20),
               itemCount: daftarMateri.length,
               itemBuilder: (context, index) {
-                final materi = daftarMateri[index];
+                final materi =
+                    daftarMateri[index];
+
+                final idMateri =
+                    _idMateri(materi);
+
+                final bool sudahSelesai =
+                    materiSudahSelesai(
+                  idMateri: idMateri,
+                  kodeKelas: kodeKelas,
+                );
 
                 return Card(
                   margin:
-                      const EdgeInsets.only(bottom: 12),
+                      const EdgeInsets.only(
+                    bottom: 12,
+                  ),
                   elevation: 0,
-                  shape: RoundedRectangleBorder(
+                  shape:
+                      RoundedRectangleBorder(
                     borderRadius:
                         BorderRadius.circular(18),
-                    side: const BorderSide(
-                      color: Color(0xFFDCEBFF),
+                    side: BorderSide(
+                      color: sudahSelesai
+                          ? const Color(0xFFB9E6C5)
+                          : const Color(0xFFDCEBFF),
                     ),
                   ),
                   child: ListTile(
                     contentPadding:
                         const EdgeInsets.all(14),
-                    leading: const Icon(
-                      Icons.explore_rounded,
-                      color: Color(0xFF56B4F8),
+                    leading: Icon(
+                      sudahSelesai
+                          ? Icons.check_circle_rounded
+                          : Icons.explore_rounded,
+                      color: sudahSelesai
+                          ? Colors.green
+                          : const Color(0xFF56B4F8),
                     ),
                     title: Text(
                       materi['judul'] ?? '',
@@ -1170,12 +1390,21 @@ class EksplorasiSiswaPage extends StatelessWidget {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    subtitle: const Padding(
-                      padding: EdgeInsets.only(top: 5),
+                    subtitle: Padding(
+                      padding:
+                          const EdgeInsets.only(
+                        top: 5,
+                      ),
                       child: Text(
-                        'Jelajahi materi pembelajaran',
+                        sudahSelesai
+                            ? 'Materi sudah dipelajari'
+                            : 'Jelajahi materi pembelajaran',
                         style: TextStyle(
-                          color: Color(0xFF7288A8),
+                          color: sudahSelesai
+                              ? Colors.green
+                              : const Color(
+                                  0xFF7288A8,
+                                ),
                           fontSize: 11,
                         ),
                       ),
@@ -1193,9 +1422,14 @@ class EksplorasiSiswaPage extends StatelessWidget {
                             judul:
                                 materi['judul'] ?? '',
                             deskripsi:
-                                materi['deskripsi'] ?? '',
-                            isi: materi['isi'] ?? '',
-                            link: materi['link'] ?? '',
+                                materi['deskripsi'] ??
+                                    '',
+                            isi:
+                                materi['isi'] ?? '',
+                            link:
+                                materi['link'] ?? '',
+                            idMateri: idMateri,
+                            kodeKelas: kodeKelas,
                           ),
                         ),
                       );
@@ -1327,7 +1561,8 @@ class TantanganSiswaPage extends StatelessWidget {
     int index,
   ) {
     final String judul =
-        tantangan['judul']?.toString() ?? 'Tantangan';
+        tantangan['judul']?.toString() ??
+            'Tantangan';
 
     final String deskripsi =
         tantangan['deskripsi']?.toString() ?? '';
@@ -1335,14 +1570,23 @@ class TantanganSiswaPage extends StatelessWidget {
     final List soal =
         (tantangan['soal'] as List?) ?? [];
 
+    final bool sudahDikerjakan =
+        tantanganSudahDikerjakan(
+      kodeKelas: kodeKelas,
+      judulTantangan: judul,
+    );
+
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
       padding: const EdgeInsets.all(17),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius:
+            BorderRadius.circular(20),
         border: Border.all(
-          color: paleBlue,
+          color: sudahDikerjakan
+              ? const Color(0xFFB9E6C5)
+              : paleBlue,
         ),
         boxShadow: [
           BoxShadow(
@@ -1353,7 +1597,8 @@ class TantanganSiswaPage extends StatelessWidget {
         ],
       ),
       child: InkWell(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius:
+            BorderRadius.circular(20),
         onTap: () {
           _showChallengeInfo(
             context,
@@ -1368,19 +1613,18 @@ class TantanganSiswaPage extends StatelessWidget {
               width: 52,
               height: 52,
               decoration: BoxDecoration(
-                color: royalBlue,
+                color: sudahDikerjakan
+                    ? Colors.green
+                    : royalBlue,
                 borderRadius:
                     BorderRadius.circular(16),
               ),
-              child: Center(
-                child: Text(
-                  '${index + 1}',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+              child: Icon(
+                sudahDikerjakan
+                    ? Icons.check_rounded
+                    : Icons.flag_rounded,
+                color: Colors.white,
+                size: 25,
               ),
             ),
 
@@ -1419,11 +1663,16 @@ class TantanganSiswaPage extends StatelessWidget {
                   const SizedBox(height: 8),
 
                   Text(
-                    '${soal.length} soal',
-                    style: const TextStyle(
-                      color: royalBlue,
+                    sudahDikerjakan
+                        ? 'Sudah dikerjakan • ${soal.length} soal'
+                        : '${soal.length} soal',
+                    style: TextStyle(
+                      color: sudahDikerjakan
+                          ? Colors.green
+                          : royalBlue,
                       fontSize: 11,
-                      fontWeight: FontWeight.bold,
+                      fontWeight:
+                          FontWeight.bold,
                     ),
                   ),
                 ],
@@ -1445,7 +1694,8 @@ class TantanganSiswaPage extends StatelessWidget {
     Map<String, dynamic> tantangan,
   ) {
     final String judul =
-        tantangan['judul']?.toString() ?? 'Tantangan';
+        tantangan['judul']?.toString() ??
+            'Tantangan';
 
     final String deskripsi =
         tantangan['deskripsi']?.toString() ?? '';
@@ -1453,11 +1703,19 @@ class TantanganSiswaPage extends StatelessWidget {
     final List soal =
         (tantangan['soal'] as List?) ?? [];
 
+    final bool sudahDikerjakan =
+        tantanganSudahDikerjakan(
+      kodeKelas: kodeKelas,
+      judulTantangan: judul,
+    );
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
+      shape:
+          const RoundedRectangleBorder(
+        borderRadius:
+            BorderRadius.vertical(
           top: Radius.circular(25),
         ),
       ),
@@ -1465,7 +1723,8 @@ class TantanganSiswaPage extends StatelessWidget {
         return Padding(
           padding: const EdgeInsets.all(22),
           child: Column(
-            mainAxisSize: MainAxisSize.min,
+            mainAxisSize:
+                MainAxisSize.min,
             crossAxisAlignment:
                 CrossAxisAlignment.start,
             children: [
@@ -1474,7 +1733,8 @@ class TantanganSiswaPage extends StatelessWidget {
                 style: const TextStyle(
                   color: textBlue,
                   fontSize: 20,
-                  fontWeight: FontWeight.bold,
+                  fontWeight:
+                      FontWeight.bold,
                 ),
               ),
 
@@ -1495,9 +1755,11 @@ class TantanganSiswaPage extends StatelessWidget {
 
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(15),
+                padding:
+                    const EdgeInsets.all(15),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF5F9FF),
+                  color:
+                      const Color(0xFFF5F9FF),
                   borderRadius:
                       BorderRadius.circular(15),
                 ),
@@ -1512,14 +1774,57 @@ class TantanganSiswaPage extends StatelessWidget {
 
                     Text(
                       '${soal.length} soal tersedia',
-                      style: const TextStyle(
+                      style:
+                          const TextStyle(
                         color: textBlue,
-                        fontWeight: FontWeight.w600,
+                        fontWeight:
+                            FontWeight.w600,
                       ),
                     ),
                   ],
                 ),
               ),
+
+              if (sudahDikerjakan) ...[
+                const SizedBox(height: 12),
+
+                Container(
+                  width: double.infinity,
+                  padding:
+                      const EdgeInsets.all(12),
+                  decoration:
+                      BoxDecoration(
+                    color:
+                        const Color(0xFFEAF8EE),
+                    borderRadius:
+                        BorderRadius.circular(
+                      13,
+                    ),
+                  ),
+                  child: const Row(
+                    children: [
+                      Icon(
+                        Icons.check_circle_rounded,
+                        color: Colors.green,
+                        size: 20,
+                      ),
+
+                      SizedBox(width: 8),
+
+                      Expanded(
+                        child: Text(
+                          'Tantangan ini sudah kamu kerjakan.',
+                          style: TextStyle(
+                            color:
+                                Color(0xFF367347),
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
 
               const SizedBox(height: 18),
 
@@ -1529,24 +1834,31 @@ class TantanganSiswaPage extends StatelessWidget {
                   onPressed: soal.isEmpty
                       ? null
                       : () {
-                          Navigator.pop(context);
+                          Navigator.pop(
+                            context,
+                          );
 
                           Navigator.push(
                             context,
                             MaterialPageRoute(
                               builder: (_) =>
                                   KerjakanTantanganPage(
-                                tantangan: tantangan,
-                                namaKelas: namaKelas,
-                                kodeKelas: kodeKelas,
+                                tantangan:
+                                    tantangan,
+                                namaKelas:
+                                    namaKelas,
+                                kodeKelas:
+                                    kodeKelas,
                               ),
                             ),
                           );
                         },
                   style:
                       ElevatedButton.styleFrom(
-                    backgroundColor: royalBlue,
-                    foregroundColor: Colors.white,
+                    backgroundColor:
+                        royalBlue,
+                    foregroundColor:
+                        Colors.white,
                     disabledBackgroundColor:
                         Colors.grey.shade300,
                     elevation: 0,
@@ -1557,13 +1869,17 @@ class TantanganSiswaPage extends StatelessWidget {
                     shape:
                         RoundedRectangleBorder(
                       borderRadius:
-                          BorderRadius.circular(14),
+                          BorderRadius.circular(
+                        14,
+                      ),
                     ),
                   ),
                   child: Text(
                     soal.isEmpty
                         ? 'Belum Ada Soal'
-                        : 'Mulai Tantangan',
+                        : sudahDikerjakan
+                            ? 'Kerjakan Lagi'
+                            : 'Mulai Tantangan',
                   ),
                 ),
               ),
