@@ -1,10 +1,28 @@
 import 'package:flutter/material.dart';
 
+// =======================================================
+// DATA TANTANGAN BERSAMA
+// =======================================================
+
+final List<Map<String, dynamic>> daftarTantanganGlobal = [];
+
+// =======================================================
+// KELOLA TANTANGAN
+// =======================================================
+
 class KelolaTantanganPage extends StatefulWidget {
-  const KelolaTantanganPage({super.key});
+  final String? namaKelas;
+  final String? kodeKelas;
+
+  const KelolaTantanganPage({
+    super.key,
+    this.namaKelas,
+    this.kodeKelas,
+  });
 
   @override
-  State<KelolaTantanganPage> createState() => _KelolaTantanganPageState();
+  State<KelolaTantanganPage> createState() =>
+      _KelolaTantanganPageState();
 }
 
 class _KelolaTantanganPageState extends State<KelolaTantanganPage> {
@@ -15,7 +33,22 @@ class _KelolaTantanganPageState extends State<KelolaTantanganPage> {
   static const Color textBlue = Color(0xFF18365D);
   static const Color mutedBlue = Color(0xFF7288A8);
 
-  final List<Map<String, dynamic>> daftarTantangan = [];
+  bool get sedangDiDalamKelas =>
+      widget.namaKelas != null && widget.kodeKelas != null;
+
+  List<Map<String, dynamic>> get daftarTantanganTampil {
+    if (!sedangDiDalamKelas) {
+      return daftarTantanganGlobal;
+    }
+
+    return daftarTantanganGlobal
+        .where(
+          (tantangan) =>
+              tantangan['kodeKelas'] == widget.kodeKelas &&
+              tantangan['namaKelas'] == widget.namaKelas,
+        )
+        .toList();
+  }
 
   // =========================================================
   // BUAT TANTANGAN
@@ -24,6 +57,14 @@ class _KelolaTantanganPageState extends State<KelolaTantanganPage> {
   void showTambahTantanganDialog() {
     final judulController = TextEditingController();
     final deskripsiController = TextEditingController();
+
+    final namaKelasController = TextEditingController(
+      text: widget.namaKelas ?? '',
+    );
+
+    final kodeKelasController = TextEditingController(
+      text: widget.kodeKelas ?? '',
+    );
 
     showDialog(
       context: context,
@@ -44,6 +85,56 @@ class _KelolaTantanganPageState extends State<KelolaTantanganPage> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
+                // =================================================
+                // KELAS
+                // =================================================
+
+                TextField(
+                  controller: namaKelasController,
+                  enabled: !sedangDiDalamKelas,
+                  decoration: InputDecoration(
+                    labelText: 'Nama Kelas',
+                    hintText: 'Contoh: Pemrograman Dasar X',
+                    prefixIcon: const Icon(
+                      Icons.class_rounded,
+                      color: royalBlue,
+                    ),
+                    filled: true,
+                    fillColor: const Color(0xFFF5F8FD),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: BorderSide.none,
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 12),
+
+                TextField(
+                  controller: kodeKelasController,
+                  enabled: !sedangDiDalamKelas,
+                  decoration: InputDecoration(
+                    labelText: 'Kode Kelas',
+                    hintText: 'Contoh: PDX-01',
+                    prefixIcon: const Icon(
+                      Icons.key_rounded,
+                      color: royalBlue,
+                    ),
+                    filled: true,
+                    fillColor: const Color(0xFFF5F8FD),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: BorderSide.none,
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 14),
+
+                // =================================================
+                // JUDUL
+                // =================================================
+
                 TextField(
                   controller: judulController,
                   decoration: InputDecoration(
@@ -61,17 +152,28 @@ class _KelolaTantanganPageState extends State<KelolaTantanganPage> {
                     ),
                   ),
                 ),
+
                 const SizedBox(height: 14),
+
+                // =================================================
+                // DESKRIPSI
+                // =================================================
+
                 TextField(
                   controller: deskripsiController,
                   maxLines: 3,
                   decoration: InputDecoration(
                     labelText: 'Deskripsi',
-                    hintText: 'Jelaskan singkat tentang tantangan ini',
-                    prefixIcon: const Icon(
-                      Icons.description_outlined,
-                      color: royalBlue,
+                    hintText:
+                        'Jelaskan singkat tentang tantangan ini',
+                    prefixIcon: const Padding(
+                      padding: EdgeInsets.only(bottom: 35),
+                      child: Icon(
+                        Icons.description_outlined,
+                        color: royalBlue,
+                      ),
                     ),
+                    alignLabelWithHint: true,
                     filled: true,
                     fillColor: const Color(0xFFF5F8FD),
                     border: OutlineInputBorder(
@@ -83,30 +185,61 @@ class _KelolaTantanganPageState extends State<KelolaTantanganPage> {
               ],
             ),
           ),
+          actionsPadding: const EdgeInsets.fromLTRB(
+            20,
+            0,
+            20,
+            18,
+          ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
+              onPressed: () {
+                Navigator.pop(dialogContext);
+              },
               child: const Text(
                 'Batal',
-                style: TextStyle(color: mutedBlue),
+                style: TextStyle(
+                  color: mutedBlue,
+                ),
               ),
             ),
             ElevatedButton(
               onPressed: () {
-                final judul = judulController.text.trim();
-                final deskripsi = deskripsiController.text.trim();
+                final namaKelas =
+                    namaKelasController.text.trim();
+                final kodeKelas =
+                    kodeKelasController.text.trim();
+                final judul =
+                    judulController.text.trim();
+                final deskripsi =
+                    deskripsiController.text.trim();
+
+                if (namaKelas.isEmpty || kodeKelas.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        'Nama kelas dan kode kelas wajib diisi.',
+                      ),
+                    ),
+                  );
+                  return;
+                }
 
                 if (judul.isEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
-                      content: Text('Judul tantangan harus diisi.'),
+                      content: Text(
+                        'Judul tantangan harus diisi.',
+                      ),
                     ),
                   );
                   return;
                 }
 
                 setState(() {
-                  daftarTantangan.add({
+                  daftarTantanganGlobal.add({
+                    'namaKelas': namaKelas,
+                    'kodeKelas': kodeKelas,
                     'judul': judul,
                     'deskripsi': deskripsi,
                     'soal': <Map<String, dynamic>>[],
@@ -117,7 +250,9 @@ class _KelolaTantanganPageState extends State<KelolaTantanganPage> {
 
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                    content: Text('Tantangan berhasil dibuat.'),
+                    content: Text(
+                      'Tantangan berhasil dibuat.',
+                    ),
                   ),
                 );
               },
@@ -125,11 +260,20 @@ class _KelolaTantanganPageState extends State<KelolaTantanganPage> {
                 backgroundColor: royalBlue,
                 foregroundColor: Colors.white,
                 elevation: 0,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 18,
+                  vertical: 12,
+                ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              child: const Text('Buat'),
+              child: const Text(
+                'Buat',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
           ],
         );
@@ -141,19 +285,25 @@ class _KelolaTantanganPageState extends State<KelolaTantanganPage> {
   // EDIT TANTANGAN
   // =========================================================
 
-  void showEditTantanganDialog(int index) {
+  void showEditTantanganDialog(
+    Map<String, dynamic> tantangan,
+  ) {
     final judulController = TextEditingController(
-      text: daftarTantangan[index]['judul'],
+      text: tantangan['judul'] ?? '',
     );
 
     final deskripsiController = TextEditingController(
-      text: daftarTantangan[index]['deskripsi'],
+      text: tantangan['deskripsi'] ?? '',
     );
 
     showDialog(
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(22),
+          ),
           title: const Text(
             'Edit Tantangan',
             style: TextStyle(
@@ -166,39 +316,75 @@ class _KelolaTantanganPageState extends State<KelolaTantanganPage> {
             children: [
               TextField(
                 controller: judulController,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Judul Tantangan',
+                  filled: true,
+                  fillColor: const Color(0xFFF5F8FD),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(13),
+                    borderSide: BorderSide.none,
+                  ),
                 ),
               ),
               const SizedBox(height: 12),
               TextField(
                 controller: deskripsiController,
                 maxLines: 3,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Deskripsi',
+                  filled: true,
+                  fillColor: const Color(0xFFF5F8FD),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(13),
+                    borderSide: BorderSide.none,
+                  ),
                 ),
               ),
             ],
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
+              onPressed: () {
+                Navigator.pop(dialogContext);
+              },
               child: const Text('Batal'),
             ),
             ElevatedButton(
               onPressed: () {
-                if (judulController.text.trim().isEmpty) return;
+                final judul =
+                    judulController.text.trim();
+
+                if (judul.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        'Judul tantangan harus diisi.',
+                      ),
+                    ),
+                  );
+                  return;
+                }
 
                 setState(() {
-                  daftarTantangan[index]['judul'] =
-                      judulController.text.trim();
-
-                  daftarTantangan[index]['deskripsi'] =
+                  tantangan['judul'] = judul;
+                  tantangan['deskripsi'] =
                       deskripsiController.text.trim();
                 });
 
                 Navigator.pop(dialogContext);
+
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text(
+                      'Tantangan berhasil diperbarui.',
+                    ),
+                  ),
+                );
               },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: royalBlue,
+                foregroundColor: Colors.white,
+              ),
               child: const Text('Simpan'),
             ),
           ],
@@ -211,27 +397,50 @@ class _KelolaTantanganPageState extends State<KelolaTantanganPage> {
   // HAPUS TANTANGAN
   // =========================================================
 
-  void hapusTantangan(int index) {
+  void hapusTantangan(
+    Map<String, dynamic> tantangan,
+  ) {
     showDialog(
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          title: const Text('Hapus Tantangan?'),
-          content: const Text(
-            'Tantangan beserta semua soal di dalamnya akan dihapus.',
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: const Text(
+            'Hapus Tantangan?',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: textBlue,
+            ),
+          ),
+          content: Text(
+            'Tantangan "${tantangan['judul']}" beserta semua '
+            'soal di dalamnya akan dihapus.',
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
+              onPressed: () {
+                Navigator.pop(dialogContext);
+              },
               child: const Text('Batal'),
             ),
             ElevatedButton(
               onPressed: () {
                 setState(() {
-                  daftarTantangan.removeAt(index);
+                  daftarTantanganGlobal.remove(tantangan);
                 });
 
                 Navigator.pop(dialogContext);
+
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text(
+                      'Tantangan berhasil dihapus.',
+                    ),
+                  ),
+                );
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.red,
@@ -249,13 +458,15 @@ class _KelolaTantanganPageState extends State<KelolaTantanganPage> {
   // HALAMAN KELOLA SOAL
   // =========================================================
 
-  void bukaKelolaSoal(int index) {
+  void bukaKelolaSoal(
+    Map<String, dynamic> tantangan,
+  ) {
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (_) => KelolaSoalPage(
-          judulTantangan: daftarTantangan[index]['judul'],
-          daftarSoal: daftarTantangan[index]['soal'],
+          judulTantangan: tantangan['judul'],
+          daftarSoal: tantangan['soal'],
         ),
       ),
     ).then((_) {
@@ -267,8 +478,9 @@ class _KelolaTantanganPageState extends State<KelolaTantanganPage> {
   // CARD TANTANGAN
   // =========================================================
 
-  Widget buildTantanganCard(int index) {
-    final tantangan = daftarTantangan[index];
+  Widget buildTantanganCard(
+    Map<String, dynamic> tantangan,
+  ) {
     final List soal = tantangan['soal'];
 
     return Container(
@@ -292,6 +504,7 @@ class _KelolaTantanganPageState extends State<KelolaTantanganPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
                 width: 50,
@@ -302,6 +515,8 @@ class _KelolaTantanganPageState extends State<KelolaTantanganPage> {
                       royalBlue,
                       skyBlue,
                     ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
                   ),
                   borderRadius: BorderRadius.circular(15),
                 ),
@@ -310,20 +525,46 @@ class _KelolaTantanganPageState extends State<KelolaTantanganPage> {
                   color: Colors.white,
                 ),
               ),
+
               const SizedBox(width: 13),
+
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      tantangan['judul'],
+                      tantangan['judul'] ?? '',
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                         color: textBlue,
                       ),
                     ),
-                    const SizedBox(height: 5),
+
+                    const SizedBox(height: 6),
+
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 9,
+                        vertical: 5,
+                      ),
+                      decoration: BoxDecoration(
+                        color: paleBlue,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        '${tantangan['namaKelas']} • '
+                        '${tantangan['kodeKelas']}',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: royalBlue,
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 6),
+
                     Text(
                       '${soal.length} soal',
                       style: const TextStyle(
@@ -334,29 +575,47 @@ class _KelolaTantanganPageState extends State<KelolaTantanganPage> {
                   ],
                 ),
               ),
+
               PopupMenuButton<String>(
                 onSelected: (value) {
                   if (value == 'edit') {
-                    showEditTantanganDialog(index);
+                    showEditTantanganDialog(tantangan);
                   } else if (value == 'hapus') {
-                    hapusTantangan(index);
+                    hapusTantangan(tantangan);
                   }
                 },
                 itemBuilder: (context) => const [
                   PopupMenuItem(
                     value: 'edit',
-                    child: Text('Edit Tantangan'),
+                    child: Row(
+                      children: [
+                        Icon(Icons.edit_outlined),
+                        SizedBox(width: 8),
+                        Text('Edit Tantangan'),
+                      ],
+                    ),
                   ),
                   PopupMenuItem(
                     value: 'hapus',
-                    child: Text('Hapus Tantangan'),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.delete_outline,
+                          color: Colors.red,
+                        ),
+                        SizedBox(width: 8),
+                        Text('Hapus Tantangan'),
+                      ],
+                    ),
                   ),
                 ],
               ),
             ],
           ),
 
-          if (tantangan['deskripsi'].toString().isNotEmpty) ...[
+          if (tantangan['deskripsi']
+              .toString()
+              .isNotEmpty) ...[
             const SizedBox(height: 14),
             Text(
               tantangan['deskripsi'],
@@ -373,7 +632,7 @@ class _KelolaTantanganPageState extends State<KelolaTantanganPage> {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton.icon(
-              onPressed: () => bukaKelolaSoal(index),
+              onPressed: () => bukaKelolaSoal(tantangan),
               icon: const Icon(
                 Icons.edit_note_rounded,
                 size: 20,
@@ -403,36 +662,58 @@ class _KelolaTantanganPageState extends State<KelolaTantanganPage> {
 
   @override
   Widget build(BuildContext context) {
+    final tantangan = daftarTantanganTampil;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF6F9FE),
+
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: Colors.white,
         elevation: 0,
+        surfaceTintColor: Colors.transparent,
         iconTheme: const IconThemeData(
           color: textBlue,
         ),
-        title: const Text(
-          'Kelola Tantangan',
-          style: TextStyle(
-            color: textBlue,
-            fontWeight: FontWeight.bold,
-          ),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Kelola Tantangan',
+              style: TextStyle(
+                color: textBlue,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+
+            if (sedangDiDalamKelas)
+              Text(
+                widget.namaKelas!,
+                style: const TextStyle(
+                  fontSize: 11,
+                  color: mutedBlue,
+                ),
+              ),
+          ],
         ),
       ),
-      body: daftarTantangan.isEmpty
+
+      body: tantangan.isEmpty
           ? buildEmptyState()
           : ListView.builder(
               padding: const EdgeInsets.fromLTRB(
                 20,
-                10,
+                16,
                 20,
                 100,
               ),
-              itemCount: daftarTantangan.length,
+              itemCount: tantangan.length,
               itemBuilder: (context, index) {
-                return buildTantanganCard(index);
+                return buildTantanganCard(
+                  tantangan[index],
+                );
               },
             ),
+
       floatingActionButton: FloatingActionButton.extended(
         onPressed: showTambahTantanganDialog,
         backgroundColor: royalBlue,
@@ -447,6 +728,10 @@ class _KelolaTantanganPageState extends State<KelolaTantanganPage> {
       ),
     );
   }
+
+  // =========================================================
+  // EMPTY STATE
+  // =========================================================
 
   Widget buildEmptyState() {
     return Center(
@@ -468,26 +753,38 @@ class _KelolaTantanganPageState extends State<KelolaTantanganPage> {
                 size: 42,
               ),
             ),
+
             const SizedBox(height: 18),
-            const Text(
-              'Belum Ada Tantangan',
-              style: TextStyle(
+
+            Text(
+              sedangDiDalamKelas
+                  ? 'Belum Ada Tantangan di Kelas Ini'
+                  : 'Belum Ada Tantangan',
+              textAlign: TextAlign.center,
+              style: const TextStyle(
                 fontSize: 19,
                 fontWeight: FontWeight.bold,
                 color: textBlue,
               ),
             ),
+
             const SizedBox(height: 8),
-            const Text(
-              'Buat tantangan untuk menambahkan soal pembelajaran bagi siswa.',
+
+            Text(
+              sedangDiDalamKelas
+                  ? 'Buat tantangan untuk ${widget.namaKelas}.'
+                  : 'Buat tantangan untuk menambahkan soal '
+                    'pembelajaran bagi siswa.',
               textAlign: TextAlign.center,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 13,
                 color: mutedBlue,
                 height: 1.5,
               ),
             ),
+
             const SizedBox(height: 20),
+
             ElevatedButton.icon(
               onPressed: showTambahTantanganDialog,
               icon: const Icon(Icons.add_rounded),
@@ -527,7 +824,8 @@ class KelolaSoalPage extends StatefulWidget {
   });
 
   @override
-  State<KelolaSoalPage> createState() => _KelolaSoalPageState();
+  State<KelolaSoalPage> createState() =>
+      _KelolaSoalPageState();
 }
 
 class _KelolaSoalPageState extends State<KelolaSoalPage> {
@@ -535,6 +833,10 @@ class _KelolaSoalPageState extends State<KelolaSoalPage> {
   static const Color paleBlue = Color(0xFFDCEBFF);
   static const Color textBlue = Color(0xFF18365D);
   static const Color mutedBlue = Color(0xFF7288A8);
+
+  // =========================================================
+  // TAMBAH SOAL
+  // =========================================================
 
   void tambahSoal() {
     showModalBottomSheet(
@@ -560,6 +862,7 @@ class _KelolaSoalPageState extends State<KelolaSoalPage> {
                     color: textBlue,
                   ),
                 ),
+
                 const SizedBox(height: 18),
 
                 buildTipeSoal(
@@ -572,14 +875,16 @@ class _KelolaSoalPageState extends State<KelolaSoalPage> {
                 buildTipeSoal(
                   icon: Icons.check_circle_outline_rounded,
                   title: 'Benar / Salah',
-                  subtitle: 'Siswa menentukan benar atau salah',
+                  subtitle:
+                      'Siswa menentukan benar atau salah',
                   tipe: 'Benar / Salah',
                 ),
 
                 buildTipeSoal(
                   icon: Icons.checklist_rounded,
                   title: 'Pilihan Ganda Kompleks',
-                  subtitle: 'Siswa dapat memilih beberapa jawaban',
+                  subtitle:
+                      'Siswa dapat memilih beberapa jawaban',
                   tipe: 'Pilihan Ganda Kompleks',
                 ),
 
@@ -593,7 +898,8 @@ class _KelolaSoalPageState extends State<KelolaSoalPage> {
                 buildTipeSoal(
                   icon: Icons.compare_arrows_rounded,
                   title: 'Menjodohkan',
-                  subtitle: 'Siswa memasangkan soal dan jawaban',
+                  subtitle:
+                      'Siswa memasangkan soal dan jawaban',
                   tipe: 'Menjodohkan',
                 ),
               ],
@@ -603,6 +909,10 @@ class _KelolaSoalPageState extends State<KelolaSoalPage> {
       },
     );
   }
+
+  // =========================================================
+  // PILIH MODEL SOAL
+  // =========================================================
 
   Widget buildTipeSoal({
     required IconData icon,
@@ -662,6 +972,7 @@ class _KelolaSoalPageState extends State<KelolaSoalPage> {
     int? editIndex,
   }) {
     final bool isEdit = editIndex != null;
+
     final Map<String, dynamic>? soalLama =
         isEdit ? widget.daftarSoal[editIndex!] : null;
 
@@ -725,6 +1036,7 @@ class _KelolaSoalPageState extends State<KelolaSoalPage> {
                       ),
                     ),
                   ),
+
                   const SizedBox(height: 15),
 
                   TextField(
@@ -782,7 +1094,9 @@ class _KelolaSoalPageState extends State<KelolaSoalPage> {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
+              onPressed: () {
+                Navigator.pop(dialogContext);
+              },
               child: const Text('Batal'),
             ),
             ElevatedButton(
@@ -801,12 +1115,18 @@ class _KelolaSoalPageState extends State<KelolaSoalPage> {
 
                 final data = {
                   'tipe': tipe,
-                  'pertanyaan': pertanyaanController.text.trim(),
-                  'jawaban': jawabanController.text.trim(),
-                  'pilihanA': pilihanAController.text.trim(),
-                  'pilihanB': pilihanBController.text.trim(),
-                  'pilihanC': pilihanCController.text.trim(),
-                  'pilihanD': pilihanDController.text.trim(),
+                  'pertanyaan':
+                      pertanyaanController.text.trim(),
+                  'jawaban':
+                      jawabanController.text.trim(),
+                  'pilihanA':
+                      pilihanAController.text.trim(),
+                  'pilihanB':
+                      pilihanBController.text.trim(),
+                  'pilihanC':
+                      pilihanCController.text.trim(),
+                  'pilihanD':
+                      pilihanDController.text.trim(),
                 };
 
                 setState(() {
@@ -844,6 +1164,10 @@ class _KelolaSoalPageState extends State<KelolaSoalPage> {
     );
   }
 
+  // =========================================================
+  // TEXT FIELD
+  // =========================================================
+
   Widget buildTextField(
     TextEditingController controller,
     String label,
@@ -877,7 +1201,9 @@ class _KelolaSoalPageState extends State<KelolaSoalPage> {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
+              onPressed: () {
+                Navigator.pop(dialogContext);
+              },
               child: const Text('Batal'),
             ),
             ElevatedButton(
@@ -887,6 +1213,14 @@ class _KelolaSoalPageState extends State<KelolaSoalPage> {
                 });
 
                 Navigator.pop(dialogContext);
+
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text(
+                      'Soal berhasil dihapus.',
+                    ),
+                  ),
+                );
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.red,
@@ -941,7 +1275,9 @@ class _KelolaSoalPageState extends State<KelolaSoalPage> {
                   ),
                 ),
               ),
+
               const Spacer(),
+
               PopupMenuButton<String>(
                 onSelected: (value) {
                   if (value == 'edit') {
@@ -949,7 +1285,7 @@ class _KelolaSoalPageState extends State<KelolaSoalPage> {
                       soal['tipe'],
                       editIndex: index,
                     );
-                  } else {
+                  } else if (value == 'hapus') {
                     hapusSoal(index);
                   }
                 },
@@ -966,7 +1302,9 @@ class _KelolaSoalPageState extends State<KelolaSoalPage> {
               ),
             ],
           ),
+
           const SizedBox(height: 12),
+
           Text(
             '${index + 1}. ${soal['pertanyaan']}',
             style: const TextStyle(
@@ -976,7 +1314,9 @@ class _KelolaSoalPageState extends State<KelolaSoalPage> {
               height: 1.4,
             ),
           ),
+
           const SizedBox(height: 10),
+
           Text(
             'Jawaban: ${soal['jawaban']}',
             style: const TextStyle(
@@ -997,9 +1337,11 @@ class _KelolaSoalPageState extends State<KelolaSoalPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF6F9FE),
+
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: Colors.white,
         elevation: 0,
+        surfaceTintColor: Colors.transparent,
         iconTheme: const IconThemeData(
           color: textBlue,
         ),
@@ -1011,12 +1353,13 @@ class _KelolaSoalPageState extends State<KelolaSoalPage> {
           ),
         ),
       ),
+
       body: widget.daftarSoal.isEmpty
           ? buildEmptySoal()
           : ListView.builder(
               padding: const EdgeInsets.fromLTRB(
                 20,
-                10,
+                16,
                 20,
                 100,
               ),
@@ -1028,6 +1371,7 @@ class _KelolaSoalPageState extends State<KelolaSoalPage> {
                 );
               },
             ),
+
       floatingActionButton: FloatingActionButton.extended(
         onPressed: tambahSoal,
         backgroundColor: royalBlue,
@@ -1042,6 +1386,10 @@ class _KelolaSoalPageState extends State<KelolaSoalPage> {
       ),
     );
   }
+
+  // =========================================================
+  // EMPTY SOAL
+  // =========================================================
 
   Widget buildEmptySoal() {
     return Center(
@@ -1063,7 +1411,9 @@ class _KelolaSoalPageState extends State<KelolaSoalPage> {
                 size: 42,
               ),
             ),
+
             const SizedBox(height: 18),
+
             const Text(
               'Belum Ada Soal',
               style: TextStyle(
@@ -1072,9 +1422,12 @@ class _KelolaSoalPageState extends State<KelolaSoalPage> {
                 color: textBlue,
               ),
             ),
+
             const SizedBox(height: 8),
+
             const Text(
-              'Tambahkan soal dengan berbagai model untuk tantangan ini.',
+              'Tambahkan soal dengan berbagai model '
+              'untuk tantangan ini.',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 13,
@@ -1082,7 +1435,9 @@ class _KelolaSoalPageState extends State<KelolaSoalPage> {
                 height: 1.5,
               ),
             ),
+
             const SizedBox(height: 20),
+
             ElevatedButton.icon(
               onPressed: tambahSoal,
               icon: const Icon(Icons.add_rounded),

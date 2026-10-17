@@ -1,4 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+
+import 'kelola_materi_page.dart';
+import 'kelola_tantangan_page.dart';
+import 'daftar_siswa_page.dart';
 
 class DetailKelasGuruPage extends StatefulWidget {
   final String namaKelas;
@@ -13,13 +18,11 @@ class DetailKelasGuruPage extends StatefulWidget {
   });
 
   @override
-  State<DetailKelasGuruPage> createState() =>
-      _DetailKelasGuruPageState();
+  State<DetailKelasGuruPage> createState() => _DetailKelasGuruPageState();
 }
 
 class _DetailKelasGuruPageState extends State<DetailKelasGuruPage> {
   static const Color royalBlue = Color(0xFF2166D5);
-  static const Color deepBlue = Color(0xFF123B70);
   static const Color skyBlue = Color(0xFF56B4F8);
   static const Color paleBlue = Color(0xFFDCEBFF);
   static const Color textBlue = Color(0xFF18365D);
@@ -145,7 +148,7 @@ class _DetailKelasGuruPageState extends State<DetailKelasGuruPage> {
                   child: buildInfoCard(
                     icon: Icons.menu_book_rounded,
                     title: 'Materi',
-                    value: '0',
+                    value: '—',
                   ),
                 ),
               ],
@@ -159,7 +162,7 @@ class _DetailKelasGuruPageState extends State<DetailKelasGuruPage> {
                   child: buildInfoCard(
                     icon: Icons.quiz_rounded,
                     title: 'Tantangan',
-                    value: '0',
+                    value: '—',
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -167,7 +170,7 @@ class _DetailKelasGuruPageState extends State<DetailKelasGuruPage> {
                   child: buildInfoCard(
                     icon: Icons.bar_chart_rounded,
                     title: 'Hasil',
-                    value: '0',
+                    value: '—',
                   ),
                 ),
               ],
@@ -189,51 +192,69 @@ class _DetailKelasGuruPageState extends State<DetailKelasGuruPage> {
 
             const SizedBox(height: 12),
 
+            // =========================
+            // DAFTAR SISWA
+            // =========================
             buildMenuItem(
               icon: Icons.people_alt_rounded,
               title: 'Daftar Siswa',
               subtitle: 'Lihat siswa yang bergabung di kelas',
               onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text(
-                      'Halaman Daftar Siswa akan dibuat selanjutnya.',
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => DaftarSiswaPage(
+                      namaKelas: widget.namaKelas,
+                      kodeKelas: widget.kodeKelas,
                     ),
                   ),
                 );
               },
             ),
 
+            // =========================
+            // MATERI KELAS
+            // =========================
             buildMenuItem(
               icon: Icons.menu_book_rounded,
               title: 'Materi Kelas',
               subtitle: 'Kelola materi pembelajaran kelas',
               onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text(
-                      'Halaman Materi Kelas akan dibuat selanjutnya.',
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => KelolaMateriPage(
+                      namaKelas: widget.namaKelas,
+                      kodeKelas: widget.kodeKelas,
                     ),
                   ),
                 );
               },
             ),
 
+            // =========================
+            // TANTANGAN KELAS
+            // =========================
             buildMenuItem(
               icon: Icons.quiz_rounded,
               title: 'Tantangan Kelas',
               subtitle: 'Kelola soal tantangan untuk siswa',
               onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text(
-                      'Halaman Tantangan Kelas akan dibuat selanjutnya.',
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => KelolaTantanganPage(
+                      namaKelas: widget.namaKelas,
+                      kodeKelas: widget.kodeKelas,
                     ),
                   ),
                 );
               },
             ),
 
+            // =========================
+            // HASIL SISWA
+            // =========================
             buildMenuItem(
               icon: Icons.bar_chart_rounded,
               title: 'Hasil Siswa',
@@ -292,6 +313,12 @@ class _DetailKelasGuruPageState extends State<DetailKelasGuruPage> {
                   const SizedBox(height: 14),
                   OutlinedButton.icon(
                     onPressed: () {
+                      Clipboard.setData(
+                        ClipboardData(
+                          text: widget.kodeKelas,
+                        ),
+                      );
+
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                           content: Text(
