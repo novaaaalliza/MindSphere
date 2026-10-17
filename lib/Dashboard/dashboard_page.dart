@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'detail_kelas_siswa_page.dart';
+import 'profil_siswa_page.dart';
 
 class DashboardPage extends StatefulWidget {
-  DashboardPage({super.key});
+  const DashboardPage({super.key});
 
   @override
   State<DashboardPage> createState() => _DashboardPageState();
@@ -24,62 +25,75 @@ class _DashboardPageState extends State<DashboardPage> {
     return Scaffold(
       backgroundColor: const Color(0xFFF7FAFF),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(20, 18, 20, 30),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildHeader(),
-              const SizedBox(height: 20),
-
-              _buildWelcomeCard(),
-              const SizedBox(height: 20),
-
-              _buildClassCard(context),
-              const SizedBox(height: 24),
-
-              _buildSectionTitle(
-                'Perjalanan Belajar',
-                'Mulai perjalanan belajarmu',
-              ),
-              const SizedBox(height: 14),
-
-              _buildLearningJourney(),
-              const SizedBox(height: 24),
-
-              _buildSectionTitle(
-                'Lanjutkan Belajar',
-                'Materi akan muncul setelah kamu bergabung',
-              ),
-              const SizedBox(height: 14),
-
-              _buildEmptyLearningCard(),
-              const SizedBox(height: 24),
-
-              _buildSectionTitle(
-                'Tantangan',
-                'Selesaikan tantangan dari kelasmu',
-              ),
-              const SizedBox(height: 14),
-
-              _buildEmptyChallengeCard(),
-              const SizedBox(height: 24),
-
-              _buildProgressCard(),
-              const SizedBox(height: 24),
-
-              _buildAchievementCard(),
-            ],
-          ),
+        child: IndexedStack(
+          index: 0,
+          children: [
+            _buildHomeContent(),
+          ],
         ),
       ),
       bottomNavigationBar: _buildBottomNavigation(),
     );
   }
 
-  // =========================
+  // ============================================================
+  // HOME CONTENT
+  // ============================================================
+
+  Widget _buildHomeContent() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(20, 18, 20, 30),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildHeader(),
+          const SizedBox(height: 20),
+
+          _buildWelcomeCard(),
+          const SizedBox(height: 20),
+
+          _buildClassCard(context),
+          const SizedBox(height: 24),
+
+          _buildSectionTitle(
+            'Perjalanan Belajar',
+            'Mulai perjalanan belajarmu',
+          ),
+          const SizedBox(height: 14),
+
+          _buildLearningJourney(),
+          const SizedBox(height: 24),
+
+          _buildSectionTitle(
+            'Lanjutkan Belajar',
+            'Materi akan muncul setelah kamu bergabung',
+          ),
+          const SizedBox(height: 14),
+
+          _buildEmptyLearningCard(),
+          const SizedBox(height: 24),
+
+          _buildSectionTitle(
+            'Tantangan',
+            'Selesaikan tantangan dari kelasmu',
+          ),
+          const SizedBox(height: 14),
+
+          _buildEmptyChallengeCard(),
+          const SizedBox(height: 24),
+
+          _buildProgressCard(),
+          const SizedBox(height: 24),
+
+          _buildAchievementCard(),
+        ],
+      ),
+    );
+  }
+
+  // ============================================================
   // HEADER
-  // =========================
+  // ============================================================
 
   Widget _buildHeader() {
     return Row(
@@ -101,6 +115,7 @@ class _DashboardPageState extends State<DashboardPage> {
             size: 27,
           ),
         ),
+
         const SizedBox(width: 12),
 
         Expanded(
@@ -126,25 +141,28 @@ class _DashboardPageState extends State<DashboardPage> {
           ),
         ),
 
-        Container(
-          width: 42,
-          height: 42,
-          decoration: BoxDecoration(
-            color: paleBlue,
-            borderRadius: BorderRadius.circular(14),
-          ),
-          child: Icon(
-            Icons.notifications_none_rounded,
-            color: royalBlue,
+        GestureDetector(
+          onTap: _showNotificationDialog,
+          child: Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: paleBlue,
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Icon(
+              Icons.notifications_none_rounded,
+              color: royalBlue,
+            ),
           ),
         ),
       ],
     );
   }
 
-  // =========================
+  // ============================================================
   // WELCOME
-  // =========================
+  // ============================================================
 
   Widget _buildWelcomeCard() {
     return Container(
@@ -203,9 +221,9 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  // =========================
+  // ============================================================
   // KELAS SAYA
-  // =========================
+  // ============================================================
 
   Widget _buildClassCard(BuildContext context) {
     if (kodeKelas == null) {
@@ -245,6 +263,7 @@ class _DashboardPageState extends State<DashboardPage> {
                     size: 25,
                   ),
                 ),
+
                 const SizedBox(width: 12),
 
                 Expanded(
@@ -339,9 +358,9 @@ class _DashboardPageState extends State<DashboardPage> {
       );
     }
 
-    // =========================
-    // JIKA SUDAH BERGABUNG
-    // =========================
+    // ============================================================
+    // SUDAH BERGABUNG
+    // ============================================================
 
     return Container(
       width: double.infinity,
@@ -379,6 +398,7 @@ class _DashboardPageState extends State<DashboardPage> {
                   size: 27,
                 ),
               ),
+
               const SizedBox(width: 12),
 
               Expanded(
@@ -458,15 +478,7 @@ class _DashboardPageState extends State<DashboardPage> {
             height: 45,
             child: ElevatedButton.icon(
               onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => DetailKelasSiswaPage(
-                      namaKelas: namaKelas!,
-                      kodeKelas: kodeKelas!,
-                    ),
-                  ),
-                );
+                _openClass();
               },
               icon: const Icon(
                 Icons.arrow_forward_rounded,
@@ -492,9 +504,29 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  // =========================
-  // DIALOG GABUNG KELAS
-  // =========================
+  // ============================================================
+  // OPEN CLASS
+  // ============================================================
+
+  void _openClass() {
+    if (namaKelas == null || kodeKelas == null) {
+      return;
+    }
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => DetailKelasSiswaPage(
+          namaKelas: namaKelas!,
+          kodeKelas: kodeKelas!,
+        ),
+      ),
+    );
+  }
+
+  // ============================================================
+  // GABUNG KELAS
+  // ============================================================
 
   void _showJoinClassDialog(BuildContext context) {
     final TextEditingController codeController =
@@ -527,6 +559,7 @@ class _DashboardPageState extends State<DashboardPage> {
                   height: 1.4,
                 ),
               ),
+
               const SizedBox(height: 18),
 
               TextField(
@@ -579,25 +612,14 @@ class _DashboardPageState extends State<DashboardPage> {
                   return;
                 }
 
-                // Simpan kelas sementara
                 setState(() {
                   kodeKelas = kode;
                   namaKelas = 'Kelas $kode';
                 });
 
-                // Tutup dialog
                 Navigator.pop(dialogContext);
 
-                // Langsung masuk ke halaman kelas
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => DetailKelasSiswaPage(
-                      namaKelas: namaKelas!,
-                      kodeKelas: kodeKelas!,
-                    ),
-                  ),
-                );
+                _openClass();
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: royalBlue,
@@ -614,9 +636,9 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  // =========================
+  // ============================================================
   // SECTION TITLE
-  // =========================
+  // ============================================================
 
   Widget _buildSectionTitle(
     String title,
@@ -645,9 +667,9 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  // =========================
+  // ============================================================
   // LEARNING JOURNEY
-  // =========================
+  // ============================================================
 
   Widget _buildLearningJourney() {
     return Container(
@@ -667,6 +689,7 @@ class _DashboardPageState extends State<DashboardPage> {
             title: 'Materi',
             subtitle: 'Belum dimulai',
             active: false,
+            onTap: _openClass,
           ),
 
           _journeyLine(),
@@ -676,6 +699,7 @@ class _DashboardPageState extends State<DashboardPage> {
             title: 'Eksplorasi',
             subtitle: 'Belum dimulai',
             active: false,
+            onTap: _openClass,
           ),
 
           _journeyLine(),
@@ -685,6 +709,7 @@ class _DashboardPageState extends State<DashboardPage> {
             title: 'Tantangan',
             subtitle: 'Belum dimulai',
             active: false,
+            onTap: _openClass,
           ),
         ],
       ),
@@ -696,48 +721,68 @@ class _DashboardPageState extends State<DashboardPage> {
     required String title,
     required String subtitle,
     required bool active,
+    required VoidCallback onTap,
   }) {
-    return Row(
-      children: [
-        Container(
-          width: 43,
-          height: 43,
-          decoration: BoxDecoration(
-            color: active
-                ? royalBlue
-                : const Color(0xFFEAF1FC),
-            shape: BoxShape.circle,
-          ),
-          child: Icon(
-            icon,
-            color: active ? Colors.white : mutedBlue,
-            size: 22,
-          ),
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(14),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          vertical: 4,
         ),
-        const SizedBox(width: 13),
-
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Row(
           children: [
-            Text(
-              title,
-              style: TextStyle(
-                color: textBlue,
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
+            Container(
+              width: 43,
+              height: 43,
+              decoration: BoxDecoration(
+                color: active
+                    ? royalBlue
+                    : const Color(0xFFEAF1FC),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                icon,
+                color: active ? Colors.white : mutedBlue,
+                size: 22,
               ),
             ),
-            const SizedBox(height: 3),
-            Text(
-              subtitle,
-              style: TextStyle(
-                color: mutedBlue,
-                fontSize: 11,
+
+            const SizedBox(width: 13),
+
+            Expanded(
+              child: Column(
+                crossAxisAlignment:
+                    CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      color: textBlue,
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      color: mutedBlue,
+                      fontSize: 11,
+                    ),
+                  ),
+                ],
               ),
+            ),
+
+            Icon(
+              Icons.arrow_forward_ios_rounded,
+              color: mutedBlue,
+              size: 14,
             ),
           ],
         ),
-      ],
+      ),
     );
   }
 
@@ -754,221 +799,253 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  // =========================
+  // ============================================================
   // EMPTY LEARNING
-  // =========================
+  // ============================================================
 
   Widget _buildEmptyLearningCard() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(22),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(
-          color: paleBlue,
+    return InkWell(
+      onTap: _openClass,
+      borderRadius: BorderRadius.circular(22),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(22),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(
+            color: paleBlue,
+          ),
         ),
-      ),
-      child: Column(
-        children: [
-          Container(
-            width: 58,
-            height: 58,
-            decoration: BoxDecoration(
-              color: paleBlue,
-              shape: BoxShape.circle,
+        child: Column(
+          children: [
+            Container(
+              width: 58,
+              height: 58,
+              decoration: BoxDecoration(
+                color: paleBlue,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.menu_book_outlined,
+                color: royalBlue,
+                size: 28,
+              ),
             ),
-            child: Icon(
-              Icons.menu_book_outlined,
-              color: royalBlue,
-              size: 28,
-            ),
-          ),
-          const SizedBox(height: 12),
 
-          Text(
-            'Belum ada materi',
-            style: TextStyle(
-              color: textBlue,
-              fontSize: 15,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
+            const SizedBox(height: 12),
 
-          const SizedBox(height: 5),
-
-          Text(
-            'Bergabung dengan kelas terlebih dahulu untuk melihat materi.',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: mutedBlue,
-              fontSize: 12,
-              height: 1.4,
+            Text(
+              'Belum ada materi',
+              style: TextStyle(
+                color: textBlue,
+                fontSize: 15,
+                fontWeight: FontWeight.bold,
+              ),
             ),
-          ),
-        ],
+
+            const SizedBox(height: 5),
+
+            Text(
+              'Bergabung dengan kelas terlebih dahulu untuk melihat materi.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: mutedBlue,
+                fontSize: 12,
+                height: 1.4,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  // =========================
+  // ============================================================
   // EMPTY CHALLENGE
-  // =========================
+  // ============================================================
 
   Widget _buildEmptyChallengeCard() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF5F9FF),
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(
-          color: paleBlue,
+    return InkWell(
+      onTap: _openClass,
+      borderRadius: BorderRadius.circular(22),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF5F9FF),
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(
+            color: paleBlue,
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 52,
+              height: 52,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Icon(
+                Icons.flag_outlined,
+                color: royalBlue,
+                size: 26,
+              ),
+            ),
+
+            const SizedBox(width: 13),
+
+            Expanded(
+              child: Column(
+                crossAxisAlignment:
+                    CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Belum ada tantangan',
+                    style: TextStyle(
+                      color: textBlue,
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+
+                  const SizedBox(height: 4),
+
+                  Text(
+                    'Tantangan akan tersedia setelah kamu bergabung dengan kelas.',
+                    style: TextStyle(
+                      color: mutedBlue,
+                      fontSize: 11.5,
+                      height: 1.4,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            Icon(
+              Icons.arrow_forward_ios_rounded,
+              color: mutedBlue,
+              size: 14,
+            ),
+          ],
         ),
       ),
-      child: Row(
-        children: [
-          Container(
-            width: 52,
-            height: 52,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Icon(
-              Icons.flag_outlined,
-              color: royalBlue,
-              size: 26,
-            ),
-          ),
-          const SizedBox(width: 13),
+    );
+  }
 
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+  // ============================================================
+  // PROGRESS
+  // ============================================================
+
+  Widget _buildProgressCard() {
+    return InkWell(
+      onTap: _openClass,
+      borderRadius: BorderRadius.circular(22),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [
+              Color(0xFFEAF3FF),
+              Colors.white,
+            ],
+          ),
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(
+            color: paleBlue,
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment:
+              CrossAxisAlignment.start,
+          children: [
+            Row(
               children: [
-                Text(
-                  'Belum ada tantangan',
-                  style: TextStyle(
-                    color: textBlue,
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
+                Icon(
+                  Icons.trending_up_rounded,
+                  color: royalBlue,
+                  size: 25,
+                ),
+                const SizedBox(width: 9),
+                Expanded(
+                  child: Text(
+                    'Progress Saya',
+                    style: TextStyle(
+                      color: textBlue,
+                      fontSize: 17,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
-                const SizedBox(height: 4),
+                Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  color: mutedBlue,
+                  size: 14,
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 18),
+
+            Row(
+              mainAxisAlignment:
+                  MainAxisAlignment.spaceBetween,
+              children: [
                 Text(
-                  'Tantangan akan tersedia setelah kamu bergabung dengan kelas.',
+                  'Belum ada aktivitas',
                   style: TextStyle(
                     color: mutedBlue,
-                    fontSize: 11.5,
-                    height: 1.4,
+                    fontSize: 12,
+                  ),
+                ),
+                Text(
+                  '0%',
+                  style: TextStyle(
+                    color: royalBlue,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
               ],
             ),
-          ),
-        ],
-      ),
-    );
-  }
 
-  // =========================
-  // PROGRESS
-  // =========================
+            const SizedBox(height: 9),
 
-  Widget _buildProgressCard() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [
-            Color(0xFFEAF3FF),
-            Colors.white,
-          ],
-        ),
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(
-          color: paleBlue,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                Icons.trending_up_rounded,
-                color: royalBlue,
-                size: 25,
-              ),
-              const SizedBox(width: 9),
-              Text(
-                'Progress Saya',
-                style: TextStyle(
-                  color: textBlue,
-                  fontSize: 17,
-                  fontWeight: FontWeight.bold,
+            ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: LinearProgressIndicator(
+                value: 0,
+                minHeight: 9,
+                backgroundColor:
+                    const Color(0xFFE0EAF7),
+                valueColor:
+                    AlwaysStoppedAnimation<Color>(
+                  royalBlue,
                 ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 18),
-
-          Row(
-            mainAxisAlignment:
-                MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Belum ada aktivitas',
-                style: TextStyle(
-                  color: mutedBlue,
-                  fontSize: 12,
-                ),
-              ),
-              Text(
-                '0%',
-                style: TextStyle(
-                  color: royalBlue,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 9),
-
-          ClipRRect(
-            borderRadius: BorderRadius.circular(20),
-            child: LinearProgressIndicator(
-              value: 0,
-              minHeight: 9,
-              backgroundColor: const Color(0xFFE0EAF7),
-              valueColor:
-                  AlwaysStoppedAnimation<Color>(
-                royalBlue,
               ),
             ),
-          ),
 
-          const SizedBox(height: 14),
+            const SizedBox(height: 14),
 
-          Row(
-            children: [
-              _progressInfo(
-                'Materi',
-                '0',
-              ),
-              const SizedBox(width: 35),
-              _progressInfo(
-                'Tantangan',
-                '0',
-              ),
-            ],
-          ),
-        ],
+            Row(
+              children: [
+                _progressInfo(
+                  'Materi',
+                  '0',
+                ),
+                const SizedBox(width: 35),
+                _progressInfo(
+                  'Tantangan',
+                  '0',
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1001,119 +1078,189 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  // =========================
+  // ============================================================
   // ACHIEVEMENT
-  // =========================
+  // ============================================================
 
   Widget _buildAchievementCard() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(
-          color: paleBlue,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment:
-            CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 43,
-                height: 43,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFFF4D9),
-                  borderRadius:
-                      BorderRadius.circular(14),
-                ),
-                child: const Icon(
-                  Icons.emoji_events_outlined,
-                  color: Color(0xFFE0A500),
-                  size: 24,
-                ),
-              ),
-              const SizedBox(width: 11),
-
-              Expanded(
-                child: Column(
-                  crossAxisAlignment:
-                      CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Pencapaian Kelas',
-                      style: TextStyle(
-                        color: textBlue,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      'Hasil akan muncul setelah siswa mengerjakan tantangan.',
-                      style: TextStyle(
-                        color: mutedBlue,
-                        fontSize: 11,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+    return InkWell(
+      onTap: _openClass,
+      borderRadius: BorderRadius.circular(22),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(
+            color: paleBlue,
           ),
-
-          const SizedBox(height: 18),
-
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(
-              vertical: 16,
-              horizontal: 14,
-            ),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF7FAFF),
-              borderRadius:
-                  BorderRadius.circular(15),
-            ),
-            child: Column(
+        ),
+        child: Column(
+          crossAxisAlignment:
+              CrossAxisAlignment.start,
+          children: [
+            Row(
               children: [
-                Icon(
-                  Icons.emoji_events_outlined,
-                  color: mutedBlue,
-                  size: 30,
-                ),
-                const SizedBox(height: 7),
-                Text(
-                  'Belum ada hasil',
-                  style: TextStyle(
-                    color: textBlue,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
+                Container(
+                  width: 43,
+                  height: 43,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFF4D9),
+                    borderRadius:
+                        BorderRadius.circular(14),
+                  ),
+                  child: const Icon(
+                    Icons.emoji_events_outlined,
+                    color: Color(0xFFE0A500),
+                    size: 24,
                   ),
                 ),
-                const SizedBox(height: 3),
-                Text(
-                  'Belum ada siswa yang menyelesaikan tantangan.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: mutedBlue,
-                    fontSize: 10.5,
+
+                const SizedBox(width: 11),
+
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment:
+                        CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Pencapaian Kelas',
+                        style: TextStyle(
+                          color: textBlue,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        'Hasil akan muncul setelah kamu mengerjakan tantangan.',
+                        style: TextStyle(
+                          color: mutedBlue,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
-          ),
-        ],
+
+            const SizedBox(height: 18),
+
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(
+                vertical: 16,
+                horizontal: 14,
+              ),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF7FAFF),
+                borderRadius:
+                    BorderRadius.circular(15),
+              ),
+              child: Column(
+                children: [
+                  Icon(
+                    Icons.emoji_events_outlined,
+                    color: mutedBlue,
+                    size: 30,
+                  ),
+                  const SizedBox(height: 7),
+                  Text(
+                    'Belum ada hasil',
+                    style: TextStyle(
+                      color: textBlue,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    'Belum ada tantangan yang diselesaikan.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: mutedBlue,
+                      fontSize: 10.5,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  // =========================
+  // ============================================================
+  // NOTIFICATION
+  // ============================================================
+
+  void _showNotificationDialog() {
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(22),
+          ),
+          title: Row(
+            children: [
+              Icon(
+                Icons.notifications_rounded,
+                color: royalBlue,
+              ),
+              const SizedBox(width: 10),
+              Text(
+                'Notifikasi',
+                style: TextStyle(
+                  color: deepBlue,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.notifications_none_rounded,
+                color: mutedBlue,
+                size: 45,
+              ),
+              const SizedBox(height: 10),
+              Text(
+                'Belum ada notifikasi baru.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: mutedBlue,
+                  fontSize: 13,
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(dialogContext);
+              },
+              child: Text(
+                'Tutup',
+                style: TextStyle(
+                  color: royalBlue,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // ============================================================
   // BOTTOM NAVIGATION
-  // =========================
+  // ============================================================
 
   Widget _buildBottomNavigation() {
     return BottomNavigationBar(
@@ -1125,6 +1272,7 @@ class _DashboardPageState extends State<DashboardPage> {
       elevation: 10,
       selectedFontSize: 11,
       unselectedFontSize: 10,
+      onTap: _handleBottomNavigation,
       items: const [
         BottomNavigationBarItem(
           icon: Icon(Icons.home_rounded),
@@ -1148,5 +1296,37 @@ class _DashboardPageState extends State<DashboardPage> {
         ),
       ],
     );
+  }
+
+  // ============================================================
+  // BOTTOM NAVIGATION ACTION
+  // ============================================================
+
+  void _handleBottomNavigation(int index) {
+    switch (index) {
+      case 0:
+        break;
+
+      case 1:
+        _openClass();
+        break;
+
+      case 2:
+        _openClass();
+        break;
+
+      case 3:
+        _openClass();
+        break;
+
+      case 4:
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const ProfilSiswaPage(),
+          ),
+        );
+        break;
+    }
   }
 }
