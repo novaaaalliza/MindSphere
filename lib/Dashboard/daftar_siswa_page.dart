@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'data_global.dart';
 
 class DaftarSiswaPage extends StatefulWidget {
   final String namaKelas;
@@ -21,9 +22,19 @@ class _DaftarSiswaPageState extends State<DaftarSiswaPage> {
   static const Color textBlue = Color(0xFF18365D);
   static const Color mutedBlue = Color(0xFF7288A8);
 
-  // Data siswa sementara.
-  // Nanti bisa kita hubungkan dengan sistem join kelas.
-  final List<Map<String, String>> daftarSiswa = [];
+  // ============================================================
+  // MENGAMBIL DATA SISWA SESUAI KELAS
+  // ============================================================
+
+  List<Map<String, String>> get daftarSiswa {
+    return daftarSiswaGlobal
+        .where(
+          (siswa) =>
+              siswa['kodeKelas'] == widget.kodeKelas &&
+              siswa['namaKelas'] == widget.namaKelas,
+        )
+        .toList();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -56,9 +67,10 @@ class _DaftarSiswaPageState extends State<DaftarSiswaPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // =========================
+            // ====================================================
             // HEADER KELAS
-            // =========================
+            // ====================================================
+
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(20),
@@ -129,9 +141,10 @@ class _DaftarSiswaPageState extends State<DaftarSiswaPage> {
 
             const SizedBox(height: 24),
 
-            // =========================
-            // JUDUL
-            // =========================
+            // ====================================================
+            // JUDUL DAN JUMLAH SISWA
+            // ====================================================
+
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -167,9 +180,10 @@ class _DaftarSiswaPageState extends State<DaftarSiswaPage> {
 
             const SizedBox(height: 14),
 
-            // =========================
+            // ====================================================
             // DAFTAR SISWA
-            // =========================
+            // ====================================================
+
             if (daftarSiswa.isEmpty)
               buildEmptyState()
             else
@@ -181,8 +195,8 @@ class _DaftarSiswaPageState extends State<DaftarSiswaPage> {
                   final siswa = daftarSiswa[index];
 
                   return buildStudentCard(
-                    nama: siswa['nama'] ?? 'Nama Siswa',
-                    email: siswa['email'] ?? '-',
+                    nama: siswa['namaSiswa'] ?? 'Nama Siswa',
+                    email: '-',
                   );
                 },
               ),
@@ -192,9 +206,9 @@ class _DaftarSiswaPageState extends State<DaftarSiswaPage> {
     );
   }
 
-  // =========================
+  // ============================================================
   // EMPTY STATE
-  // =========================
+  // ============================================================
 
   Widget buildEmptyState() {
     return Container(
@@ -268,7 +282,9 @@ class _DaftarSiswaPageState extends State<DaftarSiswaPage> {
                   color: royalBlue,
                   size: 18,
                 ),
+
                 const SizedBox(width: 8),
+
                 Text(
                   'Kode kelas: ${widget.kodeKelas}',
                   style: const TextStyle(
@@ -285,9 +301,9 @@ class _DaftarSiswaPageState extends State<DaftarSiswaPage> {
     );
   }
 
-  // =========================
+  // ============================================================
   // STUDENT CARD
-  // =========================
+  // ============================================================
 
   Widget buildStudentCard({
     required String nama,
