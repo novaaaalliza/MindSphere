@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'data_global.dart';
 
 class KelolaMateriPage extends StatefulWidget {
   final String? namaKelas;
