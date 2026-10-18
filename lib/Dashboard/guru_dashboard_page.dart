@@ -18,7 +18,10 @@ class GuruDashboardPage extends StatefulWidget {
 class _GuruDashboardPageState extends State<GuruDashboardPage> {
   int selectedIndex = 0;
 
-  // Warna utama MindSphere
+  // ============================================================
+  // WARNA UTAMA MINDSHPERE
+  // ============================================================
+
   static const Color royalBlue = Color(0xFF2166D5);
   static const Color deepBlue = Color(0xFF123B70);
   static const Color skyBlue = Color(0xFF56B4F8);
@@ -59,10 +62,13 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
   }
 
   // ============================================================
-  // JUMLAH SISWA
+  // JUMLAH SISWA PER KELAS
   // ============================================================
 
-  int jumlahSiswaKelas(String kodeKelas, String namaKelas) {
+  int jumlahSiswaKelas(
+    String kodeKelas,
+    String namaKelas,
+  ) {
     return daftarSiswaGlobal.where((siswa) {
       return siswa['kodeKelas'] == kodeKelas &&
           siswa['namaKelas'] == namaKelas;
@@ -83,6 +89,14 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
 
   int jumlahTantangan() {
     return daftarTantanganGlobal.length;
+  }
+
+  // ============================================================
+  // TOTAL SISWA
+  // ============================================================
+
+  int totalSiswa() {
+    return daftarSiswaGlobal.length;
   }
 
   // ============================================================
@@ -146,7 +160,12 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
               ),
             ],
           ),
-          actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 18),
+          actionsPadding: const EdgeInsets.fromLTRB(
+            20,
+            0,
+            20,
+            18,
+          ),
           actions: [
             TextButton(
               onPressed: () {
@@ -161,18 +180,22 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
             ),
             ElevatedButton(
               onPressed: () {
-                final namaKelas = namaKelasController.text.trim();
+                final namaKelas =
+                    namaKelasController.text.trim();
 
                 if (namaKelas.isEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
-                      content: Text('Nama kelas harus diisi.'),
+                      content: Text(
+                        'Nama kelas harus diisi.',
+                      ),
                     ),
                   );
                   return;
                 }
 
-                final kodeKelas = generateKodeKelas(namaKelas);
+                final kodeKelas =
+                    generateKodeKelas(namaKelas);
 
                 setState(() {
                   daftarKelasGlobal.add({
@@ -285,7 +308,8 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisAlignment:
+                      MainAxisAlignment.center,
                   children: [
                     Text(
                       kodeKelas,
@@ -304,7 +328,8 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
                           ClipboardData(text: kodeKelas),
                         );
 
-                        ScaffoldMessenger.of(context).showSnackBar(
+                        ScaffoldMessenger.of(context)
+                            .showSnackBar(
                           const SnackBar(
                             content: Text(
                               'Kode kelas berhasil disalin.',
@@ -343,7 +368,9 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
                   backgroundColor: royalBlue,
                   foregroundColor: Colors.white,
                   elevation: 0,
-                  padding: const EdgeInsets.symmetric(vertical: 13),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 13,
+                  ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(13),
                   ),
@@ -373,32 +400,52 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
 
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text('Kode kelas berhasil disalin.'),
+        content: Text(
+          'Kode kelas berhasil disalin.',
+        ),
       ),
     );
   }
 
   // ============================================================
-  // NAVIGASI MENU
+  // NAVIGASI MATERI
   // ============================================================
 
   void bukaMateri() {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => const KelolaMateriPage(),
+        builder: (context) =>
+            const KelolaMateriPage(),
       ),
-    );
+    ).then((_) {
+      if (mounted) {
+        setState(() {});
+      }
+    });
   }
+
+  // ============================================================
+  // NAVIGASI TANTANGAN
+  // ============================================================
 
   void bukaTantangan() {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => const KelolaTantanganPage(),
+        builder: (context) =>
+            const KelolaTantanganPage(),
       ),
-    );
+    ).then((_) {
+      if (mounted) {
+        setState(() {});
+      }
+    });
   }
+
+  // ============================================================
+  // NAVIGASI HASIL
+  // ============================================================
 
   void bukaHasil() {
     if (daftarKelasGlobal.isEmpty) {
@@ -418,21 +465,36 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
       context,
       MaterialPageRoute(
         builder: (context) => HasilSiswaPage(
-          namaKelas: kelas['nama']?.toString() ?? '',
-          kodeKelas: kelas['kode']?.toString() ?? '',
+          namaKelas:
+              kelas['nama']?.toString() ?? '',
+          kodeKelas:
+              kelas['kode']?.toString() ?? '',
         ),
       ),
-    );
+    ).then((_) {
+      if (mounted) {
+        setState(() {});
+      }
+    });
   }
+
+  // ============================================================
+  // NAVIGASI PROFIL
+  // ============================================================
 
   void bukaProfil() {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => const ProfilGuruPage(),
+        builder: (context) =>
+            const ProfilGuruPage(),
       ),
     );
   }
+
+  // ============================================================
+  // NOTIFIKASI
+  // ============================================================
 
   void bukaNotifikasi() {
     showDialog(
@@ -442,14 +504,14 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(22),
           ),
-          title: Row(
+          title: const Row(
             children: [
-              const Icon(
+              Icon(
                 Icons.notifications_rounded,
                 color: royalBlue,
               ),
-              const SizedBox(width: 10),
-              const Text(
+              SizedBox(width: 10),
+              Text(
                 'Notifikasi',
                 style: TextStyle(
                   color: textBlue,
@@ -525,7 +587,8 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
         const SizedBox(width: 12),
         const Expanded(
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment:
+                CrossAxisAlignment.start,
             children: [
               Text(
                 'MindSphere',
@@ -552,7 +615,8 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
             height: 42,
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(13),
+              borderRadius:
+                  BorderRadius.circular(13),
             ),
             child: const Icon(
               Icons.notifications_none_rounded,
@@ -594,7 +658,8 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
         children: [
           Expanded(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment:
+                  CrossAxisAlignment.start,
               children: [
                 const Text(
                   'Selamat Datang, Guru! 👋',
@@ -620,17 +685,22 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
                     Icons.add_rounded,
                     size: 19,
                   ),
-                  label: const Text('Buat Kelas'),
+                  label: const Text(
+                    'Buat Kelas',
+                  ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white,
                     foregroundColor: royalBlue,
                     elevation: 0,
-                    padding: const EdgeInsets.symmetric(
+                    padding:
+                        const EdgeInsets.symmetric(
                       horizontal: 16,
                       vertical: 11,
                     ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                    shape:
+                        RoundedRectangleBorder(
+                      borderRadius:
+                          BorderRadius.circular(12),
                     ),
                   ),
                 ),
@@ -642,7 +712,8 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
             width: 72,
             height: 72,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.15),
+              color:
+                  Colors.white.withOpacity(0.15),
               shape: BoxShape.circle,
             ),
             child: const Icon(
@@ -662,7 +733,8 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
 
   Widget buildKelasSaya() {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment:
+          CrossAxisAlignment.start,
       children: [
         Row(
           children: [
@@ -682,7 +754,9 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
                 Icons.add_rounded,
                 size: 18,
               ),
-              label: const Text('Buat Kelas'),
+              label: const Text(
+                'Buat Kelas',
+              ),
               style: TextButton.styleFrom(
                 foregroundColor: royalBlue,
               ),
@@ -695,10 +769,13 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
         else
           ...daftarKelasGlobal.map(
             (kelas) {
-              final nama = kelas['nama']?.toString() ?? '';
-              final kode = kelas['kode']?.toString() ?? '';
+              final nama =
+                  kelas['nama']?.toString() ?? '';
+              final kode =
+                  kelas['kode']?.toString() ?? '';
 
-              final jumlahSiswa = jumlahSiswaKelas(
+              final jumlahSiswa =
+                  jumlahSiswaKelas(
                 kode,
                 nama,
               );
@@ -714,13 +791,18 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
     );
   }
 
+  // ============================================================
+  // EMPTY CLASS
+  // ============================================================
+
   Widget buildEmptyClass() {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(25),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(22),
+        borderRadius:
+            BorderRadius.circular(22),
         border: Border.all(
           color: const Color(0xFFE4EBF5),
         ),
@@ -762,18 +844,25 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
           const SizedBox(height: 16),
           ElevatedButton.icon(
             onPressed: showBuatKelasDialog,
-            icon: const Icon(Icons.add_rounded),
-            label: const Text('Buat Kelas'),
+            icon: const Icon(
+              Icons.add_rounded,
+            ),
+            label: const Text(
+              'Buat Kelas',
+            ),
             style: ElevatedButton.styleFrom(
               backgroundColor: royalBlue,
               foregroundColor: Colors.white,
               elevation: 0,
-              padding: const EdgeInsets.symmetric(
+              padding:
+                  const EdgeInsets.symmetric(
                 horizontal: 20,
                 vertical: 12,
               ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(13),
+              shape:
+                  RoundedRectangleBorder(
+                borderRadius:
+                    BorderRadius.circular(13),
               ),
             ),
           ),
@@ -792,33 +881,39 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
     int jumlahSiswa,
   ) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 14),
+      margin:
+          const EdgeInsets.only(bottom: 14),
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(22),
+        borderRadius:
+            BorderRadius.circular(22),
         border: Border.all(
           color: const Color(0xFFE1E9F5),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color:
+                Colors.black.withOpacity(0.03),
             blurRadius: 12,
             offset: const Offset(0, 5),
           ),
         ],
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment:
+            CrossAxisAlignment.start,
         children: [
           Row(
             children: [
               Container(
                 width: 48,
                 height: 48,
-                decoration: const BoxDecoration(
+                decoration:
+                    const BoxDecoration(
                   color: paleBlue,
-                  borderRadius: BorderRadius.all(
+                  borderRadius:
+                      BorderRadius.all(
                     Radius.circular(14),
                   ),
                 ),
@@ -831,13 +926,15 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment:
+                      CrossAxisAlignment.start,
                   children: [
                     Text(
                       nama,
                       style: const TextStyle(
                         fontSize: 16,
-                        fontWeight: FontWeight.bold,
+                        fontWeight:
+                            FontWeight.bold,
                         color: textBlue,
                       ),
                     ),
@@ -867,13 +964,15 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
           const SizedBox(height: 16),
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.symmetric(
+            padding:
+                const EdgeInsets.symmetric(
               horizontal: 15,
               vertical: 13,
             ),
             decoration: BoxDecoration(
               color: const Color(0xFFF3F7FD),
-              borderRadius: BorderRadius.circular(14),
+              borderRadius:
+                  BorderRadius.circular(14),
             ),
             child: Row(
               children: [
@@ -915,17 +1014,24 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
                     Icons.copy_rounded,
                     size: 17,
                   ),
-                  label: const Text('Salin Kode'),
-                  style: OutlinedButton.styleFrom(
+                  label: const Text(
+                    'Salin Kode',
+                  ),
+                  style:
+                      OutlinedButton.styleFrom(
                     foregroundColor: royalBlue,
-                    side: const BorderSide(
+                    side:
+                        const BorderSide(
                       color: royalBlue,
                     ),
-                    padding: const EdgeInsets.symmetric(
+                    padding:
+                        const EdgeInsets.symmetric(
                       vertical: 11,
                     ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                    shape:
+                        RoundedRectangleBorder(
+                      borderRadius:
+                          BorderRadius.circular(12),
                     ),
                   ),
                 ),
@@ -937,28 +1043,39 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => DetailKelasGuruPage(
+                        builder: (_) =>
+                            DetailKelasGuruPage(
                           namaKelas: nama,
                           kodeKelas: kode,
-                          jumlahSiswa: jumlahSiswa,
+                          jumlahSiswa:
+                              jumlahSiswa,
                         ),
                       ),
                     ).then((_) {
-                      setState(() {});
+                      if (mounted) {
+                        setState(() {});
+                      }
                     });
                   },
-                  style: ElevatedButton.styleFrom(
+                  style:
+                      ElevatedButton.styleFrom(
                     backgroundColor: royalBlue,
-                    foregroundColor: Colors.white,
+                    foregroundColor:
+                        Colors.white,
                     elevation: 0,
-                    padding: const EdgeInsets.symmetric(
+                    padding:
+                        const EdgeInsets.symmetric(
                       vertical: 11,
                     ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                    shape:
+                        RoundedRectangleBorder(
+                      borderRadius:
+                          BorderRadius.circular(12),
                     ),
                   ),
-                  child: const Text('Lihat Kelas'),
+                  child: const Text(
+                    'Lihat Kelas',
+                  ),
                 ),
               ),
             ],
@@ -974,7 +1091,8 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
 
   Widget buildKelolaPembelajaran() {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment:
+          CrossAxisAlignment.start,
       children: [
         const Text(
           'Kelola Pembelajaran',
@@ -989,9 +1107,11 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
           children: [
             Expanded(
               child: buildMenuCard(
-                icon: Icons.menu_book_rounded,
+                icon:
+                    Icons.menu_book_rounded,
                 title: 'Kelola Materi',
-                subtitle: 'Tambah dan atur materi',
+                subtitle:
+                    'Tambah dan atur materi',
                 onTap: bukaMateri,
               ),
             ),
@@ -1000,7 +1120,8 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
               child: buildMenuCard(
                 icon: Icons.quiz_rounded,
                 title: 'Kelola Tantangan',
-                subtitle: 'Buat kuis dan soal',
+                subtitle:
+                    'Buat kuis dan soal',
                 onTap: bukaTantangan,
               ),
             ),
@@ -1011,9 +1132,11 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
           children: [
             Expanded(
               child: buildMenuCard(
-                icon: Icons.bar_chart_rounded,
+                icon:
+                    Icons.bar_chart_rounded,
                 title: 'Hasil Siswa',
-                subtitle: 'Lihat perkembangan siswa',
+                subtitle:
+                    'Lihat perkembangan siswa',
                 onTap: bukaHasil,
               ),
             ),
@@ -1022,7 +1145,8 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
               child: buildMenuCard(
                 icon: Icons.person_rounded,
                 title: 'Profil',
-                subtitle: 'Kelola profil guru',
+                subtitle:
+                    'Kelola profil guru',
                 onTap: bukaProfil,
               ),
             ),
@@ -1044,25 +1168,32 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
   }) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(18),
+      borderRadius:
+          BorderRadius.circular(18),
       child: Container(
-        padding: const EdgeInsets.all(15),
+        padding:
+            const EdgeInsets.all(15),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(18),
+          borderRadius:
+              BorderRadius.circular(18),
           border: Border.all(
-            color: const Color(0xFFE3EAF4),
+            color:
+                const Color(0xFFE3EAF4),
           ),
         ),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment:
+              CrossAxisAlignment.start,
           children: [
             Container(
               width: 42,
               height: 42,
-              decoration: const BoxDecoration(
+              decoration:
+                  const BoxDecoration(
                 color: paleBlue,
-                borderRadius: BorderRadius.all(
+                borderRadius:
+                    BorderRadius.all(
                   Radius.circular(12),
                 ),
               ),
@@ -1077,7 +1208,8 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
               title,
               style: const TextStyle(
                 fontSize: 14,
-                fontWeight: FontWeight.bold,
+                fontWeight:
+                    FontWeight.bold,
                 color: textBlue,
               ),
             ),
@@ -1097,18 +1229,20 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
   }
 
   // ============================================================
-  // RINGKASAN
+  // RINGKASAN PEMBELAJARAN
   // ============================================================
 
   Widget buildRingkasan() {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment:
+          CrossAxisAlignment.start,
       children: [
         const Text(
           'Ringkasan Pembelajaran',
           style: TextStyle(
             fontSize: 18,
-            fontWeight: FontWeight.bold,
+            fontWeight:
+                FontWeight.bold,
             color: textBlue,
           ),
         ),
@@ -1117,17 +1251,21 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
           children: [
             Expanded(
               child: buildStatCard(
-                icon: Icons.people_alt_rounded,
+                icon:
+                    Icons.people_alt_rounded,
                 title: 'Siswa',
-                value: totalSiswa().toString(),
+                value:
+                    totalSiswa().toString(),
               ),
             ),
             const SizedBox(width: 10),
             Expanded(
               child: buildStatCard(
-                icon: Icons.menu_book_rounded,
+                icon:
+                    Icons.menu_book_rounded,
                 title: 'Materi',
-                value: jumlahMateri().toString(),
+                value:
+                    jumlahMateri().toString(),
               ),
             ),
             const SizedBox(width: 10),
@@ -1135,7 +1273,8 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
               child: buildStatCard(
                 icon: Icons.quiz_rounded,
                 title: 'Tantangan',
-                value: jumlahTantangan().toString(),
+                value:
+                    jumlahTantangan().toString(),
               ),
             ),
           ],
@@ -1144,9 +1283,9 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
     );
   }
 
-  int totalSiswa() {
-    return daftarSiswaGlobal.length;
-  }
+  // ============================================================
+  // STAT CARD
+  // ============================================================
 
   Widget buildStatCard({
     required IconData icon,
@@ -1154,15 +1293,18 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
     required String value,
   }) {
     return Container(
-      padding: const EdgeInsets.symmetric(
+      padding:
+          const EdgeInsets.symmetric(
         horizontal: 10,
         vertical: 15,
       ),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius:
+            BorderRadius.circular(18),
         border: Border.all(
-          color: const Color(0xFFE3EAF4),
+          color:
+              const Color(0xFFE3EAF4),
         ),
       ),
       child: Column(
@@ -1177,7 +1319,8 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
             value,
             style: const TextStyle(
               fontSize: 20,
-              fontWeight: FontWeight.bold,
+              fontWeight:
+                  FontWeight.bold,
               color: textBlue,
             ),
           ),
@@ -1195,18 +1338,21 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
   }
 
   // ============================================================
-  // AKTIVITAS
+  // AKTIVITAS TERBARU
   // ============================================================
 
   Widget buildAktivitas() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(22),
+      padding:
+          const EdgeInsets.all(22),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(22),
+        borderRadius:
+            BorderRadius.circular(22),
         border: Border.all(
-          color: const Color(0xFFE3EAF4),
+          color:
+              const Color(0xFFE3EAF4),
         ),
       ),
       child: Column(
@@ -1214,7 +1360,8 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
           Container(
             width: 58,
             height: 58,
-            decoration: const BoxDecoration(
+            decoration:
+                const BoxDecoration(
               color: paleBlue,
               shape: BoxShape.circle,
             ),
@@ -1229,7 +1376,8 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
             'Belum Ada Aktivitas',
             style: TextStyle(
               fontSize: 15,
-              fontWeight: FontWeight.bold,
+              fontWeight:
+                  FontWeight.bold,
               color: textBlue,
             ),
           ),
@@ -1254,32 +1402,45 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
 
   Widget buildBottomNavigation() {
     return Container(
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-      padding: const EdgeInsets.symmetric(
+      margin:
+          const EdgeInsets.fromLTRB(
+        16,
+        0,
+        16,
+        16,
+      ),
+      padding:
+          const EdgeInsets.symmetric(
         vertical: 8,
         horizontal: 5,
       ),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius:
+            BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color:
+                Colors.black.withOpacity(0.08),
             blurRadius: 20,
-            offset: const Offset(0, 8),
+            offset:
+                const Offset(0, 8),
           ),
         ],
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        mainAxisAlignment:
+            MainAxisAlignment.spaceAround,
         children: [
           buildNavItem(
-            icon: Icons.dashboard_rounded,
+            icon:
+                Icons.dashboard_rounded,
             label: 'Dashboard',
             index: 0,
           ),
           buildNavItem(
-            icon: Icons.menu_book_rounded,
+            icon:
+                Icons.menu_book_rounded,
             label: 'Materi',
             index: 1,
           ),
@@ -1289,12 +1450,14 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
             index: 2,
           ),
           buildNavItem(
-            icon: Icons.bar_chart_rounded,
+            icon:
+                Icons.bar_chart_rounded,
             label: 'Hasil',
             index: 3,
           ),
           buildNavItem(
-            icon: Icons.person_rounded,
+            icon:
+                Icons.person_rounded,
             label: 'Profil',
             index: 4,
           ),
@@ -1303,12 +1466,17 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
     );
   }
 
+  // ============================================================
+  // NAVIGATION ITEM
+  // ============================================================
+
   Widget buildNavItem({
     required IconData icon,
     required String label,
     required int index,
   }) {
-    final bool isSelected = selectedIndex == index;
+    final bool isSelected =
+        selectedIndex == index;
 
     return GestureDetector(
       onTap: () {
@@ -1334,31 +1502,44 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
         }
       },
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(
+        duration:
+            const Duration(
+          milliseconds: 200,
+        ),
+        padding:
+            const EdgeInsets.symmetric(
           horizontal: 10,
           vertical: 8,
         ),
         decoration: BoxDecoration(
-          color: isSelected ? paleBlue : Colors.transparent,
-          borderRadius: BorderRadius.circular(15),
+          color: isSelected
+              ? paleBlue
+              : Colors.transparent,
+          borderRadius:
+              BorderRadius.circular(15),
         ),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisSize:
+              MainAxisSize.min,
           children: [
             Icon(
               icon,
               size: 21,
-              color: isSelected ? royalBlue : mutedBlue,
+              color: isSelected
+                  ? royalBlue
+                  : mutedBlue,
             ),
             const SizedBox(height: 3),
             Text(
               label,
               style: TextStyle(
                 fontSize: 10,
-                fontWeight:
-                    isSelected ? FontWeight.bold : FontWeight.normal,
-                color: isSelected ? royalBlue : mutedBlue,
+                fontWeight: isSelected
+                    ? FontWeight.bold
+                    : FontWeight.normal,
+                color: isSelected
+                    ? royalBlue
+                    : mutedBlue,
               ),
             ),
           ],
@@ -1374,20 +1555,24 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF6F9FE),
+      backgroundColor:
+          const Color(0xFFF6F9FE),
       body: SafeArea(
         child: Column(
           children: [
             Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(
+              child:
+                  SingleChildScrollView(
+                padding:
+                    const EdgeInsets.fromLTRB(
                   20,
                   18,
                   20,
                   10,
                 ),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment:
+                      CrossAxisAlignment.start,
                   children: [
                     buildHeader(),
                     const SizedBox(height: 22),
@@ -1403,7 +1588,8 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
                       'Aktivitas Terbaru',
                       style: TextStyle(
                         fontSize: 18,
-                        fontWeight: FontWeight.bold,
+                        fontWeight:
+                            FontWeight.bold,
                         color: textBlue,
                       ),
                     ),
