@@ -100,9 +100,7 @@ class _SplashPageState extends State<SplashPage> {
                       size: 29,
                     ),
                   ),
-
                   const SizedBox(width: 12),
-
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -118,7 +116,7 @@ class _SplashPageState extends State<SplashPage> {
                         'Learn smarter. Grow better.',
                         style: TextStyle(
                           fontSize: 11,
-                          color: Colors.blueGrey.shade500,
+                          color: Colors.blueGrey,
                         ),
                       ),
                     ],
@@ -144,112 +142,129 @@ class _SplashPageState extends State<SplashPage> {
 
                   return Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 28),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        // Ilustrasi berbentuk lingkaran
-                        Container(
-                          width: 245,
-                          height: 245,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            gradient: const LinearGradient(
-                              colors: [
-                                Color(0xFFDCEBFF),
-                                Color(0xFFEFF8FF),
-                              ],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: const Color(0xFF2166D5)
-                                    .withOpacity(0.12),
-                                blurRadius: 30,
-                                offset: const Offset(0, 12),
-                              ),
-                            ],
-                          ),
-                          child: Stack(
-                            alignment: Alignment.center,
-                            children: [
-                              // Lingkaran kecil dekorasi
-                              Positioned(
-                                top: 25,
-                                right: 35,
-                                child: Container(
-                                  width: 18,
-                                  height: 18,
-                                  decoration: const BoxDecoration(
-                                    color: Color(0xFF56B4F8),
-                                    shape: BoxShape.circle,
-                                  ),
-                                ),
-                              ),
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        final tinggi = constraints.maxHeight;
 
-                              Positioned(
-                                bottom: 35,
-                                left: 30,
-                                child: Container(
-                                  width: 12,
-                                  height: 12,
-                                  decoration: const BoxDecoration(
-                                    color: Color(0xFF2166D5),
-                                    shape: BoxShape.circle,
-                                  ),
-                                ),
-                              ),
+                        final ukuranLingkaran =
+                            tinggi < 400 ? 190.0 : 245.0;
+                        final ukuranIcon =
+                            tinggi < 400 ? 58.0 : 68.0;
+                        final ukuranIconContainer =
+                            tinggi < 400 ? 100.0 : 125.0;
+                        final jarak =
+                            tinggi < 400 ? 20.0 : 42.0;
 
-                              // Icon utama
-                              Container(
-                                width: 125,
-                                height: 125,
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  shape: BoxShape.circle,
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: const Color(0xFF2166D5)
-                                          .withOpacity(0.15),
-                                      blurRadius: 20,
-                                      offset: const Offset(0, 8),
-                                    ),
+                        return Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            // =========================
+                            // ILUSTRASI
+                            // =========================
+                            Container(
+                              width: ukuranLingkaran,
+                              height: ukuranLingkaran,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                gradient: const LinearGradient(
+                                  colors: [
+                                    Color(0xFFDCEBFF),
+                                    Color(0xFFEFF8FF),
                                   ],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
                                 ),
-                                child: Icon(
-                                  data['icon'],
-                                  size: 68,
-                                  color: const Color(0xFF2166D5),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: const Color(0xFF2166D5)
+                                        .withOpacity(0.12),
+                                    blurRadius: 30,
+                                    offset: const Offset(0, 12),
+                                  ),
+                                ],
+                              ),
+                              child: Stack(
+                                alignment: Alignment.center,
+                                children: [
+                                  Positioned(
+                                    top: 25,
+                                    right: 35,
+                                    child: Container(
+                                      width: 18,
+                                      height: 18,
+                                      decoration: const BoxDecoration(
+                                        color: Color(0xFF56B4F8),
+                                        shape: BoxShape.circle,
+                                      ),
+                                    ),
+                                  ),
+                                  Positioned(
+                                    bottom: 35,
+                                    left: 30,
+                                    child: Container(
+                                      width: 12,
+                                      height: 12,
+                                      decoration: const BoxDecoration(
+                                        color: Color(0xFF2166D5),
+                                        shape: BoxShape.circle,
+                                      ),
+                                    ),
+                                  ),
+                                  Container(
+                                    width: ukuranIconContainer,
+                                    height: ukuranIconContainer,
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      shape: BoxShape.circle,
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: const Color(0xFF2166D5)
+                                              .withOpacity(0.15),
+                                          blurRadius: 20,
+                                          offset: const Offset(0, 8),
+                                        ),
+                                      ],
+                                    ),
+                                    child: Icon(
+                                      data['icon'],
+                                      size: ukuranIcon,
+                                      color: const Color(0xFF2166D5),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+
+                            SizedBox(height: jarak),
+
+                            Text(
+                              data['title'],
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: tinggi < 400 ? 23 : 27,
+                                fontWeight: FontWeight.bold,
+                                color: const Color(0xFF123B70),
+                              ),
+                            ),
+
+                            SizedBox(
+                              height: tinggi < 400 ? 8 : 14,
+                            ),
+
+                            Flexible(
+                              child: Text(
+                                data['description'],
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: tinggi < 400 ? 13 : 15,
+                                  height: 1.5,
+                                  color: Colors.blueGrey.shade600,
                                 ),
                               ),
-                            ],
-                          ),
-                        ),
-
-                        const SizedBox(height: 42),
-
-                        Text(
-                          data['title'],
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            fontSize: 27,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF123B70),
-                          ),
-                        ),
-
-                        const SizedBox(height: 14),
-
-                        Text(
-                          data['description'],
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 15,
-                            height: 1.6,
-                            color: Colors.blueGrey.shade600,
-                          ),
-                        ),
-                      ],
+                            ),
+                          ],
+                        );
+                      },
                     ),
                   );
                 },

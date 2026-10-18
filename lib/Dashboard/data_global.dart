@@ -45,10 +45,43 @@ final List<Map<String, String>> daftarAktivitasMateriGlobal = [];
 
 
 // ============================================================
+// DATA AKTIVITAS TERBARU
+// ============================================================
+
+final List<Map<String, dynamic>> daftarAktivitasGlobal = [];
+
+
+// ============================================================
 // DATA SISWA YANG SEDANG LOGIN
 // ============================================================
 
 String namaSiswaAktif = 'Siswa';
+
+
+// ============================================================
+// MENAMBAHKAN AKTIVITAS TERBARU
+// ============================================================
+
+void tambahAktivitas({
+  required String tipe,
+  required String judul,
+  required String deskripsi,
+  required String namaSiswa,
+  required String namaKelas,
+  String? kodeKelas,
+  int? nilai,
+}) {
+  daftarAktivitasGlobal.insert(0, {
+    'tipe': tipe,
+    'judul': judul,
+    'deskripsi': deskripsi,
+    'namaSiswa': namaSiswa,
+    'namaKelas': namaKelas,
+    'kodeKelas': kodeKelas,
+    'nilai': nilai,
+    'waktu': DateTime.now(),
+  });
+}
 
 
 // ============================================================
@@ -98,6 +131,17 @@ void tambahSiswaKeKelas({
     'namaKelas': namaKelas,
     'kodeKelas': kodeKelas,
   });
+
+  // Catat aktivitas siswa bergabung ke kelas
+  tambahAktivitas(
+    tipe: 'gabung_kelas',
+    judul: 'Siswa bergabung ke kelas',
+    deskripsi:
+        '$namaSiswaAktif bergabung ke kelas $namaKelas',
+    namaSiswa: namaSiswaAktif,
+    namaKelas: namaKelas,
+    kodeKelas: kodeKelas,
+  );
 }
 
 
@@ -161,6 +205,39 @@ void tandaiMateriSelesai({
     'kodeKelas': kodeKelas,
     'namaSiswa': namaSiswaAktif,
   });
+
+  // Cari data materi untuk mendapatkan judul dan nama kelas
+  Map<String, String>? materiDitemukan;
+
+  for (final materi in daftarMateriGlobal) {
+    final idMateriGlobal = materi['id'];
+
+    final idFallback =
+        '${materi['kodeKelas']}_${materi['judul']}';
+
+    if (idMateriGlobal == idMateri ||
+        idFallback == idMateri) {
+      materiDitemukan = materi;
+      break;
+    }
+  }
+
+  final judulMateri =
+      materiDitemukan?['judul'] ?? 'Materi';
+
+  final namaKelas =
+      materiDitemukan?['namaKelas'] ?? 'Kelas';
+
+  // Catat aktivitas materi selesai
+  tambahAktivitas(
+    tipe: 'materi_selesai',
+    judul: 'Materi selesai dipelajari',
+    deskripsi:
+        '$namaSiswaAktif menyelesaikan materi "$judulMateri"',
+    namaSiswa: namaSiswaAktif,
+    namaKelas: namaKelas,
+    kodeKelas: kodeKelas,
+  );
 }
 
 
