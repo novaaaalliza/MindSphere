@@ -1338,14 +1338,283 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
   }
 
   // ============================================================
+  // WAKTU AKTIVITAS
+  // ============================================================
+
+  String waktuRelatif(DateTime waktu) {
+    final sekarang = DateTime.now();
+    final selisih = sekarang.difference(waktu);
+
+    if (selisih.inSeconds < 10) {
+      return 'Baru saja';
+    }
+
+    if (selisih.inMinutes < 1) {
+      return '${selisih.inSeconds} detik lalu';
+    }
+
+    if (selisih.inMinutes < 60) {
+      return '${selisih.inMinutes} menit lalu';
+    }
+
+    if (selisih.inHours < 24) {
+      return '${selisih.inHours} jam lalu';
+    }
+
+    if (selisih.inDays < 7) {
+      return '${selisih.inDays} hari lalu';
+    }
+
+    return '${waktu.day}/${waktu.month}/${waktu.year}';
+  }
+
+  // ============================================================
+  // ICON AKTIVITAS
+  // ============================================================
+
+  IconData iconAktivitas(String tipe) {
+    switch (tipe) {
+      case 'gabung_kelas':
+        return Icons.person_add_alt_1_rounded;
+
+      case 'materi_selesai':
+        return Icons.menu_book_rounded;
+
+      case 'tantangan':
+        return Icons.quiz_rounded;
+
+      default:
+        return Icons.notifications_rounded;
+    }
+  }
+
+  // ============================================================
+  // WARNA ICON AKTIVITAS
+  // ============================================================
+
+  Color warnaAktivitas(String tipe) {
+    switch (tipe) {
+      case 'gabung_kelas':
+        return skyBlue;
+
+      case 'materi_selesai':
+        return royalBlue;
+
+      case 'tantangan':
+        return const Color(0xFF7B61FF);
+
+      default:
+        return royalBlue;
+    }
+  }
+
+  // ============================================================
+  // CARD SATU AKTIVITAS
+  // ============================================================
+
+  Widget buildActivityItem(
+    Map<String, dynamic> aktivitas,
+  ) {
+    final tipe =
+        aktivitas['tipe']?.toString() ?? '';
+
+    final judul =
+        aktivitas['judul']?.toString() ?? '';
+
+    final deskripsi =
+        aktivitas['deskripsi']?.toString() ?? '';
+
+    final waktu =
+        aktivitas['waktu'];
+
+    DateTime waktuAktivitas;
+
+    if (waktu is DateTime) {
+      waktuAktivitas = waktu;
+    } else {
+      waktuAktivitas = DateTime.now();
+    }
+
+    final nilai = aktivitas['nilai'];
+
+    return Container(
+      margin:
+          const EdgeInsets.only(bottom: 10),
+      padding:
+          const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFE),
+        borderRadius:
+            BorderRadius.circular(16),
+        border: Border.all(
+          color: const Color(0xFFE7EDF6),
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment:
+            CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: warnaAktivitas(tipe)
+                  .withOpacity(0.12),
+              borderRadius:
+                  BorderRadius.circular(12),
+            ),
+            child: Icon(
+              iconAktivitas(tipe),
+              color: warnaAktivitas(tipe),
+              size: 21,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment:
+                  CrossAxisAlignment.start,
+              children: [
+                Text(
+                  judul,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight:
+                        FontWeight.bold,
+                    color: textBlue,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  deskripsi,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: mutedBlue,
+                    height: 1.35,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.access_time_rounded,
+                      size: 13,
+                      color: mutedBlue,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      waktuRelatif(
+                        waktuAktivitas,
+                      ),
+                      style: const TextStyle(
+                        fontSize: 10,
+                        color: mutedBlue,
+                      ),
+                    ),
+                    if (nilai != null) ...[
+                      const SizedBox(width: 10),
+                      Container(
+                        padding:
+                            const EdgeInsets
+                                .symmetric(
+                          horizontal: 7,
+                          vertical: 3,
+                        ),
+                        decoration: BoxDecoration(
+                          color: paleBlue,
+                          borderRadius:
+                              BorderRadius
+                                  .circular(8),
+                        ),
+                        child: Text(
+                          'Nilai $nilai',
+                          style:
+                              const TextStyle(
+                            fontSize: 10,
+                            fontWeight:
+                                FontWeight.bold,
+                            color: royalBlue,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ============================================================
   // AKTIVITAS TERBARU
   // ============================================================
 
   Widget buildAktivitas() {
+    final aktivitasTerbaru =
+        daftarAktivitasGlobal.take(5).toList();
+
+    if (aktivitasTerbaru.isEmpty) {
+      return Container(
+        width: double.infinity,
+        padding:
+            const EdgeInsets.all(22),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius:
+              BorderRadius.circular(22),
+          border: Border.all(
+            color:
+                const Color(0xFFE3EAF4),
+          ),
+        ),
+        child: Column(
+          children: [
+            Container(
+              width: 58,
+              height: 58,
+              decoration:
+                  const BoxDecoration(
+                color: paleBlue,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.notifications_none_rounded,
+                color: royalBlue,
+                size: 30,
+              ),
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'Belum Ada Aktivitas',
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight:
+                    FontWeight.bold,
+                color: textBlue,
+              ),
+            ),
+            const SizedBox(height: 5),
+            const Text(
+              'Aktivitas siswa akan muncul di sini setelah kelas mulai digunakan.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 12,
+                color: mutedBlue,
+                height: 1.4,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     return Container(
       width: double.infinity,
       padding:
-          const EdgeInsets.all(22),
+          const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius:
@@ -1357,38 +1626,10 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
       ),
       child: Column(
         children: [
-          Container(
-            width: 58,
-            height: 58,
-            decoration:
-                const BoxDecoration(
-              color: paleBlue,
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.notifications_none_rounded,
-              color: royalBlue,
-              size: 30,
-            ),
-          ),
-          const SizedBox(height: 12),
-          const Text(
-            'Belum Ada Aktivitas',
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight:
-                  FontWeight.bold,
-              color: textBlue,
-            ),
-          ),
-          const SizedBox(height: 5),
-          const Text(
-            'Aktivitas siswa akan muncul di sini setelah kelas mulai digunakan.',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 12,
-              color: mutedBlue,
-              height: 1.4,
+          ...aktivitasTerbaru.map(
+            (aktivitas) =>
+                buildActivityItem(
+              aktivitas,
             ),
           ),
         ],
