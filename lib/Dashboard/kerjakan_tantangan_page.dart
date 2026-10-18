@@ -641,7 +641,21 @@ class _KerjakanTantanganPageState extends State<KerjakanTantanganPage> {
       'tanggal': _tanggalSekarang(),
     };
 
+    // Simpan hasil tantangan
     daftarHasilGlobal.add(hasilBaru);
+
+    // Catat aktivitas siswa menyelesaikan tantangan
+    // agar muncul pada Dashboard Guru.
+    tambahAktivitas(
+      tipe: 'tantangan',
+      judul: 'Siswa menyelesaikan tantangan',
+      deskripsi:
+          '$namaSiswaAktif menyelesaikan tantangan "${widget.tantangan['judul']}"',
+      namaSiswa: namaSiswaAktif,
+      namaKelas: widget.namaKelas,
+      kodeKelas: widget.kodeKelas,
+      nilai: nilai,
+    );
 
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(
@@ -682,14 +696,8 @@ class _KerjakanTantanganPageState extends State<KerjakanTantanganPage> {
       return userList.join(',') == benarList.join(',');
     }
 
-    return jawabanUser
-            .toString()
-            .trim()
-            .toLowerCase() ==
-        jawabanBenar
-            .toString()
-            .trim()
-            .toLowerCase();
+    return jawabanUser.toString().trim().toLowerCase() ==
+        jawabanBenar.toString().trim().toLowerCase();
   }
 
   String _tanggalSekarang() {
