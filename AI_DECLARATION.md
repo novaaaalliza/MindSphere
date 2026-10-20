@@ -1,566 +1,171 @@
 # AI DECLARATION – MINDSHPERE
 
-## 1. Pernyataan Penggunaan AI
+## 1. Informasi Project
 
-Dalam proses pengembangan aplikasi mobile **MindSphere**, AI digunakan sebagai alat bantu dalam proses pengembangan, terutama untuk membantu memahami konsep pemrograman, mencari solusi terhadap error, menyusun logika program, serta memberikan alternatif dalam pengembangan tampilan dan fitur aplikasi.
+**Nama Project:** MindSphere  
+**Jenis Project:** Aplikasi Mobile Media Pembelajaran  
+**Framework:** Flutter  
+**Bahasa Pemrograman:** Dart  
+**Target Pengguna:** Siswa dan Guru SMK  
 
-AI yang digunakan dalam proses pengembangan adalah **ChatGPT**. Penggunaan AI tidak menggantikan proses pengembangan dan pemahaman dari pengembang. Setiap kode atau saran yang diberikan oleh AI diperiksa, disesuaikan, dan diuji kembali sebelum digunakan dalam aplikasi.
+Dokumen ini dibuat sebagai bentuk transparansi penggunaan Artificial Intelligence (AI) dalam proses pengembangan aplikasi MindSphere. AI digunakan sebagai alat bantu dalam proses pemrograman, terutama untuk memahami error, mencari solusi, menjelaskan kode, dan membantu mengembangkan beberapa fungsi aplikasi.
 
-Pengembang tetap bertanggung jawab terhadap fungsi aplikasi, struktur kode, hasil pengujian, serta keputusan akhir dalam penggunaan setiap kode yang diterapkan pada project MindSphere.
-
----
-
-## 2. AI yang Digunakan
-
-**AI Tool:** ChatGPT
-
-ChatGPT digunakan sebagai alat bantu selama proses pengembangan aplikasi MindSphere.
-
-Penggunaan AI meliputi:
-
-- Membantu memahami konsep pemrograman Flutter dan Dart.
-- Membantu memahami struktur project Flutter.
-- Membantu mencari penyebab error pada aplikasi.
-- Membantu memberikan alternatif solusi terhadap error.
-- Membantu menyusun dan memperbaiki logika program.
-- Membantu mengembangkan struktur halaman aplikasi.
-- Membantu memberikan alternatif desain dan tata letak antarmuka.
-- Membantu menjelaskan kode yang belum dipahami.
-- Membantu mengembangkan fitur aplikasi.
-- Membantu melakukan pengecekan terhadap kemungkinan masalah pada kode.
-- Membantu memahami penggunaan Git dan GitHub selama proses pengembangan.
-
-AI digunakan sebagai **asisten pengembangan**, sedangkan keputusan akhir mengenai kode, fitur, desain, dan struktur aplikasi tetap dilakukan oleh pengembang.
+Penggunaan AI tidak menggantikan proses perancangan dan pengambilan keputusan dalam pengembangan aplikasi. Setiap kode atau solusi yang diperoleh dari AI diperiksa, disesuaikan, dan diuji kembali agar sesuai dengan struktur dan kebutuhan aplikasi MindSphere.
 
 ---
 
-# 3. Bagian Pengembangan yang Mendapat Bantuan AI
+## 2. Daftar Alat AI
 
-## 3.1 Pengembangan Flutter dan Dart
+Alat AI yang digunakan dalam proses pengembangan aplikasi MindSphere adalah:
 
-AI digunakan untuk membantu memahami konsep dasar Flutter dan Dart yang digunakan dalam aplikasi MindSphere.
+### ChatGPT
 
-Bantuan yang diberikan meliputi pemahaman mengenai widget, struktur halaman, penggunaan `StatefulWidget` dan `StatelessWidget`, navigasi antarhalaman, penggunaan `List`, `Map`, fungsi, variabel, serta pengelolaan data yang digunakan dalam aplikasi.
+ChatGPT digunakan sebagai alat bantu dalam proses pengembangan Flutter dan Dart. Penggunaannya meliputi:
 
-AI juga membantu memberikan contoh struktur kode ketika pengembang mengalami kesulitan dalam membuat atau memperbaiki suatu bagian aplikasi.
+- Membantu memahami pesan error pada Flutter.
+- Membantu mencari penyebab error pada kode.
+- Memberikan saran perbaikan kode.
+- Membantu menjelaskan fungsi dan alur kode.
+- Membantu menyusun atau memperbaiki fungsi tertentu.
+- Membantu menyesuaikan hubungan antarfile.
+- Membantu memberikan alternatif solusi ketika terjadi kendala dalam pengembangan.
 
-Kode yang diberikan AI tidak langsung digunakan seluruhnya. Kode diperiksa kembali dan disesuaikan dengan struktur project MindSphere.
-
----
-
-## 3.2 Perbaikan Error
-
-Dalam proses pengembangan MindSphere, beberapa error muncul ketika aplikasi dijalankan atau ketika terdapat perubahan pada kode.
-
-AI digunakan untuk membantu membaca pesan error dan mencari kemungkinan penyebabnya.
-
-Beberapa jenis error yang dibantu untuk dianalisis antara lain:
-
-- file atau halaman yang belum ditemukan;
-- import yang belum sesuai;
-- class yang belum dikenali;
-- fungsi atau variabel yang belum terdefinisi;
-- masalah navigasi antarhalaman;
-- masalah struktur kode;
-- masalah tampilan atau layout;
-- error ketika menjalankan aplikasi menggunakan Flutter.
-
-Proses perbaikan tetap dilakukan dengan memeriksa file dan kode yang ada pada project. Setelah perubahan dilakukan, aplikasi dijalankan kembali untuk memastikan solusi tersebut sesuai.
-
-Jika solusi yang diberikan AI belum sesuai dengan kondisi project, kode disesuaikan secara manual.
+ChatGPT tidak digunakan untuk menggantikan proses pengembangan secara keseluruhan. Kode yang diberikan tetap diperiksa dan disesuaikan dengan struktur project sebelum digunakan.
 
 ---
 
-## 3.3 Pengembangan Login dan Register
+## 3. Pembagian Peran AI dan Pengembang
 
-AI digunakan sebagai bantuan dalam memahami dan menyusun struktur halaman Login dan Register pada aplikasi MindSphere.
+Dalam pengembangan MindSphere, pembagian peran antara pengembang dan AI dilakukan sebagai berikut.
 
-Bantuan meliputi:
+### 3.1 Bagian yang Dirancang dan Ditentukan oleh Pengembang
 
-- penyusunan struktur tampilan;
-- penggunaan `TextField`;
-- penggunaan tombol;
-- validasi input;
-- navigasi dari Login ke halaman berikutnya;
-- navigasi dari Register ke Login;
-- penyesuaian tampilan dengan tema MindSphere.
+Pengembang menentukan konsep utama aplikasi MindSphere, meliputi:
 
-Implementasi akhir tetap disesuaikan dengan konsep aplikasi dan struktur kode yang digunakan dalam project.
+- Nama dan konsep aplikasi MindSphere.
+- Target pengguna yaitu Siswa dan Guru SMK.
+- Pembagian role Guru dan Siswa.
+- Konsep pembelajaran berbasis materi dan tantangan.
+- Alur penggunaan aplikasi.
+- Fitur utama yang dibutuhkan.
+- Struktur navigasi aplikasi.
+- Kebutuhan kelas, materi, tantangan, hasil, progress, dan aktivitas.
+- Konsep hubungan data berdasarkan kelas.
+- Tampilan dan susunan fitur sesuai kebutuhan project.
 
----
+Keputusan mengenai fitur dan alur aplikasi ditentukan berdasarkan kebutuhan project dan tidak diserahkan sepenuhnya kepada AI.
 
-## 3.4 Pengembangan Dashboard
+### 3.2 Bagian yang Dibantu AI
 
-AI digunakan sebagai referensi dalam mengembangkan Dashboard aplikasi.
+AI digunakan sebagai alat bantu terutama pada bagian implementasi dan pemecahan masalah, seperti:
 
-Bantuan meliputi:
+- Perbaikan error pada kode Flutter dan Dart.
+- Penyesuaian kode antarfile.
+- Pembuatan atau perbaikan fungsi tertentu.
+- Penjelasan logika pengolahan data.
+- Perbaikan navigasi dan struktur kode.
+- Penyusunan fungsi untuk pengelolaan data kelas, materi, tantangan, hasil, dan aktivitas.
+- Pemeriksaan penyebab error berdasarkan pesan yang muncul ketika aplikasi dijalankan.
 
-- penyusunan struktur layout;
-- penyusunan menu;
-- penggunaan Card;
-- penggunaan icon;
-- penyusunan informasi pada Dashboard;
-- navigasi menuju halaman lain;
-- penyesuaian tampilan agar sesuai dengan perangkat mobile.
+Kode yang diberikan AI tidak langsung digunakan tanpa pemeriksaan. Kode perlu disesuaikan kembali karena AI tidak mengetahui seluruh kondisi dan struktur project secara otomatis.
 
-Dashboard kemudian dikembangkan dan disesuaikan secara manual berdasarkan kebutuhan aplikasi MindSphere.
+### 3.3 Pembagian Tanggung Jawab
 
----
+Pengembang bertanggung jawab terhadap keputusan akhir mengenai kode dan fitur yang digunakan dalam aplikasi. AI berperan sebagai alat bantu untuk memberikan saran dan alternatif solusi.
 
-## 3.5 Pengembangan Fitur Materi
+Dengan demikian, pembagian perannya adalah:
 
-AI digunakan sebagai bantuan dalam menyusun struktur fitur Materi pembelajaran.
+**Pengembang →** menentukan konsep, kebutuhan fitur, alur aplikasi, struktur data, melakukan pemeriksaan, penyesuaian, dan pengujian.
 
-Fitur Materi digunakan agar Guru dapat membuat dan mengelola materi pembelajaran, sedangkan Siswa dapat melihat dan mempelajari materi sesuai dengan kelas yang diikuti.
-
-Bantuan AI digunakan untuk:
-
-- menyusun struktur halaman;
-- membantu membuat form materi;
-- membantu mengatur data materi;
-- membantu membuat navigasi;
-- membantu menyusun logika filtering materi berdasarkan kelas.
-
-Struktur akhir kemudian disesuaikan dengan kebutuhan MindSphere.
+**AI →** membantu memberikan solusi kode, menjelaskan error, memberikan contoh implementasi, dan membantu memahami logika pemrograman.
 
 ---
 
-## 3.6 Pengembangan Fitur Kelas
+## 4. Studi Kasus Prompting
 
-AI digunakan sebagai bantuan dalam mengembangkan fitur Kelas.
+### 4.1 Studi Kasus 1 – Perbaikan Error pada Project
 
-Fitur Kelas digunakan untuk menghubungkan siswa dengan kelas yang tersedia. Siswa dapat bergabung menggunakan kode kelas yang diberikan oleh Guru.
+Salah satu prompt yang digunakan adalah:
 
-Bantuan AI digunakan untuk memahami:
+> “Saya lagi bikin aplikasi MindSphere pakai Flutter dan Dart untuk media pembelajaran siswa SMK. Di aplikasi ini ada role Guru dan Siswa, terus ada fitur kelas, materi, tantangan, hasil, progress, aktivitas, dan profil. Aku lagi mengalami masalah di bagian kode dan butuh bantuan buat memperbaikinya. Tolong cek dulu kode yang aku kasih, jelaskan kenapa errornya bisa terjadi, lalu kasih solusi yang sesuai sama struktur project aku. Jangan ubah bagian yang nggak berhubungan, dan jelaskan juga kode yang kamu ubah supaya aku ngerti.”
 
-- cara menyimpan data kelas;
-- cara mencari kelas berdasarkan kode;
-- cara mengecek apakah siswa sudah bergabung;
-- cara menambahkan siswa ke kelas;
-- cara menampilkan data sesuai kelas.
+### Hasil Awal dari AI
 
-Logika tersebut kemudian disesuaikan dengan struktur data yang digunakan dalam MindSphere.
+AI memberikan penjelasan mengenai kemungkinan penyebab error dan memberikan contoh perubahan kode yang diperlukan agar fungsi atau data dapat dikenali oleh file yang menggunakannya.
 
----
+Namun, hasil dari AI tidak langsung dianggap sebagai solusi akhir. Kode tetap diperiksa kembali berdasarkan struktur file dan kondisi project MindSphere.
 
-## 3.7 Pengembangan Fitur Tantangan
+### Penyesuaian Manual
 
-AI digunakan sebagai bantuan dalam mengembangkan fitur Tantangan.
+Penyesuaian dilakukan dengan memeriksa file yang mengalami error, file sumber data, import yang digunakan, serta hubungan antarfile. Setelah kode disesuaikan, aplikasi dijalankan kembali untuk melihat apakah error masih muncul.
 
-Tantangan merupakan aktivitas pembelajaran yang digunakan untuk menguji pemahaman siswa setelah mempelajari materi.
-
-Fitur ini membutuhkan beberapa proses, yaitu:
-
-1. menampilkan daftar tantangan;
-2. menampilkan soal;
-3. menerima jawaban siswa;
-4. memeriksa jawaban;
-5. menghitung jawaban benar;
-6. menghitung jawaban salah;
-7. menghitung nilai;
-8. menyimpan hasil;
-9. menampilkan hasil kepada siswa.
-
-AI membantu memberikan gambaran mengenai struktur logika yang dapat digunakan untuk proses tersebut.
+Proses tersebut menunjukkan bahwa solusi dari AI perlu disesuaikan dengan kondisi project karena struktur project yang sebenarnya dapat berbeda dari asumsi yang digunakan AI.
 
 ---
 
-## 3.8 Jenis Soal pada Tantangan
+## 5. Studi Kasus 2 – Pengelolaan Data Berdasarkan Kelas
 
-Dalam pengembangan MindSphere, fitur Tantangan menggunakan beberapa jenis soal, yaitu:
+AI juga digunakan untuk membantu menyusun logika pengelolaan data agar materi dan tantangan yang ditampilkan sesuai dengan kelas yang dipilih.
 
-- Pilihan Ganda;
-- Benar / Salah;
-- Pilihan Ganda Kompleks;
-- Isian Singkat;
-- Menjodohkan.
+Contoh prompt:
 
-AI membantu dalam memberikan alternatif struktur kode untuk menangani beberapa jenis soal tersebut.
+> “Saya punya aplikasi MindSphere dengan data kelas, materi, dan tantangan. Materi dan tantangan harus menggunakan data yang sama antara dashboard Guru dan halaman kelas. Kalau dibuka dari kelas tertentu, yang muncul hanya materi dan tantangan dari kelas tersebut. Tolong buatkan logika filtering berdasarkan kode kelas dan nama kelas yang saya sudah buat tanpa membuat data baru yang terpisah.”
 
-Namun, implementasi akhir disesuaikan secara manual agar sesuai dengan kebutuhan aplikasi MindSphere.
+### Hasil Awal dari AI
 
----
+AI memberikan contoh fungsi untuk mengambil data materi berdasarkan kode kelas dan nama kelas. Salah satu fungsi yang digunakan adalah:
 
-## 3.9 Pengembangan Hasil Tantangan
+```dart
+List<Map<String, String>> ambilMateriKelas(
+  String kodeKelas,
+  String namaKelas,
+) {
+  return daftarMateriGlobal
+      .where(
+        (materi) =>
+            materi['kodeKelas'] == kodeKelas &&
+            materi['namaKelas'] == namaKelas,
+      )
+      .toList();
+}
 
-AI digunakan sebagai bantuan dalam menyusun logika halaman hasil setelah siswa menyelesaikan tantangan.
+Fungsi tersebut digunakan untuk melakukan penyaringan data sehingga hanya materi yang memiliki kode dan nama kelas yang sesuai yang ditampilkan.
 
-Informasi yang ditampilkan pada hasil antara lain:
+### Penyesuaian Manual
 
-- jumlah jawaban benar;
-- jumlah jawaban salah;
-- nilai;
-- informasi tantangan;
-- informasi siswa;
-- informasi kelas.
+Logika tersebut kemudian disesuaikan dengan struktur data MindSphere. Data materi tidak dibuat menjadi salinan baru untuk setiap halaman, tetapi menggunakan data bersama pada `data_global.dart`.
 
-Data hasil juga digunakan sebagai dasar untuk menampilkan perkembangan pembelajaran siswa.
+Pengembang juga memastikan bahwa data materi dan tantangan yang dibuat oleh Guru memiliki informasi `kodeKelas` dan `namaKelas`. Dengan demikian, halaman pengelolaan Guru dan halaman pembelajaran Siswa dapat menggunakan sumber data yang sama.
 
----
+Alur data yang diterapkan adalah:
 
-## 3.10 Pengembangan Progress
+```text
+Guru membuat materi
+        ↓
+Data disimpan pada data bersama
+        ↓
+Data memiliki kode dan nama kelas
+        ↓
+Siswa membuka kelas
+        ↓
+Data difilter berdasarkan kelas
+        ↓
+Materi yang sesuai ditampilkan
 
-AI digunakan sebagai bantuan untuk memahami cara menghitung progress pembelajaran siswa.
+## 6. Pemeriksaan dan Pengujian Hasil AI
 
-Progress mempertimbangkan aktivitas pembelajaran yang telah dilakukan siswa, seperti:
+Setiap solusi yang diperoleh dari AI diperiksa kembali sebelum digunakan. Pemeriksaan dilakukan dengan melihat kesesuaian kode dengan struktur project, menjalankan aplikasi, serta memperhatikan error yang muncul.
 
-- materi yang sudah selesai dipelajari;
-- tantangan yang sudah dikerjakan.
+Apabila kode yang diberikan AI tidak sesuai dengan kondisi project, kode tersebut disesuaikan secara manual. Setelah perubahan dilakukan, aplikasi dijalankan kembali untuk memastikan fitur dapat berfungsi dan tidak menyebabkan masalah pada bagian lainnya.
 
-Data tersebut kemudian digunakan untuk menghitung perkembangan siswa pada suatu kelas.
-
-Logika akhir disesuaikan dengan struktur data yang digunakan dalam project MindSphere.
-
----
-
-## 3.11 Pengembangan Aktivitas Terbaru
-
-AI juga digunakan sebagai bantuan dalam mengembangkan fitur **Aktivitas Terbaru**.
-
-Fitur ini digunakan untuk mencatat aktivitas yang dilakukan siswa, seperti:
-
-- bergabung ke kelas;
-- menyelesaikan materi;
-- menyelesaikan tantangan.
-
-Informasi aktivitas digunakan untuk memberikan gambaran aktivitas pembelajaran terbaru pada aplikasi.
+Salah satu hal yang ditemukan selama proses pengembangan adalah AI tidak selalu dapat mengetahui kondisi seluruh project, terutama ketika terdapat banyak file yang saling berhubungan. Oleh karena itu, pesan error, struktur folder, import, nama variabel, dan sumber data tetap perlu diperiksa secara langsung oleh pengembang.
 
 ---
 
-## 3.12 Pengembangan Tampilan
+## 7. Kesimpulan Penggunaan AI
 
-AI digunakan sebagai referensi dalam mengembangkan tampilan antarmuka MindSphere.
+AI memberikan bantuan dalam mempercepat proses pengembangan MindSphere, terutama dalam memahami error, mencari solusi kode, dan menjelaskan logika pemrograman. Namun, AI digunakan sebagai alat bantu dan bukan sebagai pengganti proses berpikir serta tanggung jawab pengembang.
 
-Bantuan meliputi:
+Konsep aplikasi, kebutuhan fitur, pembagian role Guru dan Siswa, alur pembelajaran, serta keputusan akhir terhadap kode ditentukan dan diperiksa oleh pengembang. Setiap hasil dari AI tetap melalui proses penyesuaian dan pengujian agar dapat digunakan sesuai dengan kebutuhan aplikasi MindSphere.
 
-- penyusunan layout;
-- pemilihan struktur halaman;
-- penggunaan warna;
-- penggunaan Card;
-- penggunaan icon;
-- penyusunan tombol;
-- pengaturan jarak antarwidget;
-- penyesuaian ukuran teks;
-- penyesuaian tampilan untuk perangkat mobile;
-- perbaikan masalah overflow pada layout.
-
-Desain akhir tetap ditentukan dan disesuaikan oleh pengembang berdasarkan konsep MindSphere.
-
----
-
-# 4. Bagian yang Dikerjakan dan Disesuaikan Secara Manual
-
-Walaupun menggunakan bantuan AI, sebagian besar proses pengembangan tetap membutuhkan pengerjaan dan penyesuaian secara manual.
-
-Pekerjaan manual yang dilakukan meliputi:
-
-- menentukan ide aplikasi;
-- menentukan nama aplikasi MindSphere;
-- menentukan konsep aplikasi;
-- menentukan target pengguna;
-- menentukan fitur aplikasi;
-- menentukan role Guru dan Siswa;
-- menentukan alur aplikasi;
-- menentukan struktur menu;
-- membuat project Flutter;
-- membuat dan mengatur file project;
-- menyesuaikan struktur folder;
-- menghubungkan antarhalaman;
-- menyesuaikan kode dengan project yang sudah ada;
-- menentukan data yang digunakan;
-- menguji aplikasi;
-- membaca pesan error;
-- memperbaiki kode;
-- menentukan desain akhir;
-- menyesuaikan tampilan;
-- melakukan perubahan terhadap kode yang diberikan AI;
-- menjalankan aplikasi;
-- melakukan pengecekan fungsi;
-- mengelola project menggunakan Git;
-- melakukan commit;
-- melakukan push ke GitHub.
-
-Dengan demikian, AI digunakan sebagai alat bantu, sedangkan proses pengambilan keputusan dan pengembangan akhir tetap dilakukan oleh pengembang.
-
----
-
-# 5. Studi Kasus Penggunaan AI
-
-## Studi Kasus 1 – Perbaikan Error pada Flutter
-
-### 5.1 Permasalahan
-
-Dalam proses pengembangan MindSphere, terdapat beberapa error ketika project dijalankan.
-
-Salah satu masalah yang ditemukan berkaitan dengan file, class, import, atau fungsi yang belum dikenali oleh project.
-
-Hal tersebut menyebabkan aplikasi tidak dapat dijalankan dengan baik.
-
-### 5.2 Bantuan AI
-
-AI digunakan untuk membantu membaca pesan error dan menjelaskan kemungkinan penyebabnya.
-
-Contoh bentuk prompt yang digunakan:
-
-> "Saya sedang membuat aplikasi Flutter MindSphere. Saat menjalankan aplikasi muncul error bahwa file atau class tertentu tidak ditemukan. Bagaimana cara mengecek penyebabnya dan memperbaikinya tanpa merusak struktur project?"
-
-### 5.3 Hasil Awal dari AI
-
-AI memberikan beberapa kemungkinan penyebab, seperti:
-
-- file belum dibuat;
-- nama file tidak sesuai;
-- import belum ditambahkan;
-- nama class berbeda dengan yang dipanggil;
-- lokasi file tidak sesuai;
-- terdapat kesalahan penulisan nama file atau class.
-
-AI kemudian memberikan langkah pemeriksaan dan contoh solusi yang dapat dicoba.
-
-### 5.4 Penyesuaian Manual
-
-Solusi dari AI tidak langsung diterapkan seluruhnya.
-
-Pengembang terlebih dahulu memeriksa:
-
-- lokasi file;
-- nama file;
-- nama class;
-- import;
-- struktur folder;
-- kode yang memanggil class atau fungsi tersebut.
-
-Setelah penyebab ditemukan, perubahan dilakukan secara manual sesuai dengan struktur project MindSphere.
-
-Aplikasi kemudian dijalankan kembali untuk memastikan perubahan tersebut tidak menimbulkan error baru.
-
-### 5.5 Pembelajaran
-
-Dari proses tersebut, pengembang memahami bahwa pesan error Flutter perlu dibaca berdasarkan file, baris kode, import, class, dan hubungan antarfile.
-
-AI membantu mempercepat proses pencarian solusi, tetapi pemeriksaan langsung terhadap project tetap diperlukan.
-
----
-
-# 6. Studi Kasus Penggunaan AI – Fitur Tantangan
-
-## 6.1 Permasalahan
-
-MindSphere memiliki fitur Tantangan yang digunakan siswa untuk mengerjakan soal pembelajaran.
-
-Fitur tersebut membutuhkan proses pemeriksaan jawaban dan perhitungan nilai.
-
-Selain itu, aplikasi memiliki beberapa jenis soal sehingga setiap jenis soal membutuhkan logika pemeriksaan yang sesuai.
-
-### 6.2 Bantuan AI
-
-AI digunakan untuk membantu menyusun gambaran logika fitur Tantangan.
-
-Contoh bentuk prompt yang digunakan:
-
-> "Saya ingin membuat fitur tantangan di Flutter untuk aplikasi pembelajaran. Siswa dapat mengerjakan beberapa jenis soal, kemudian sistem memeriksa jawaban, menghitung benar dan salah, menghitung nilai, menyimpan hasil, dan menampilkan halaman hasil. Bagaimana struktur logika yang sesuai?"
-
-### 6.3 Hasil Awal dari AI
-
-AI memberikan gambaran alur pengembangan fitur, yaitu:
-
-1. mengambil data soal;
-2. menampilkan soal;
-3. menyimpan jawaban;
-4. memeriksa jawaban;
-5. menghitung jumlah benar;
-6. menghitung jumlah salah;
-7. menghitung nilai;
-8. menyimpan hasil;
-9. menampilkan halaman hasil.
-
-AI juga memberikan contoh struktur kode yang dapat digunakan sebagai dasar.
-
-### 6.4 Penyesuaian Manual
-
-Kode dan struktur yang diberikan AI kemudian disesuaikan dengan kebutuhan MindSphere.
-
-Fitur Tantangan pada MindSphere menggunakan beberapa jenis soal:
-
-- Pilihan Ganda;
-- Benar / Salah;
-- Pilihan Ganda Kompleks;
-- Isian Singkat;
-- Menjodohkan.
-
-Logika pemeriksaan jawaban kemudian disesuaikan dengan jenis soal masing-masing.
-
-Hasil tantangan juga disimpan berdasarkan informasi siswa dan kelas sehingga dapat digunakan untuk menampilkan hasil pembelajaran dan progress.
-
-### 6.5 Pembelajaran
-
-Dari proses tersebut, pengembang memahami bahwa contoh kode dari AI perlu disesuaikan dengan struktur data dan kebutuhan aplikasi.
-
-Kode yang terlihat benar secara umum belum tentu dapat langsung digunakan pada project tanpa penyesuaian.
-
----
-
-# 7. Evaluasi terhadap Penggunaan AI
-
-Penggunaan AI memberikan beberapa manfaat selama proses pengembangan MindSphere.
-
-## 7.1 Manfaat AI
-
-AI membantu:
-
-- mempercepat pencarian solusi error;
-- memberikan penjelasan mengenai kode;
-- membantu memahami konsep Flutter dan Dart;
-- memberikan alternatif struktur kode;
-- membantu menyusun logika program;
-- membantu mengembangkan fitur;
-- membantu memperbaiki tampilan;
-- membantu memahami pesan error;
-- memberikan alternatif penyelesaian masalah.
-
-## 7.2 Keterbatasan AI
-
-AI juga memiliki keterbatasan.
-
-Tidak semua kode atau solusi yang diberikan dapat langsung digunakan karena:
-
-- struktur project setiap aplikasi berbeda;
-- nama file dan class dapat berbeda;
-- struktur data dapat berbeda;
-- solusi AI dapat tidak sesuai dengan kode yang sudah ada;
-- perubahan kode dapat menimbulkan error baru;
-- kode yang diberikan belum tentu sesuai dengan kebutuhan aplikasi.
-
-Oleh karena itu, hasil dari AI perlu diperiksa, dipahami, disesuaikan, dan diuji sebelum digunakan.
-
----
-
-# 8. Proses Validasi Kode dari AI
-
-Setiap kode atau solusi yang diperoleh dari AI melalui beberapa proses sebelum digunakan.
-
-Proses tersebut meliputi:
-
-1. membaca dan memahami saran dari AI;
-2. membandingkan saran dengan struktur project;
-3. memeriksa file dan kode yang berkaitan;
-4. menyesuaikan kode;
-5. menjalankan aplikasi;
-6. memeriksa apakah terdapat error;
-7. memperbaiki kembali apabila terdapat masalah;
-8. menguji fungsi yang berkaitan.
-
-Dengan proses tersebut, penggunaan AI tidak dilakukan secara langsung tanpa pemeriksaan.
-
----
-
-# 9. Tanggung Jawab Pengembang
-
-Pengembang bertanggung jawab terhadap seluruh kode yang digunakan dalam aplikasi MindSphere.
-
-Walaupun AI digunakan sebagai alat bantu, pengembang tetap bertanggung jawab untuk:
-
-- memahami kode yang digunakan;
-- memahami fungsi dari setiap fitur;
-- memeriksa kode;
-- menguji aplikasi;
-- memperbaiki kesalahan;
-- menyesuaikan kode;
-- memastikan fitur bekerja sesuai kebutuhan;
-- menjelaskan proses pengembangan ketika dilakukan code walkthrough.
-
-Pengembang juga bertanggung jawab untuk menjelaskan bagian kode yang dibuat dengan bantuan AI serta perubahan yang dilakukan terhadap hasil dari AI.
-
----
-
-# 10. Pemetaan Penggunaan AI dan Pengerjaan Manual
-
-| Bagian Pengembangan | Bantuan AI | Pengerjaan/Keputusan Manual |
-|---|---|---|
-| Konsep aplikasi | Memberikan referensi dan ide | Menentukan konsep MindSphere |
-| Target pengguna | Memberikan referensi | Menentukan siswa dan Guru |
-| Struktur Flutter | Memberikan contoh | Menyesuaikan struktur project |
-| Login | Bantuan kode dan penjelasan | Implementasi dan penyesuaian |
-| Register | Bantuan kode dan penjelasan | Implementasi dan penyesuaian |
-| Dashboard | Bantuan struktur UI | Menentukan tampilan dan navigasi |
-| Kelas | Bantuan logika | Menentukan sistem kelas |
-| Materi | Bantuan struktur fitur | Menentukan alur materi |
-| Tantangan | Bantuan logika dan kode | Menentukan jenis soal dan alur |
-| Hasil | Bantuan logika | Menyesuaikan data hasil |
-| Progress | Bantuan logika | Menentukan perhitungan progress |
-| Aktivitas | Bantuan struktur | Menyesuaikan aktivitas aplikasi |
-| Tampilan | Referensi desain | Menentukan desain akhir |
-| Error fixing | Membantu menganalisis error | Memeriksa dan memperbaiki kode |
-| Pengujian | Membantu memahami masalah | Melakukan pengujian aplikasi |
-| Git/GitHub | Bantuan penggunaan | Melakukan commit dan push |
-
----
-
-# 11. Penggunaan AI dalam Pembelajaran
-
-Selain membantu proses coding, penggunaan AI juga membantu pengembang memahami konsep yang sebelumnya belum dipahami.
-
-AI digunakan sebagai media untuk:
-
-- bertanya ketika mengalami kesulitan;
-- meminta penjelasan kode;
-- memahami pesan error;
-- mempelajari konsep Flutter;
-- memahami struktur program;
-- mencari alternatif penyelesaian masalah.
-
-Dengan demikian, penggunaan AI juga menjadi bagian dari proses pembelajaran pemrograman.
-
----
-
-# 12. Prinsip Penggunaan AI
-
-Dalam pengembangan MindSphere, AI digunakan dengan prinsip:
-
-### 1. AI sebagai alat bantu
-
-AI digunakan sebagai asisten, bukan sebagai pengganti pengembang.
-
-### 2. Kode harus dipahami
-
-Kode yang digunakan harus dipahami oleh pengembang agar dapat dijelaskan saat dilakukan code walkthrough.
-
-### 3. Kode harus diperiksa
-
-Kode dari AI tidak langsung dianggap benar dan harus diperiksa berdasarkan struktur project.
-
-### 4. Kode harus diuji
-
-Setiap perubahan harus diuji untuk mengetahui apakah fungsi aplikasi berjalan sesuai kebutuhan.
-
-### 5. Pengembang bertanggung jawab
-
-Pengembang bertanggung jawab terhadap kode dan fitur yang digunakan dalam aplikasi.
-
----
-
-# 13. Kesimpulan
-
-Penggunaan AI dalam pengembangan aplikasi MindSphere dilakukan sebagai alat bantu untuk meningkatkan efisiensi proses pengembangan dan membantu memahami berbagai konsep pemrograman.
-
-AI terutama digunakan untuk membantu memahami Flutter dan Dart, mencari solusi terhadap error, menyusun logika fitur, mengembangkan halaman, serta memberikan alternatif dalam pengembangan tampilan aplikasi.
-
-Meskipun menggunakan bantuan AI, pengembang tetap melakukan proses analisis, penyesuaian, pengujian, dan perbaikan secara manual.
-
-Pengembang tidak hanya menggunakan kode yang diberikan AI, tetapi juga memeriksa kesesuaiannya dengan struktur project dan kebutuhan aplikasi.
-
-Dengan demikian, AI digunakan sebagai **asisten dalam proses pengembangan dan pembelajaran**, sedangkan tanggung jawab terhadap kode, fungsi aplikasi, hasil pengujian, serta pemahaman terhadap project tetap berada pada pengembang.
-
----
-
-## 14. Pernyataan Akhir
-
-Saya menyatakan bahwa penggunaan AI dalam pengembangan aplikasi **MindSphere** dilakukan sebagai alat bantu dalam proses pembelajaran dan pengembangan aplikasi.
-
-AI digunakan untuk membantu memahami konsep pemrograman, mencari solusi terhadap permasalahan teknis, memberikan alternatif implementasi, dan membantu proses pengembangan fitur.
-
-Setiap hasil yang diperoleh dari AI tetap diperiksa, disesuaikan, dan diuji sebelum diterapkan pada aplikasi.
-
-Saya bertanggung jawab terhadap kode yang digunakan dalam repository MindSphere dan memahami fungsi dari bagian kode yang digunakan dalam project.
-
-**AI tidak digunakan sebagai pengganti proses berpikir dan pemahaman pengembang, tetapi sebagai alat bantu dalam proses pengembangan aplikasi.**
+Dengan penggunaan tersebut, AI membantu proses pengembangan menjadi lebih efisien sekaligus membantu pengembang memahami dan menyelesaikan permasalahan yang muncul selama proses pembuatan aplikasi.
