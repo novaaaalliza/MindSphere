@@ -48,25 +48,33 @@ class _DetailKelasSiswaPageState
   final Color mutedBlue = const Color(0xFF7288A8);
 
   List<Map<String, String>> daftarMateriFirebase = [];
+  List<Map<String, dynamic>> daftarTantanganFirebase = [];
+
   Set<String> materiSelesaiFirebase = {};
 
   StreamSubscription? _materiSubscription;
   StreamSubscription? _progressSubscription;
+  StreamSubscription? _tantanganSubscription;
 
   bool sedangMemuatMateri = true;
+  bool sedangMemuatTantangan = true;
+
   String? errorMateri;
+  String? errorTantangan;
 
   @override
   void initState() {
     super.initState();
     _dengarkanMateriFirebase();
     _dengarkanProgressFirebase();
+    _dengarkanTantanganFirebase();
   }
 
   @override
   void dispose() {
     _materiSubscription?.cancel();
     _progressSubscription?.cancel();
+    _tantanganSubscription?.cancel();
     super.dispose();
   }
 
@@ -137,7 +145,7 @@ class _DetailKelasSiswaPageState
   }
 
   // ============================================================
-  // MENGAMBIL PROGRESS SISWA DARI FIRESTORE
+  // MENGAMBIL PROGRESS MATERI SISWA DARI FIRESTORE
   // ============================================================
 
   void _dengarkanProgressFirebase() {
@@ -161,13 +169,11 @@ class _DetailKelasSiswaPageState
         setState(() {
           materiSelesaiFirebase = snapshot.docs
               .where(
-                (doc) =>
-                    doc.data()['selesai'] == true,
+                (doc) => doc.data()['selesai'] == true,
               )
               .map(
                 (doc) =>
-                    doc.data()['idMateri']?.toString() ??
-                    '',
+                    doc.data()['idMateri']?.toString() ?? '',
               )
               .where((id) => id.isNotEmpty)
               .toSet();
@@ -182,6 +188,66 @@ class _DetailKelasSiswaPageState
   }
 
   // ============================================================
+  // MENGAMBIL TANTANGAN DARI FIRESTORE
+  // ============================================================
+
+  void _dengarkanTantanganFirebase() {
+    _tantanganSubscription = FirebaseFirestore.instance
+        .collection('tantangan')
+        .where(
+          'kodeKelas',
+          isEqualTo: widget.kodeKelas,
+        )
+        .snapshots()
+        .listen(
+      (snapshot) {
+        final hasil = snapshot.docs
+            .where(
+              (doc) =>
+                  doc.data()['namaKelas'] ==
+                  widget.namaKelas,
+            )
+            .map((doc) {
+          final data = doc.data();
+
+          final List<Map<String, dynamic>> soal =
+              (data['soal'] as List<dynamic>? ?? [])
+                  .map(
+                    (item) => Map<String, dynamic>.from(
+                      item as Map,
+                    ),
+                  )
+                  .toList();
+
+          return <String, dynamic>{
+            ...data,
+            'id': doc.id,
+            'soal': soal,
+          };
+        }).toList();
+
+        if (!mounted) return;
+
+        setState(() {
+          daftarTantanganFirebase = hasil;
+          sedangMemuatTantangan = false;
+          errorTantangan = null;
+        });
+      },
+      onError: (error) {
+        if (!mounted) return;
+
+        setState(() {
+          sedangMemuatTantangan = false;
+          errorTantangan = error.toString();
+        });
+
+        debugPrint('Gagal mengambil tantangan: $error');
+      },
+    );
+  }
+
+  // ============================================================
   // DATA KELAS
   // ============================================================
 
@@ -190,10 +256,7 @@ class _DetailKelasSiswaPageState
   }
 
   List<Map<String, dynamic>> get daftarTantanganKelas {
-    return ambilTantanganKelas(
-      widget.kodeKelas,
-      widget.namaKelas,
-    );
+    return daftarTantanganFirebase;
   }
 
   List<Map<String, dynamic>> get daftarHasilKelas {
@@ -283,9 +346,7 @@ class _DetailKelasSiswaPageState
             Icons.arrow_back_rounded,
             color: deepBlue,
           ),
-          onPressed: () {
-            Navigator.pop(context);
-          },
+          onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           'Kelas Saya',
@@ -297,19 +358,12 @@ class _DetailKelasSiswaPageState
         ),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(
-          20,
-          10,
-          20,
-          30,
-        ),
+        padding: const EdgeInsets.fromLTRB(20, 10, 20, 30),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildClassHeader(),
-
             const SizedBox(height: 24),
-
             Text(
               'Perjalanan Belajar',
               style: TextStyle(
@@ -318,9 +372,7 @@ class _DetailKelasSiswaPageState
                 fontWeight: FontWeight.bold,
               ),
             ),
-
             const SizedBox(height: 5),
-
             Text(
               'Ikuti pembelajaran secara bertahap.',
               style: TextStyle(
@@ -328,9 +380,7 @@ class _DetailKelasSiswaPageState
                 fontSize: 12,
               ),
             ),
-
             const SizedBox(height: 15),
-
             _buildMenuCard(
               icon: Icons.menu_book_rounded,
               iconColor: royalBlue,
@@ -338,9 +388,7 @@ class _DetailKelasSiswaPageState
               subtitle: '$jumlahMateri materi tersedia',
               onTap: _showMateriPage,
             ),
-
             const SizedBox(height: 12),
-
             _buildMenuCard(
               icon: Icons.explore_rounded,
               iconColor: skyBlue,
@@ -348,21 +396,21 @@ class _DetailKelasSiswaPageState
               subtitle: 'Jelajahi pembelajaran lebih lanjut',
               onTap: _showEksplorasiPage,
             ),
-
             const SizedBox(height: 12),
-
             _buildMenuCard(
               icon: Icons.flag_rounded,
               iconColor: const Color(0xFFE0A500),
               title: 'Tantangan',
-              subtitle: jumlahTantangan == 0
-                  ? 'Belum ada tantangan'
-                  : '$jumlahTantangan tantangan tersedia',
+              subtitle: sedangMemuatTantangan
+                  ? 'Memuat tantangan...'
+                  : errorTantangan != null
+                      ? 'Gagal memuat tantangan'
+                      : jumlahTantangan == 0
+                          ? 'Belum ada tantangan'
+                          : '$jumlahTantangan tantangan tersedia',
               onTap: _showTantanganPage,
             ),
-
             const SizedBox(height: 24),
-
             Text(
               'Progress Kelas',
               style: TextStyle(
@@ -371,9 +419,7 @@ class _DetailKelasSiswaPageState
                 fontWeight: FontWeight.bold,
               ),
             ),
-
             const SizedBox(height: 14),
-
             _buildProgressCard(),
           ],
         ),
@@ -391,11 +437,7 @@ class _DetailKelasSiswaPageState
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [
-            deepBlue,
-            royalBlue,
-            skyBlue,
-          ],
+          colors: [deepBlue, royalBlue, skyBlue],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -439,9 +481,7 @@ class _DetailKelasSiswaPageState
               ),
             ],
           ),
-
           const SizedBox(height: 20),
-
           Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(
@@ -605,6 +645,26 @@ class _DetailKelasSiswaPageState
   // ============================================================
 
   void _showTantanganPage() {
+    if (sedangMemuatTantangan) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Sedang memuat tantangan...'),
+        ),
+      );
+      return;
+    }
+
+    if (errorTantangan != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Gagal mengambil tantangan: $errorTantangan',
+          ),
+        ),
+      );
+      return;
+    }
+
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -627,21 +687,19 @@ class _DetailKelasSiswaPageState
     final int jumlahMateri = daftarMateriKelas.length;
     final int jumlahTantangan = daftarTantanganKelas.length;
 
-    final int materiSelesai =
-        materiSelesaiFirebase.length;
+    final int materiSelesai = materiSelesaiFirebase.length;
 
+    // Catatan: hasil tantangan masih menggunakan data lokal.
     final int jumlahTantanganSelesai =
-        daftarTantanganKelas.where(
-      (tantangan) {
-        final String judul =
-            tantangan['judul']?.toString() ?? '';
+        daftarTantanganKelas.where((tantangan) {
+      final String judul =
+          tantangan['judul']?.toString() ?? '';
 
-        return daftarHasilKelas.any(
-          (hasil) =>
-              hasil['judulTantangan']?.toString() == judul,
-        );
-      },
-    ).length;
+      return daftarHasilKelas.any(
+        (hasil) =>
+            hasil['judulTantangan']?.toString() == judul,
+      );
+    }).length;
 
     final int totalAktivitas =
         jumlahMateri + jumlahTantangan;
@@ -651,7 +709,9 @@ class _DetailKelasSiswaPageState
 
     final double progress = totalAktivitas == 0
         ? 0
-        : aktivitasSelesai / totalAktivitas;
+        : (aktivitasSelesai / totalAktivitas)
+            .clamp(0.0, 1.0)
+            .toDouble();
 
     final int persen = (progress * 100).round();
 
@@ -684,12 +744,9 @@ class _DetailKelasSiswaPageState
               ),
             ],
           ),
-
           const SizedBox(height: 18),
-
           Row(
-            mainAxisAlignment:
-                MainAxisAlignment.spaceBetween,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
                 totalAktivitas == 0
@@ -710,9 +767,7 @@ class _DetailKelasSiswaPageState
               ),
             ],
           ),
-
           const SizedBox(height: 9),
-
           ClipRRect(
             borderRadius: BorderRadius.circular(20),
             child: LinearProgressIndicator(
@@ -723,9 +778,7 @@ class _DetailKelasSiswaPageState
                   AlwaysStoppedAnimation<Color>(royalBlue),
             ),
           ),
-
           const SizedBox(height: 15),
-
           Row(
             children: [
               _progressItem(
@@ -760,11 +813,7 @@ class _DetailKelasSiswaPageState
     return Expanded(
       child: Row(
         children: [
-          Icon(
-            icon,
-            color: royalBlue,
-            size: 20,
-          ),
+          Icon(icon, color: royalBlue, size: 20),
           const SizedBox(width: 6),
           Expanded(
             child: Column(
@@ -822,9 +871,7 @@ class MateriSiswaPage extends StatelessWidget {
   String _idMateri(Map<String, String> materi) {
     final id = materi['id'];
 
-    if (id != null && id.isNotEmpty) {
-      return id;
-    }
+    if (id != null && id.isNotEmpty) return id;
 
     final judul = materi['judul'] ?? 'materi';
     return '${kodeKelas}_$judul';
@@ -859,12 +906,11 @@ class MateriSiswaPage extends StatelessWidget {
               itemCount: daftarMateri.length,
               itemBuilder: (context, index) {
                 final materi = daftarMateri[index];
-                final idMateri = _idMateri(materi);
 
                 return _buildMateriCard(
                   context,
                   materi,
-                  idMateri,
+                  _idMateri(materi),
                   index,
                 );
               },
@@ -1112,18 +1158,12 @@ class _BacaMateriPageState extends State<BacaMateriPage> {
     _ambilStatusMateri();
   }
 
-  // ============================================================
-  // MENGAMBIL STATUS MATERI
-  // ============================================================
-
   Future<void> _ambilStatusMateri() async {
     try {
       final ref = _progressRef;
 
       if (ref == null) {
-        throw Exception(
-          'Silakan login terlebih dahulu.',
-        );
+        throw Exception('Silakan login terlebih dahulu.');
       }
 
       final snapshot = await ref.get();
@@ -1134,7 +1174,6 @@ class _BacaMateriPageState extends State<BacaMateriPage> {
         _sudahSelesai =
             snapshot.exists &&
             snapshot.data()?['selesai'] == true;
-
         _sedangMemuatStatus = false;
       });
     } catch (e) {
@@ -1146,17 +1185,11 @@ class _BacaMateriPageState extends State<BacaMateriPage> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            'Gagal mengambil status materi: $e',
-          ),
+          content: Text('Gagal mengambil status materi: $e'),
         ),
       );
     }
   }
-
-  // ============================================================
-  // MENYIMPAN STATUS MATERI KE FIREBASE
-  // ============================================================
 
   Future<void> _tandaiSudahDipahami() async {
     if (_sudahSelesai || _sedangMenyimpan) return;
@@ -1167,9 +1200,7 @@ class _BacaMateriPageState extends State<BacaMateriPage> {
     if (user == null || ref == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text(
-            'Silakan login terlebih dahulu.',
-          ),
+          content: Text('Silakan login terlebih dahulu.'),
         ),
       );
       return;
@@ -1213,17 +1244,11 @@ class _BacaMateriPageState extends State<BacaMateriPage> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            'Gagal menyimpan progress: $e',
-          ),
+          content: Text('Gagal menyimpan progress: $e'),
         ),
       );
     }
   }
-
-  // ============================================================
-  // BUILD
-  // ============================================================
 
   @override
   Widget build(BuildContext context) {
@@ -1257,10 +1282,7 @@ class _BacaMateriPageState extends State<BacaMateriPage> {
               padding: const EdgeInsets.all(22),
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
-                  colors: [
-                    royalBlue,
-                    Color(0xFF56B4F8),
-                  ],
+                  colors: [royalBlue, Color(0xFF56B4F8)],
                 ),
                 borderRadius: BorderRadius.circular(23),
               ),
@@ -1270,9 +1292,7 @@ class _BacaMateriPageState extends State<BacaMateriPage> {
                 size: 42,
               ),
             ),
-
             const SizedBox(height: 22),
-
             Text(
               widget.judul,
               style: const TextStyle(
@@ -1281,9 +1301,7 @@ class _BacaMateriPageState extends State<BacaMateriPage> {
                 fontWeight: FontWeight.bold,
               ),
             ),
-
             const SizedBox(height: 10),
-
             Text(
               widget.deskripsi,
               style: const TextStyle(
@@ -1292,9 +1310,7 @@ class _BacaMateriPageState extends State<BacaMateriPage> {
                 height: 1.5,
               ),
             ),
-
             const SizedBox(height: 22),
-
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(20),
@@ -1314,10 +1330,8 @@ class _BacaMateriPageState extends State<BacaMateriPage> {
                 ),
               ),
             ),
-
             if (widget.link.isNotEmpty) ...[
               const SizedBox(height: 18),
-
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(16),
@@ -1369,8 +1383,7 @@ class _BacaMateriPageState extends State<BacaMateriPage> {
                     ),
                     IconButton(
                       onPressed: () {
-                        ScaffoldMessenger.of(context)
-                            .showSnackBar(
+                        ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
                             content: Text(
                               'Link materi tambahan siap dibuka.',
@@ -1387,9 +1400,7 @@ class _BacaMateriPageState extends State<BacaMateriPage> {
                 ),
               ),
             ],
-
             const SizedBox(height: 25),
-
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
@@ -1428,9 +1439,7 @@ class _BacaMateriPageState extends State<BacaMateriPage> {
                 ),
               ),
             ),
-
             const SizedBox(height: 12),
-
             if (_sudahSelesai)
               Container(
                 width: double.infinity,
@@ -1494,9 +1503,7 @@ class EksplorasiSiswaPage extends StatelessWidget {
   String _idMateri(Map<String, String> materi) {
     final id = materi['id'];
 
-    if (id != null && id.isNotEmpty) {
-      return id;
-    }
+    if (id != null && id.isNotEmpty) return id;
 
     final judul = materi['judul'] ?? 'materi';
     return '${kodeKelas}_$judul';
@@ -1596,8 +1603,7 @@ class EksplorasiSiswaPage extends StatelessWidget {
                           builder: (_) => BacaMateriPage(
                             namaKelas: namaKelas,
                             judul: materi['judul'] ?? '',
-                            deskripsi:
-                                materi['deskripsi'] ?? '',
+                            deskripsi: materi['deskripsi'] ?? '',
                             isi: materi['isi'] ?? '',
                             link: materi['link'] ?? '',
                             idMateri: idMateri,
@@ -1730,11 +1736,9 @@ class TantanganSiswaPage extends StatelessWidget {
     final String deskripsi =
         tantangan['deskripsi']?.toString() ?? '';
 
-    final List soal =
-        (tantangan['soal'] as List?) ?? [];
+    final List soal = (tantangan['soal'] as List?) ?? [];
 
-    final bool sudahDikerjakan =
-        tantanganSudahDikerjakan(
+    final bool sudahDikerjakan = tantanganSudahDikerjakan(
       kodeKelas: kodeKelas,
       judulTantangan: judul,
     );
@@ -1760,9 +1764,7 @@ class TantanganSiswaPage extends StatelessWidget {
       ),
       child: InkWell(
         borderRadius: BorderRadius.circular(20),
-        onTap: () {
-          _showChallengeInfo(context, tantangan);
-        },
+        onTap: () => _showChallengeInfo(context, tantangan),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -1849,11 +1851,9 @@ class TantanganSiswaPage extends StatelessWidget {
     final String deskripsi =
         tantangan['deskripsi']?.toString() ?? '';
 
-    final List soal =
-        (tantangan['soal'] as List?) ?? [];
+    final List soal = (tantangan['soal'] as List?) ?? [];
 
-    final bool sudahDikerjakan =
-        tantanganSudahDikerjakan(
+    final bool sudahDikerjakan = tantanganSudahDikerjakan(
       kodeKelas: kodeKelas,
       judulTantangan: judul,
     );
