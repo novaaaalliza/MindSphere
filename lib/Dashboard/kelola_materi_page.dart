@@ -1,5 +1,7 @@
+
 import 'package:flutter/material.dart';
-import 'data_global.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class KelolaMateriPage extends StatefulWidget {
   final String? namaKelas;
@@ -19,17 +21,48 @@ class _KelolaMateriPageState extends State<KelolaMateriPage> {
   bool get sedangDiDalamKelas =>
       widget.namaKelas != null && widget.kodeKelas != null;
 
-  List<Map<String, String>> get daftarMateriTampil {
-    if (!sedangDiDalamKelas) {
-      return daftarMateriGlobal;
+  final CollectionReference<Map<String, dynamic>> koleksiMateri =
+      FirebaseFirestore.instance.collection('materi');
+
+  // =======================================================
+  // MENGAMBIL MATERI DARI FIREBASE
+  // =======================================================
+
+  Stream<QuerySnapshot<Map<String, dynamic>>> get streamMateri {
+    if (sedangDiDalamKelas) {
+      return koleksiMateri
+          .where('kodeKelas', isEqualTo: widget.kodeKelas)
+          .snapshots();
     }
 
-    return daftarMateriGlobal
-        .where(
-          (materi) =>
-              materi['kodeKelas'] == widget.kodeKelas &&
-              materi['namaKelas'] == widget.namaKelas,
-        )
+    return koleksiMateri.snapshots();
+  }
+
+  List<Map<String, String>> ubahDataMateri(
+    QuerySnapshot<Map<String, dynamic>> snapshot,
+  ) {
+    return snapshot.docs
+        .where((doc) {
+          final data = doc.data();
+
+          if (!sedangDiDalamKelas) return true;
+
+          return data['namaKelas'] == widget.namaKelas;
+        })
+        .map((doc) {
+          final data = doc.data();
+
+          return {
+            'id': doc.id,
+            'namaKelas': data['namaKelas']?.toString() ?? '',
+            'kodeKelas': data['kodeKelas']?.toString() ?? '',
+            'judul': data['judul']?.toString() ?? '',
+            'isi': data['isi']?.toString() ?? '',
+            'sumber': data['sumber']?.toString() ?? '',
+            'link': data['sumber']?.toString() ?? '',
+            'deskripsi': data['deskripsi']?.toString() ?? '',
+          };
+        })
         .toList();
   }
 
@@ -52,231 +85,284 @@ class _KelolaMateriPageState extends State<KelolaMateriPage> {
 
     showDialog(
       context: context,
-      builder: (context) {
-        return AlertDialog(
-          backgroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(22),
-          ),
-          title: const Text(
-            'Tambah Materi',
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF18365D),
-            ),
-          ),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // =================================================
-                // INFORMASI KELAS
-                // =================================================
+      builder: (dialogContext) {
+        bool sedangMenyimpan = false;
 
-                TextField(
-                  controller: namaKelasController,
-                  enabled: !sedangDiDalamKelas,
-                  decoration: InputDecoration(
-                    labelText: 'Nama Kelas',
-                    hintText: 'Contoh: Pemrograman Dasar X',
-                    prefixIcon: const Icon(
-                      Icons.class_rounded,
-                      color: Color(0xFF2166D5),
-                    ),
-                    filled: true,
-                    fillColor: const Color(0xFFF5F8FD),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                      borderSide: BorderSide.none,
-                    ),
-                  ),
+        return StatefulBuilder(
+          builder: (context, ubahDialog) {
+            return AlertDialog(
+              backgroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(22),
+              ),
+              title: const Text(
+                'Tambah Materi',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF18365D),
                 ),
-
-                const SizedBox(height: 12),
-
-                TextField(
-                  controller: kodeKelasController,
-                  enabled: !sedangDiDalamKelas,
-                  decoration: InputDecoration(
-                    labelText: 'Kode Kelas',
-                    hintText: 'Contoh: PDX-01',
-                    prefixIcon: const Icon(
-                      Icons.key_rounded,
-                      color: Color(0xFF2166D5),
-                    ),
-                    filled: true,
-                    fillColor: const Color(0xFFF5F8FD),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                      borderSide: BorderSide.none,
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 16),
-
-                // =================================================
-                // JUDUL MATERI
-                // =================================================
-
-                TextField(
-                  controller: judulController,
-                  textCapitalization: TextCapitalization.sentences,
-                  decoration: InputDecoration(
-                    labelText: 'Judul Materi',
-                    hintText: 'Contoh: Pengenalan Algoritma',
-                    prefixIcon: const Icon(
-                      Icons.menu_book_outlined,
-                      color: Color(0xFF2166D5),
-                    ),
-                    filled: true,
-                    fillColor: const Color(0xFFF5F8FD),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                      borderSide: BorderSide.none,
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 14),
-
-                // =================================================
-                // ISI MATERI
-                // =================================================
-
-                TextField(
-                  controller: isiController,
-                  maxLines: 6,
-                  textCapitalization: TextCapitalization.sentences,
-                  decoration: InputDecoration(
-                    labelText: 'Isi Materi',
-                    hintText: 'Tuliskan materi pembelajaran...',
-                    prefixIcon: const Padding(
-                      padding: EdgeInsets.only(bottom: 90),
-                      child: Icon(
-                        Icons.article_outlined,
-                        color: Color(0xFF2166D5),
+              ),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextField(
+                      controller: namaKelasController,
+                      enabled: !sedangDiDalamKelas,
+                      decoration: InputDecoration(
+                        labelText: 'Nama Kelas',
+                        hintText: 'Contoh: Pemrograman Dasar X',
+                        prefixIcon: const Icon(
+                          Icons.class_rounded,
+                          color: Color(0xFF2166D5),
+                        ),
+                        filled: true,
+                        fillColor: const Color(0xFFF5F8FD),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: BorderSide.none,
+                        ),
                       ),
                     ),
-                    alignLabelWithHint: true,
-                    filled: true,
-                    fillColor: const Color(0xFFF5F8FD),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                      borderSide: BorderSide.none,
+
+                    const SizedBox(height: 12),
+
+                    TextField(
+                      controller: kodeKelasController,
+                      enabled: !sedangDiDalamKelas,
+                      decoration: InputDecoration(
+                        labelText: 'Kode Kelas',
+                        hintText: 'Contoh: PDX-01',
+                        prefixIcon: const Icon(
+                          Icons.key_rounded,
+                          color: Color(0xFF2166D5),
+                        ),
+                        filled: true,
+                        fillColor: const Color(0xFFF5F8FD),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    TextField(
+                      controller: judulController,
+                      textCapitalization:
+                          TextCapitalization.sentences,
+                      decoration: InputDecoration(
+                        labelText: 'Judul Materi',
+                        hintText: 'Contoh: Pengenalan Algoritma',
+                        prefixIcon: const Icon(
+                          Icons.menu_book_outlined,
+                          color: Color(0xFF2166D5),
+                        ),
+                        filled: true,
+                        fillColor: const Color(0xFFF5F8FD),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 14),
+
+                    TextField(
+                      controller: isiController,
+                      maxLines: 6,
+                      textCapitalization:
+                          TextCapitalization.sentences,
+                      decoration: InputDecoration(
+                        labelText: 'Isi Materi',
+                        hintText: 'Tuliskan materi pembelajaran...',
+                        prefixIcon: const Padding(
+                          padding: EdgeInsets.only(bottom: 90),
+                          child: Icon(
+                            Icons.article_outlined,
+                            color: Color(0xFF2166D5),
+                          ),
+                        ),
+                        alignLabelWithHint: true,
+                        filled: true,
+                        fillColor: const Color(0xFFF5F8FD),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 14),
+
+                    TextField(
+                      controller: sumberController,
+                      keyboardType: TextInputType.url,
+                      decoration: InputDecoration(
+                        labelText: 'Link Sumber Tambahan',
+                        hintText: 'Opsional, misalnya link YouTube',
+                        prefixIcon: const Icon(
+                          Icons.link_rounded,
+                          color: Color(0xFF2166D5),
+                        ),
+                        filled: true,
+                        fillColor: const Color(0xFFF5F8FD),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              actionsPadding:
+                  const EdgeInsets.fromLTRB(20, 0, 20, 18),
+              actions: [
+                TextButton(
+                  onPressed: sedangMenyimpan
+                      ? null
+                      : () => Navigator.pop(dialogContext),
+                  child: const Text(
+                    'Batal',
+                    style: TextStyle(
+                      color: Color(0xFF7288A8),
                     ),
                   ),
                 ),
 
-                const SizedBox(height: 14),
+                ElevatedButton.icon(
+                  onPressed: sedangMenyimpan
+                      ? null
+                      : () async {
+                          final namaKelas =
+                              namaKelasController.text.trim();
+                          final kodeKelas =
+                              kodeKelasController.text.trim();
+                          final judul =
+                              judulController.text.trim();
+                          final isi =
+                              isiController.text.trim();
+                          final sumber =
+                              sumberController.text.trim();
 
-                // =================================================
-                // LINK SUMBER
-                // =================================================
+                          if (namaKelas.isEmpty ||
+                              kodeKelas.isEmpty) {
+                            ScaffoldMessenger.of(context)
+                                .showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  'Nama kelas dan kode kelas wajib diisi.',
+                                ),
+                              ),
+                            );
+                            return;
+                          }
 
-                TextField(
-                  controller: sumberController,
-                  keyboardType: TextInputType.url,
-                  decoration: InputDecoration(
-                    labelText: 'Link Sumber Tambahan',
-                    hintText: 'Opsional, misalnya link YouTube',
-                    prefixIcon: const Icon(
-                      Icons.link_rounded,
-                      color: Color(0xFF2166D5),
+                          if (judul.isEmpty || isi.isEmpty) {
+                            ScaffoldMessenger.of(context)
+                                .showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  'Judul dan isi materi wajib diisi.',
+                                ),
+                              ),
+                            );
+                            return;
+                          }
+
+                          final pengguna =
+                              FirebaseAuth.instance.currentUser;
+
+                          if (pengguna == null) {
+                            ScaffoldMessenger.of(context)
+                                .showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  'Silakan login terlebih dahulu.',
+                                ),
+                              ),
+                            );
+                            return;
+                          }
+
+                          ubahDialog(() {
+                            sedangMenyimpan = true;
+                          });
+
+                          try {
+                            await koleksiMateri.add({
+                              'namaKelas': namaKelas,
+                              'kodeKelas': kodeKelas,
+                              'judul': judul,
+                              'isi': isi,
+                              'sumber': sumber,
+                              'deskripsi': '',
+                              'createdBy': pengguna.uid,
+                              'createdAt':
+                                  FieldValue.serverTimestamp(),
+                            });
+
+                            if (!mounted) return;
+
+                            Navigator.pop(dialogContext);
+
+                            ScaffoldMessenger.of(context)
+                                .showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  'Materi berhasil disimpan ke Firebase.',
+                                ),
+                              ),
+                            );
+                          } catch (e) {
+                            ubahDialog(() {
+                              sedangMenyimpan = false;
+                            });
+
+                            if (!mounted) return;
+
+                            ScaffoldMessenger.of(context)
+                                .showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  'Gagal menyimpan materi: $e',
+                                ),
+                              ),
+                            );
+                          }
+                        },
+                  icon: const Icon(Icons.save_outlined),
+                  label: Text(
+                    sedangMenyimpan ? 'Menyimpan...' : 'Simpan',
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF2166D5),
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 18,
+                      vertical: 12,
                     ),
-                    filled: true,
-                    fillColor: const Color(0xFFF5F8FD),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                      borderSide: BorderSide.none,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
                     ),
                   ),
                 ),
               ],
-            ),
-          ),
-          actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 18),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              child: const Text(
-                'Batal',
-                style: TextStyle(
-                  color: Color(0xFF7288A8),
-                ),
-              ),
-            ),
-            ElevatedButton.icon(
-              onPressed: () {
-                final namaKelas = namaKelasController.text.trim();
-                final kodeKelas = kodeKelasController.text.trim();
-                final judul = judulController.text.trim();
-                final isi = isiController.text.trim();
-                final sumber = sumberController.text.trim();
-
-                if (namaKelas.isEmpty || kodeKelas.isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text(
-                        'Nama kelas dan kode kelas wajib diisi.',
-                      ),
-                    ),
-                  );
-                  return;
-                }
-
-                if (judul.isEmpty || isi.isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text(
-                        'Judul dan isi materi wajib diisi.',
-                      ),
-                    ),
-                  );
-                  return;
-                }
-
-                setState(() {
-                  daftarMateriGlobal.add({
-                    'namaKelas': namaKelas,
-                    'kodeKelas': kodeKelas,
-                    'judul': judul,
-                    'isi': isi,
-                    'sumber': sumber,
-                  });
-                });
-
-                Navigator.pop(context);
-
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text(
-                      'Materi berhasil ditambahkan.',
-                    ),
-                  ),
-                );
-              },
-              icon: const Icon(Icons.save_outlined),
-              label: const Text('Simpan'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF2166D5),
-                foregroundColor: Colors.white,
-                elevation: 0,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 18,
-                  vertical: 12,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-            ),
-          ],
+            );
+          },
         );
       },
-    );
+    ).then((_) {
+      judulController.dispose();
+      isiController.dispose();
+      sumberController.dispose();
+      namaKelasController.dispose();
+      kodeKelasController.dispose();
+    });
   }
 
   // =======================================================
@@ -305,7 +391,7 @@ class _KelolaMateriPageState extends State<KelolaMateriPage> {
   void hapusMateri(Map<String, String> materi) {
     showDialog(
       context: context,
-      builder: (context) {
+      builder: (dialogContext) {
         return AlertDialog(
           backgroundColor: Colors.white,
           shape: RoundedRectangleBorder(
@@ -323,26 +409,54 @@ class _KelolaMateriPageState extends State<KelolaMateriPage> {
           ),
           actions: [
             TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
+              onPressed: () => Navigator.pop(dialogContext),
               child: const Text('Batal'),
             ),
+
             ElevatedButton(
-              onPressed: () {
-                setState(() {
-                  daftarMateriGlobal.remove(materi);
-                });
+              onPressed: () async {
+                final idMateri = materi['id'];
 
-                Navigator.pop(context);
+                if (idMateri == null || idMateri.isEmpty) {
+                  Navigator.pop(dialogContext);
 
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text(
-                      'Materi berhasil dihapus.',
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        'ID materi tidak ditemukan.',
+                      ),
                     ),
-                  ),
-                );
+                  );
+                  return;
+                }
+
+                try {
+                  await koleksiMateri.doc(idMateri).delete();
+
+                  if (!mounted) return;
+
+                  Navigator.pop(dialogContext);
+
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        'Materi berhasil dihapus dari Firebase.',
+                      ),
+                    ),
+                  );
+                } catch (e) {
+                  if (!mounted) return;
+
+                  Navigator.pop(dialogContext);
+
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        'Gagal menghapus materi: $e',
+                      ),
+                    ),
+                  );
+                }
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.red,
@@ -360,9 +474,7 @@ class _KelolaMateriPageState extends State<KelolaMateriPage> {
   // CARD MATERI
   // =======================================================
 
-  Widget buildMateriCard(
-    Map<String, String> materi,
-  ) {
+  Widget buildMateriCard(Map<String, String> materi) {
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
       decoration: BoxDecoration(
@@ -483,13 +595,88 @@ class _KelolaMateriPageState extends State<KelolaMateriPage> {
   }
 
   // =======================================================
+  // TAMPILAN KOSONG
+  // =======================================================
+
+  Widget buildMateriKosong() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 90,
+              height: 90,
+              decoration: const BoxDecoration(
+                color: Color(0xFFDCEBFF),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.menu_book_outlined,
+                size: 45,
+                color: Color(0xFF2166D5),
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            Text(
+              sedangDiDalamKelas
+                  ? 'Belum Ada Materi di Kelas Ini'
+                  : 'Belum Ada Materi',
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF18365D),
+              ),
+            ),
+
+            const SizedBox(height: 8),
+
+            Text(
+              sedangDiDalamKelas
+                  ? 'Tambahkan materi untuk ${widget.namaKelas}.'
+                  : 'Tambahkan materi pembelajaran untuk kelas yang dikelola.',
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Color(0xFF7288A8),
+                height: 1.4,
+              ),
+            ),
+
+            const SizedBox(height: 24),
+
+            ElevatedButton.icon(
+              onPressed: tambahMateri,
+              icon: const Icon(Icons.add_rounded),
+              label: const Text('Tambah Materi'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF2166D5),
+                foregroundColor: Colors.white,
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 13,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(13),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // =======================================================
   // BUILD
   // =======================================================
 
   @override
   Widget build(BuildContext context) {
-    final materi = daftarMateriTampil;
-
     return Scaffold(
       backgroundColor: const Color(0xFFF6F9FE),
 
@@ -520,89 +707,52 @@ class _KelolaMateriPageState extends State<KelolaMateriPage> {
         ),
       ),
 
-      body: materi.isEmpty
-          ? Center(
+      body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+        stream: streamMateri,
+        builder: (context, snapshot) {
+          if (snapshot.hasError) {
+            return Center(
               child: Padding(
                 padding: const EdgeInsets.all(24),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Container(
-                      width: 90,
-                      height: 90,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFFDCEBFF),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.menu_book_outlined,
-                        size: 45,
-                        color: Color(0xFF2166D5),
-                      ),
-                    ),
-
-                    const SizedBox(height: 20),
-
-                    Text(
-                      sedangDiDalamKelas
-                          ? 'Belum Ada Materi di Kelas Ini'
-                          : 'Belum Ada Materi',
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF18365D),
-                      ),
-                    ),
-
-                    const SizedBox(height: 8),
-
-                    Text(
-                      sedangDiDalamKelas
-                          ? 'Tambahkan materi untuk ${widget.namaKelas}.'
-                          : 'Tambahkan materi pembelajaran untuk kelas yang dikelola.',
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        color: Color(0xFF7288A8),
-                        height: 1.4,
-                      ),
-                    ),
-
-                    const SizedBox(height: 24),
-
-                    ElevatedButton.icon(
-                      onPressed: tambahMateri,
-                      icon: const Icon(Icons.add_rounded),
-                      label: const Text('Tambah Materi'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF2166D5),
-                        foregroundColor: Colors.white,
-                        elevation: 0,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 13,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(13),
-                        ),
-                      ),
-                    ),
-                  ],
+                child: Text(
+                  'Gagal mengambil materi dari Firebase.\n${snapshot.error}',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: Colors.red,
+                  ),
                 ),
               ),
-            )
-          : ListView.builder(
-              padding: const EdgeInsets.fromLTRB(
-                16,
-                16,
-                16,
-                100,
+            );
+          }
+
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(
+              child: CircularProgressIndicator(
+                color: Color(0xFF2166D5),
               ),
-              itemCount: materi.length,
-              itemBuilder: (context, index) {
-                return buildMateriCard(materi[index]);
-              },
+            );
+          }
+
+          final materi = ubahDataMateri(snapshot.data!);
+
+          if (materi.isEmpty) {
+            return buildMateriKosong();
+          }
+
+          return ListView.builder(
+            padding: const EdgeInsets.fromLTRB(
+              16,
+              16,
+              16,
+              100,
             ),
+            itemCount: materi.length,
+            itemBuilder: (context, index) {
+              return buildMateriCard(materi[index]);
+            },
+          );
+        },
+      ),
 
       floatingActionButton: FloatingActionButton.extended(
         onPressed: tambahMateri,
@@ -658,10 +808,6 @@ class DetailMateriPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // =================================================
-            // KELAS
-            // =================================================
-
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(16),
@@ -704,10 +850,6 @@ class DetailMateriPage extends StatelessWidget {
 
             const SizedBox(height: 22),
 
-            // =================================================
-            // JUDUL
-            // =================================================
-
             Text(
               judul,
               style: const TextStyle(
@@ -749,10 +891,6 @@ class DetailMateriPage extends StatelessWidget {
                 ),
               ),
             ),
-
-            // =================================================
-            // SUMBER
-            // =================================================
 
             if (sumber.isNotEmpty) ...[
               const SizedBox(height: 24),
