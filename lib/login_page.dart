@@ -1,4 +1,8 @@
+
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 import 'register_page.dart';
 import 'Dashboard/dashboard_page.dart';
 import 'Dashboard/guru_dashboard_page.dart';
@@ -15,6 +19,7 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController passwordController = TextEditingController();
 
   bool passwordVisible = false;
+  bool isLoading = false;
   String selectedRole = 'Siswa';
 
   static const Color primaryBlue = Color(0xFF2166D5);
@@ -31,12 +36,14 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   // ============================================================
-  // LOGIN
+  // LOGIN MENGGUNAKAN FIREBASE AUTHENTICATION
   // ============================================================
 
-  void login() {
-    if (emailController.text.trim().isEmpty ||
-        passwordController.text.trim().isEmpty) {
+  Future<void> login() async {
+    final email = emailController.text.trim();
+    final password = passwordController.text;
+
+    if (email.isEmpty || password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Email dan password harus diisi.'),
@@ -45,24 +52,157 @@ class _LoginPageState extends State<LoginPage> {
       return;
     }
 
-    // Jika memilih SISWA
-    if (selectedRole == 'Siswa') {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (_) => DashboardPage(),
-        ),
-      );
-    }
+    setState(() {
+      isLoading = true;
+    });
 
-    // Jika memilih GURU
-    else if (selectedRole == 'Guru') {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (_) => const GuruDashboardPage(),
+    try {
+      // 1. Memeriksa email dan password melalui Firebase Authentication
+      final UserCredential userCredential =
+          await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      final User? user = userCredential.user;
+
+      if (user == null) {
+        throw Exception('Data pengguna tidak ditemukan.');
+      }
+
+      // 2. Mengambil data pengguna dari Firestore
+      final DocumentSnapshot<Map<String, dynamic>> userDocument =
+          await FirebaseFirestore.instance
+              .collection('users')
+              .doc(user.uid)
+              .get();
+
+      // 3. Memeriksa apakah profil pengguna tersedia
+      if (!userDocument.exists || userDocument.data() == null) {
+        await FirebaseAuth.instance.signOut();
+
+        if (!mounted) return;
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Data profil belum ditemukan. Silakan daftar kembali.',
+            ),
+          ),
+        );
+        return;
+      }
+
+      // 4. Mengambil role pengguna dari Firestore
+      final String userRole =
+          userDocument.data()!['role']?.toString() ?? '';
+
+      // 5. Memeriksa kesesuaian role yang dipilih
+      if (userRole != selectedRole) {
+        await FirebaseAuth.instance.signOut();
+
+        if (!mounted) return;
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Akun ini terdaftar sebagai $userRole, bukan $selectedRole.',
+            ),
+          ),
+        );
+        return;
+      }
+
+      if (!mounted) return;
+
+      // 6. Mengarahkan pengguna sesuai role
+      if (selectedRole == 'Siswa') {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => DashboardPage(),
+          ),
+        );
+      } else if (selectedRole == 'Guru') {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const GuruDashboardPage(),
+          ),
+        );
+      }
+    } on FirebaseAuthException catch (e) {
+      String message;
+
+      switch (e.code) {
+        case 'user-not-found':
+          message = 'Email belum terdaftar. Silakan daftar terlebih dahulu.';
+          break;
+
+        case 'wrong-password':
+          message = 'Password yang kamu masukkan salah.';
+          break;
+
+        case 'invalid-credential':
+          message = 'Email atau password yang kamu masukkan tidak sesuai.';
+          break;
+
+        case 'invalid-email':
+          message = 'Format email tidak valid.';
+          break;
+
+        case 'user-disabled':
+          message = 'Akun ini telah dinonaktifkan.';
+          break;
+
+        case 'network-request-failed':
+          message = 'Koneksi internet bermasalah. Periksa jaringanmu.';
+          break;
+
+        case 'too-many-requests':
+          message = 'Terlalu banyak percobaan. Coba lagi nanti.';
+          break;
+
+        default:
+          message = 'Login gagal: ${e.message ?? e.code}';
+      }
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
         ),
       );
+    } on FirebaseException catch (e) {
+      // Jika pemeriksaan Firestore gagal, keluarkan sesi login
+      await FirebaseAuth.instance.signOut();
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Gagal mengambil data pengguna: ${e.message ?? e.code}',
+          ),
+        ),
+      );
+    } catch (e) {
+      await FirebaseAuth.instance.signOut();
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Terjadi kesalahan: $e'),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
     }
   }
 
@@ -131,28 +271,19 @@ class _LoginPageState extends State<LoginPage> {
                     Positioned(
                       left: 43,
                       top: 75,
-                      child: _dot(
-                        8,
-                        primaryBlue,
-                      ),
+                      child: _dot(8, primaryBlue),
                     ),
 
                     Positioned(
                       right: 65,
                       top: 48,
-                      child: _dot(
-                        7,
-                        lightBlue,
-                      ),
+                      child: _dot(7, lightBlue),
                     ),
 
                     Positioned(
                       right: 42,
                       top: 155,
-                      child: _dot(
-                        5,
-                        primaryBlue,
-                      ),
+                      child: _dot(5, primaryBlue),
                     ),
 
                     // =================================================
@@ -191,8 +322,7 @@ class _LoginPageState extends State<LoginPage> {
                                       height: 98,
                                       decoration: BoxDecoration(
                                         border: Border.all(
-                                          color:
-                                              primaryBlue.withOpacity(0.17),
+                                          color: primaryBlue.withOpacity(0.17),
                                           width: 2,
                                         ),
                                         borderRadius:
@@ -234,8 +364,7 @@ class _LoginPageState extends State<LoginPage> {
                                       ),
                                       boxShadow: [
                                         BoxShadow(
-                                          color:
-                                              primaryBlue.withOpacity(0.25),
+                                          color: primaryBlue.withOpacity(0.25),
                                           blurRadius: 25,
                                           spreadRadius: 3,
                                           offset: const Offset(0, 8),
@@ -366,12 +495,7 @@ class _LoginPageState extends State<LoginPage> {
                 padding: const EdgeInsets.symmetric(horizontal: 18),
                 child: Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.fromLTRB(
-                    22,
-                    24,
-                    22,
-                    25,
-                  ),
+                  padding: const EdgeInsets.fromLTRB(22, 24, 22, 25),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(30),
@@ -540,32 +664,43 @@ class _LoginPageState extends State<LoginPage> {
                         width: double.infinity,
                         height: 53,
                         child: ElevatedButton(
-                          onPressed: login,
+                          onPressed: isLoading ? null : login,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: primaryBlue,
                             foregroundColor: Colors.white,
+                            disabledBackgroundColor: primaryBlue,
+                            disabledForegroundColor: Colors.white,
                             elevation: 0,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(16),
                             ),
                           ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                'Masuk sebagai $selectedRole',
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w700,
+                          child: isLoading
+                              ? const SizedBox(
+                                  width: 23,
+                                  height: 23,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2.5,
+                                  ),
+                                )
+                              : Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      'Masuk sebagai $selectedRole',
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    const Icon(
+                                      Icons.arrow_forward_rounded,
+                                      size: 19,
+                                    ),
+                                  ],
                                 ),
-                              ),
-                              const SizedBox(width: 8),
-                              const Icon(
-                                Icons.arrow_forward_rounded,
-                                size: 19,
-                              ),
-                            ],
-                          ),
                         ),
                       ),
 
@@ -578,6 +713,8 @@ class _LoginPageState extends State<LoginPage> {
                       Center(
                         child: GestureDetector(
                           onTap: () {
+                            if (isLoading) return;
+
                             Navigator.push(
                               context,
                               MaterialPageRoute(
@@ -668,6 +805,8 @@ class _LoginPageState extends State<LoginPage> {
 
     return GestureDetector(
       onTap: () {
+        if (isLoading) return;
+
         setState(() {
           selectedRole = role;
         });
@@ -679,9 +818,7 @@ class _LoginPageState extends State<LoginPage> {
           color: selected ? paleBlue : const Color(0xFFF8FAFD),
           borderRadius: BorderRadius.circular(15),
           border: Border.all(
-            color: selected
-                ? primaryBlue
-                : const Color(0xFFE1EAF3),
+            color: selected ? primaryBlue : const Color(0xFFE1EAF3),
             width: selected ? 1.5 : 1,
           ),
         ),
