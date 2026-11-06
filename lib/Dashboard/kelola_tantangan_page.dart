@@ -1,8 +1,10 @@
+
 import 'package:flutter/material.dart';
-import 'data_global.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 // =======================================================
-// KELOLA TANTANGAN
+// KELOLA TANTANGAN MINDSHPERE - FIRESTORE
 // =======================================================
 
 class KelolaTantanganPage extends StatefulWidget {
@@ -20,7 +22,8 @@ class KelolaTantanganPage extends StatefulWidget {
       _KelolaTantanganPageState();
 }
 
-class _KelolaTantanganPageState extends State<KelolaTantanganPage> {
+class _KelolaTantanganPageState
+    extends State<KelolaTantanganPage> {
   static const Color royalBlue = Color(0xFF2166D5);
   static const Color deepBlue = Color(0xFF123B70);
   static const Color skyBlue = Color(0xFF56B4F8);
@@ -29,26 +32,57 @@ class _KelolaTantanganPageState extends State<KelolaTantanganPage> {
   static const Color mutedBlue = Color(0xFF7288A8);
   static const Color backgroundColor = Color(0xFFF6F9FE);
 
-  bool get sedangDiDalamKelas =>
-      widget.namaKelas != null && widget.kodeKelas != null;
+  final FirebaseFirestore firestore =
+      FirebaseFirestore.instance;
 
-  List<Map<String, dynamic>> get daftarTantanganTampil {
-    if (!sedangDiDalamKelas) {
-      return daftarTantanganGlobal;
+  bool get sedangDiDalamKelas =>
+      widget.namaKelas != null &&
+      widget.kodeKelas != null;
+
+  CollectionReference<Map<String, dynamic>>
+      get koleksiTantangan =>
+          firestore.collection('tantangan');
+
+  // =====================================================
+  // STREAM TANTANGAN
+  // =====================================================
+
+  Stream<QuerySnapshot<Map<String, dynamic>>>
+      get streamTantangan {
+    if (sedangDiDalamKelas) {
+      return koleksiTantangan
+          .where(
+            'kodeKelas',
+            isEqualTo: widget.kodeKelas,
+          )
+          .snapshots();
     }
 
-    return daftarTantanganGlobal
-        .where(
-          (tantangan) =>
-              tantangan['kodeKelas'] == widget.kodeKelas &&
-              tantangan['namaKelas'] == widget.namaKelas,
-        )
-        .toList();
+    return koleksiTantangan.snapshots();
   }
 
-  // =========================================================
+  // =====================================================
+  // NOTIFIKASI
+  // =====================================================
+
+  void tampilkanPesan(String pesan) {
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(pesan)),
+    );
+  }
+
+  // =====================================================
+  // CEK LOGIN
+  // =====================================================
+
+  bool get sudahLogin =>
+      FirebaseAuth.instance.currentUser != null;
+
+  // =====================================================
   // BUAT TANTANGAN
-  // =========================================================
+  // =====================================================
 
   void showTambahTantanganDialog() {
     final judulController = TextEditingController();
@@ -67,35 +101,12 @@ class _KelolaTantanganPageState extends State<KelolaTantanganPage> {
       builder: (dialogContext) {
         return AlertDialog(
           backgroundColor: Colors.white,
-          insetPadding: const EdgeInsets.symmetric(
-            horizontal: 20,
-            vertical: 24,
-          ),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(24),
-          ),
-          titlePadding: const EdgeInsets.fromLTRB(
-            24,
-            22,
-            24,
-            8,
-          ),
-          contentPadding: const EdgeInsets.fromLTRB(
-            24,
-            8,
-            24,
-            8,
-          ),
-          actionsPadding: const EdgeInsets.fromLTRB(
-            18,
-            4,
-            18,
-            18,
           ),
           title: const Text(
             'Buat Tantangan',
             style: TextStyle(
-              fontSize: 21,
               color: textBlue,
               fontWeight: FontWeight.bold,
             ),
@@ -104,192 +115,99 @@ class _KelolaTantanganPageState extends State<KelolaTantanganPage> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                TextField(
-                  controller: namaKelasController,
+                buildField(
+                  namaKelasController,
+                  'Nama Kelas',
+                  icon: Icons.class_rounded,
                   enabled: !sedangDiDalamKelas,
-                  decoration: InputDecoration(
-                    labelText: 'Nama Kelas',
-                    hintText: 'Contoh: Pemrograman Dasar X',
-                    prefixIcon: const Icon(
-                      Icons.class_rounded,
-                      color: royalBlue,
-                    ),
-                    filled: true,
-                    fillColor: const Color(0xFFF5F8FD),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                      borderSide: BorderSide.none,
-                    ),
-                    disabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                      borderSide: BorderSide.none,
-                    ),
-                  ),
                 ),
-
                 const SizedBox(height: 12),
-
-                TextField(
-                  controller: kodeKelasController,
+                buildField(
+                  kodeKelasController,
+                  'Kode Kelas',
+                  icon: Icons.key_rounded,
                   enabled: !sedangDiDalamKelas,
-                  decoration: InputDecoration(
-                    labelText: 'Kode Kelas',
-                    hintText: 'Contoh: PDX-01',
-                    prefixIcon: const Icon(
-                      Icons.key_rounded,
-                      color: royalBlue,
-                    ),
-                    filled: true,
-                    fillColor: const Color(0xFFF5F8FD),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                      borderSide: BorderSide.none,
-                    ),
-                    disabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                      borderSide: BorderSide.none,
-                    ),
-                  ),
                 ),
-
                 const SizedBox(height: 12),
-
-                TextField(
-                  controller: judulController,
-                  decoration: InputDecoration(
-                    labelText: 'Judul Tantangan',
-                    hintText: 'Contoh: Dasar Pemrograman',
-                    prefixIcon: const Icon(
-                      Icons.quiz_rounded,
-                      color: royalBlue,
-                    ),
-                    filled: true,
-                    fillColor: const Color(0xFFF5F8FD),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                      borderSide: BorderSide.none,
-                    ),
-                  ),
+                buildField(
+                  judulController,
+                  'Judul Tantangan',
+                  icon: Icons.quiz_rounded,
                 ),
-
                 const SizedBox(height: 12),
-
-                TextField(
-                  controller: deskripsiController,
+                buildField(
+                  deskripsiController,
+                  'Deskripsi',
+                  icon: Icons.description_outlined,
                   maxLines: 3,
-                  decoration: InputDecoration(
-                    labelText: 'Deskripsi',
-                    hintText:
-                        'Jelaskan singkat tentang tantangan ini',
-                    prefixIcon: const Padding(
-                      padding: EdgeInsets.only(bottom: 35),
-                      child: Icon(
-                        Icons.description_outlined,
-                        color: royalBlue,
-                      ),
-                    ),
-                    alignLabelWithHint: true,
-                    filled: true,
-                    fillColor: const Color(0xFFF5F8FD),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                      borderSide: BorderSide.none,
-                    ),
-                  ),
                 ),
               ],
             ),
           ),
           actions: [
             TextButton(
-              onPressed: () {
-                Navigator.pop(dialogContext);
-              },
-              style: TextButton.styleFrom(
-                foregroundColor: mutedBlue,
-              ),
-              child: const Text(
-                'Batal',
-                style: TextStyle(
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
+              onPressed: () =>
+                  Navigator.pop(dialogContext),
+              child: const Text('Batal'),
             ),
             ElevatedButton(
-              onPressed: () {
+              onPressed: () async {
                 final namaKelas =
                     namaKelasController.text.trim();
-
                 final kodeKelas =
                     kodeKelasController.text.trim();
-
                 final judul =
                     judulController.text.trim();
-
                 final deskripsi =
                     deskripsiController.text.trim();
 
                 if (namaKelas.isEmpty ||
-                    kodeKelas.isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text(
-                        'Nama kelas dan kode kelas wajib diisi.',
-                      ),
-                    ),
+                    kodeKelas.isEmpty ||
+                    judul.isEmpty) {
+                  tampilkanPesan(
+                    'Nama kelas, kode kelas, dan judul wajib diisi.',
                   );
                   return;
                 }
 
-                if (judul.isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text(
-                        'Judul tantangan harus diisi.',
-                      ),
-                    ),
+                if (!sudahLogin) {
+                  tampilkanPesan(
+                    'Silakan login terlebih dahulu.',
                   );
                   return;
                 }
 
-                setState(() {
-                  daftarTantanganGlobal.add({
+                try {
+                  await koleksiTantangan.add({
                     'namaKelas': namaKelas,
                     'kodeKelas': kodeKelas,
                     'judul': judul,
                     'deskripsi': deskripsi,
                     'soal': <Map<String, dynamic>>[],
+                    'createdBy':
+                        FirebaseAuth.instance.currentUser!.uid,
+                    'createdAt':
+                        FieldValue.serverTimestamp(),
+                    'updatedAt':
+                        FieldValue.serverTimestamp(),
                   });
-                });
 
-                Navigator.pop(dialogContext);
-
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text(
-                      'Tantangan berhasil dibuat.',
-                    ),
-                  ),
-                );
+                  if (!mounted) return;
+                  Navigator.pop(dialogContext);
+                  tampilkanPesan(
+                    'Tantangan berhasil dibuat.',
+                  );
+                } catch (e) {
+                  tampilkanPesan(
+                    'Gagal membuat tantangan: $e',
+                  );
+                }
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: royalBlue,
                 foregroundColor: Colors.white,
-                elevation: 0,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 12,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
               ),
-              child: const Text(
-                'Buat Tantangan',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+              child: const Text('Buat Tantangan'),
             ),
           ],
         );
@@ -297,19 +215,20 @@ class _KelolaTantanganPageState extends State<KelolaTantanganPage> {
     );
   }
 
-  // =========================================================
+  // =====================================================
   // EDIT TANTANGAN
-  // =========================================================
+  // =====================================================
 
   void showEditTantanganDialog(
+    String id,
     Map<String, dynamic> tantangan,
   ) {
     final judulController = TextEditingController(
-      text: tantangan['judul'] ?? '',
+      text: tantangan['judul']?.toString() ?? '',
     );
 
     final deskripsiController = TextEditingController(
-      text: tantangan['deskripsi'] ?? '',
+      text: tantangan['deskripsi']?.toString() ?? '',
     );
 
     showDialog(
@@ -317,146 +236,76 @@ class _KelolaTantanganPageState extends State<KelolaTantanganPage> {
       builder: (dialogContext) {
         return AlertDialog(
           backgroundColor: Colors.white,
-          insetPadding: const EdgeInsets.symmetric(
-            horizontal: 20,
-            vertical: 24,
-          ),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(24),
-          ),
-          titlePadding: const EdgeInsets.fromLTRB(
-            24,
-            22,
-            24,
-            8,
-          ),
-          contentPadding: const EdgeInsets.fromLTRB(
-            24,
-            8,
-            24,
-            8,
-          ),
-          actionsPadding: const EdgeInsets.fromLTRB(
-            18,
-            4,
-            18,
-            18,
           ),
           title: const Text(
             'Edit Tantangan',
             style: TextStyle(
-              fontSize: 21,
               color: textBlue,
               fontWeight: FontWeight.bold,
             ),
           ),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: judulController,
-                  decoration: InputDecoration(
-                    labelText: 'Judul Tantangan',
-                    prefixIcon: const Icon(
-                      Icons.quiz_rounded,
-                      color: royalBlue,
-                    ),
-                    filled: true,
-                    fillColor: const Color(0xFFF5F8FD),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(13),
-                      borderSide: BorderSide.none,
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 12),
-
-                TextField(
-                  controller: deskripsiController,
-                  maxLines: 3,
-                  decoration: InputDecoration(
-                    labelText: 'Deskripsi',
-                    prefixIcon: const Padding(
-                      padding: EdgeInsets.only(bottom: 35),
-                      child: Icon(
-                        Icons.description_outlined,
-                        color: royalBlue,
-                      ),
-                    ),
-                    alignLabelWithHint: true,
-                    filled: true,
-                    fillColor: const Color(0xFFF5F8FD),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(13),
-                      borderSide: BorderSide.none,
-                    ),
-                  ),
-                ),
-              ],
-            ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              buildField(
+                judulController,
+                'Judul Tantangan',
+                icon: Icons.quiz_rounded,
+              ),
+              const SizedBox(height: 12),
+              buildField(
+                deskripsiController,
+                'Deskripsi',
+                icon: Icons.description_outlined,
+                maxLines: 3,
+              ),
+            ],
           ),
           actions: [
             TextButton(
-              onPressed: () {
-                Navigator.pop(dialogContext);
-              },
-              style: TextButton.styleFrom(
-                foregroundColor: mutedBlue,
-              ),
+              onPressed: () =>
+                  Navigator.pop(dialogContext),
               child: const Text('Batal'),
             ),
             ElevatedButton(
-              onPressed: () {
+              onPressed: () async {
                 final judul =
                     judulController.text.trim();
 
                 if (judul.isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text(
-                        'Judul tantangan harus diisi.',
-                      ),
-                    ),
+                  tampilkanPesan(
+                    'Judul tantangan harus diisi.',
                   );
                   return;
                 }
 
-                setState(() {
-                  tantangan['judul'] = judul;
-                  tantangan['deskripsi'] =
-                      deskripsiController.text.trim();
-                });
+                try {
+                  await koleksiTantangan.doc(id).update({
+                    'judul': judul,
+                    'deskripsi':
+                        deskripsiController.text.trim(),
+                    'updatedAt':
+                        FieldValue.serverTimestamp(),
+                  });
 
-                Navigator.pop(dialogContext);
-
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text(
-                      'Tantangan berhasil diperbarui.',
-                    ),
-                  ),
-                );
+                  if (!mounted) return;
+                  Navigator.pop(dialogContext);
+                  tampilkanPesan(
+                    'Tantangan berhasil diperbarui.',
+                  );
+                } catch (e) {
+                  tampilkanPesan(
+                    'Gagal mengedit tantangan: $e',
+                  );
+                }
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: royalBlue,
                 foregroundColor: Colors.white,
-                elevation: 0,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 18,
-                  vertical: 11,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
               ),
-              child: const Text(
-                'Simpan',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+              child: const Text('Simpan'),
             ),
           ],
         );
@@ -464,69 +313,54 @@ class _KelolaTantanganPageState extends State<KelolaTantanganPage> {
     );
   }
 
-  // =========================================================
+  // =====================================================
   // HAPUS TANTANGAN
-  // =========================================================
+  // =====================================================
 
   void hapusTantangan(
-    Map<String, dynamic> tantangan,
+    String id,
+    String judul,
   ) {
     showDialog(
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
           backgroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
           title: const Text(
             'Hapus Tantangan?',
             style: TextStyle(
-              fontWeight: FontWeight.bold,
               color: textBlue,
+              fontWeight: FontWeight.bold,
             ),
           ),
           content: Text(
-            'Tantangan "${tantangan['judul']}" beserta semua '
-            'soal di dalamnya akan dihapus.',
-            style: const TextStyle(
-              color: mutedBlue,
-              height: 1.4,
-            ),
+            'Tantangan "$judul" beserta soal di dalamnya akan dihapus.',
           ),
           actions: [
             TextButton(
-              onPressed: () {
-                Navigator.pop(dialogContext);
-              },
-              style: TextButton.styleFrom(
-                foregroundColor: mutedBlue,
-              ),
+              onPressed: () =>
+                  Navigator.pop(dialogContext),
               child: const Text('Batal'),
             ),
             ElevatedButton(
-              onPressed: () {
-                setState(() {
-                  daftarTantanganGlobal.remove(tantangan);
-                });
+              onPressed: () async {
+                try {
+                  await koleksiTantangan.doc(id).delete();
 
-                Navigator.pop(dialogContext);
-
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text(
-                      'Tantangan berhasil dihapus.',
-                    ),
-                  ),
-                );
+                  if (!mounted) return;
+                  Navigator.pop(dialogContext);
+                  tampilkanPesan(
+                    'Tantangan berhasil dihapus.',
+                  );
+                } catch (e) {
+                  tampilkanPesan(
+                    'Gagal menghapus tantangan: $e',
+                  );
+                }
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.red,
                 foregroundColor: Colors.white,
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
               ),
               child: const Text('Hapus'),
             ),
@@ -536,48 +370,87 @@ class _KelolaTantanganPageState extends State<KelolaTantanganPage> {
     );
   }
 
-  // =========================================================
-  // HALAMAN KELOLA SOAL
-  // =========================================================
+  // =====================================================
+  // KELOLA SOAL
+  // =====================================================
 
   void bukaKelolaSoal(
+    String id,
     Map<String, dynamic> tantangan,
   ) {
+    final List<Map<String, dynamic>> soal =
+        (tantangan['soal'] as List? ?? [])
+            .map(
+              (item) => Map<String, dynamic>.from(item),
+            )
+            .toList();
+
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (_) => KelolaSoalPage(
+          idTantangan: id,
           judulTantangan:
               tantangan['judul']?.toString() ?? 'Tantangan',
-          daftarSoal:
-              tantangan['soal'] as List<Map<String, dynamic>>,
+          daftarSoal: soal,
         ),
       ),
-    ).then((_) {
-      setState(() {});
-    });
+    );
   }
 
-  // =========================================================
+  // =====================================================
+  // FIELD INPUT
+  // =====================================================
+
+  Widget buildField(
+    TextEditingController controller,
+    String label, {
+    IconData icon = Icons.edit_outlined,
+    bool enabled = true,
+    int maxLines = 1,
+  }) {
+    return TextField(
+      controller: controller,
+      enabled: enabled,
+      maxLines: maxLines,
+      decoration: InputDecoration(
+        labelText: label,
+        prefixIcon: Icon(
+          icon,
+          color: royalBlue,
+        ),
+        filled: true,
+        fillColor: const Color(0xFFF5F8FD),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide.none,
+        ),
+      ),
+    );
+  }
+
+  // =====================================================
   // CARD TANTANGAN
-  // =========================================================
+  // =====================================================
 
   Widget buildTantanganCard(
-    Map<String, dynamic> tantangan,
+    QueryDocumentSnapshot<Map<String, dynamic>> doc,
   ) {
-    final List soal = tantangan['soal'] ?? [];
+    final tantangan = doc.data();
 
-    final String judul =
+    final judul =
         tantangan['judul']?.toString() ?? '';
 
-    final String namaKelas =
+    final namaKelas =
         tantangan['namaKelas']?.toString() ?? '';
 
-    final String kodeKelas =
+    final kodeKelas =
         tantangan['kodeKelas']?.toString() ?? '';
 
-    final String deskripsi =
+    final deskripsi =
         tantangan['deskripsi']?.toString() ?? '';
+
+    final List soal = tantangan['soal'] as List? ?? [];
 
     return Container(
       margin: const EdgeInsets.only(bottom: 15),
@@ -600,19 +473,13 @@ class _KelolaTantanganPageState extends State<KelolaTantanganPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
                 width: 50,
                 height: 50,
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
-                    colors: [
-                      royalBlue,
-                      skyBlue,
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
+                    colors: [royalBlue, skyBlue],
                   ),
                   borderRadius: BorderRadius.circular(15),
                 ),
@@ -621,13 +488,10 @@ class _KelolaTantanganPageState extends State<KelolaTantanganPage> {
                   color: Colors.white,
                 ),
               ),
-
               const SizedBox(width: 13),
-
               Expanded(
                 child: Column(
-                  crossAxisAlignment:
-                      CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       judul,
@@ -637,98 +501,50 @@ class _KelolaTantanganPageState extends State<KelolaTantanganPage> {
                         color: textBlue,
                       ),
                     ),
-
                     const SizedBox(height: 7),
-
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 9,
-                        vertical: 5,
-                      ),
-                      decoration: BoxDecoration(
-                        color: paleBlue,
-                        borderRadius:
-                            BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        '$namaKelas • $kodeKelas',
-                        style: const TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: royalBlue,
-                        ),
+                    Text(
+                      '$namaKelas • $kodeKelas',
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: royalBlue,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
-
-                    const SizedBox(height: 6),
-
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.list_alt_rounded,
-                          size: 15,
-                          color: mutedBlue,
-                        ),
-                        const SizedBox(width: 5),
-                        Text(
-                          '${soal.length} soal',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: mutedBlue,
-                          ),
-                        ),
-                      ],
+                    const SizedBox(height: 5),
+                    Text(
+                      '${soal.length} soal',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: mutedBlue,
+                      ),
                     ),
                   ],
                 ),
               ),
-
               PopupMenuButton<String>(
-                icon: const Icon(
-                  Icons.more_vert_rounded,
-                  color: mutedBlue,
-                ),
                 onSelected: (value) {
                   if (value == 'edit') {
                     showEditTantanganDialog(
+                      doc.id,
                       tantangan,
                     );
                   } else if (value == 'hapus') {
-                    hapusTantangan(tantangan);
+                    hapusTantangan(doc.id, judul);
                   }
                 },
                 itemBuilder: (context) => const [
                   PopupMenuItem(
                     value: 'edit',
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.edit_outlined,
-                          color: royalBlue,
-                        ),
-                        SizedBox(width: 8),
-                        Text('Edit Tantangan'),
-                      ],
-                    ),
+                    child: Text('Edit Tantangan'),
                   ),
                   PopupMenuItem(
                     value: 'hapus',
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.delete_outline,
-                          color: Colors.red,
-                        ),
-                        SizedBox(width: 8),
-                        Text('Hapus Tantangan'),
-                      ],
-                    ),
+                    child: Text('Hapus Tantangan'),
                   ),
                 ],
               ),
             ],
           ),
-
           if (deskripsi.isNotEmpty) ...[
             const SizedBox(height: 14),
             Text(
@@ -740,24 +556,14 @@ class _KelolaTantanganPageState extends State<KelolaTantanganPage> {
               ),
             ),
           ],
-
           const SizedBox(height: 16),
-
           SizedBox(
             width: double.infinity,
             child: ElevatedButton.icon(
               onPressed: () =>
-                  bukaKelolaSoal(tantangan),
-              icon: const Icon(
-                Icons.edit_note_rounded,
-                size: 20,
-              ),
-              label: const Text(
-                'Kelola Soal',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+                  bukaKelolaSoal(doc.id, tantangan),
+              icon: const Icon(Icons.edit_note_rounded),
+              label: const Text('Kelola Soal'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: royalBlue,
                 foregroundColor: Colors.white,
@@ -776,24 +582,20 @@ class _KelolaTantanganPageState extends State<KelolaTantanganPage> {
     );
   }
 
-  // =========================================================
+  // =====================================================
   // BUILD
-  // =========================================================
+  // =====================================================
 
   @override
   Widget build(BuildContext context) {
-    final tantangan = daftarTantanganTampil;
-
     return Scaffold(
       backgroundColor: backgroundColor,
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        surfaceTintColor: Colors.transparent,
         iconTheme: const IconThemeData(
           color: textBlue,
         ),
-        titleSpacing: 20,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -816,45 +618,78 @@ class _KelolaTantanganPageState extends State<KelolaTantanganPage> {
           ],
         ),
       ),
-      body: tantangan.isEmpty
-          ? buildEmptyState()
-          : ListView.builder(
-              padding: const EdgeInsets.fromLTRB(
-                20,
-                16,
-                20,
-                110,
+      body: StreamBuilder<
+          QuerySnapshot<Map<String, dynamic>>>(
+        stream: streamTantangan,
+        builder: (context, snapshot) {
+          if (snapshot.hasError) {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Text(
+                  'Gagal mengambil tantangan:\n${snapshot.error}',
+                  textAlign: TextAlign.center,
+                ),
               ),
-              itemCount: tantangan.length,
-              itemBuilder: (context, index) {
-                return buildTantanganCard(
-                  tantangan[index],
-                );
-              },
+            );
+          }
+
+          if (snapshot.connectionState ==
+              ConnectionState.waiting) {
+            return const Center(
+              child: CircularProgressIndicator(
+                color: royalBlue,
+              ),
+            );
+          }
+
+          final docs = snapshot.data?.docs ?? [];
+
+          final daftar = docs.where((doc) {
+            if (!sedangDiDalamKelas) return true;
+
+            return doc.data()['namaKelas'] ==
+                widget.namaKelas;
+          }).toList();
+
+          if (daftar.isEmpty) {
+            return buildEmptyState();
+          }
+
+          return ListView.builder(
+            padding: const EdgeInsets.fromLTRB(
+              20,
+              16,
+              20,
+              110,
             ),
+            itemCount: daftar.length,
+            itemBuilder: (context, index) {
+              return buildTantanganCard(daftar[index]);
+            },
+          );
+        },
+      ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: showTambahTantanganDialog,
         backgroundColor: royalBlue,
         foregroundColor: Colors.white,
-        elevation: 4,
         icon: const Icon(Icons.add_rounded),
         label: const Text(
           'Buat Tantangan',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(fontWeight: FontWeight.bold),
         ),
       ),
     );
   }
 
-  // =========================================================
+  // =====================================================
   // EMPTY STATE
-  // =========================================================
+  // =====================================================
 
   Widget buildEmptyState() {
     return Center(
-      child: SingleChildScrollView(
+      child: Padding(
         padding: const EdgeInsets.all(30),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -872,9 +707,7 @@ class _KelolaTantanganPageState extends State<KelolaTantanganPage> {
                 size: 42,
               ),
             ),
-
             const SizedBox(height: 18),
-
             Text(
               sedangDiDalamKelas
                   ? 'Belum Ada Tantangan di Kelas Ini'
@@ -886,44 +719,23 @@ class _KelolaTantanganPageState extends State<KelolaTantanganPage> {
                 color: textBlue,
               ),
             ),
-
             const SizedBox(height: 8),
-
-            Text(
-              sedangDiDalamKelas
-                  ? 'Buat tantangan untuk ${widget.namaKelas}.'
-                  : 'Buat tantangan untuk menambahkan soal '
-                    'pembelajaran bagi siswa.',
+            const Text(
+              'Buat tantangan untuk menambahkan soal pembelajaran bagi siswa.',
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 13,
                 color: mutedBlue,
-                height: 1.5,
               ),
             ),
-
             const SizedBox(height: 20),
-
             ElevatedButton.icon(
               onPressed: showTambahTantanganDialog,
               icon: const Icon(Icons.add_rounded),
-              label: const Text(
-                'Buat Tantangan',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+              label: const Text('Buat Tantangan'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: royalBlue,
                 foregroundColor: Colors.white,
-                elevation: 0,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 13,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(13),
-                ),
               ),
             ),
           ],
@@ -934,15 +746,17 @@ class _KelolaTantanganPageState extends State<KelolaTantanganPage> {
 }
 
 // =============================================================
-// HALAMAN KELOLA SOAL
+// HALAMAN KELOLA SOAL - FIRESTORE
 // =============================================================
 
 class KelolaSoalPage extends StatefulWidget {
+  final String idTantangan;
   final String judulTantangan;
   final List<Map<String, dynamic>> daftarSoal;
 
   const KelolaSoalPage({
     super.key,
+    required this.idTantangan,
     required this.judulTantangan,
     required this.daftarSoal,
   });
@@ -954,15 +768,59 @@ class KelolaSoalPage extends StatefulWidget {
 
 class _KelolaSoalPageState extends State<KelolaSoalPage> {
   static const Color royalBlue = Color(0xFF2166D5);
-  static const Color skyBlue = Color(0xFF56B4F8);
   static const Color paleBlue = Color(0xFFDCEBFF);
   static const Color textBlue = Color(0xFF18365D);
   static const Color mutedBlue = Color(0xFF7288A8);
   static const Color backgroundColor = Color(0xFFF6F9FE);
 
-  // =========================================================
-  // TAMBAH SOAL
-  // =========================================================
+  CollectionReference<Map<String, dynamic>>
+      get koleksiTantangan =>
+          FirebaseFirestore.instance.collection('tantangan');
+
+  bool sedangMenyimpan = false;
+
+  // =====================================================
+  // SIMPAN SOAL KE FIRESTORE
+  // =====================================================
+
+  Future<void> simpanSoal() async {
+    if (sedangMenyimpan) return;
+
+    setState(() => sedangMenyimpan = true);
+
+    try {
+      await koleksiTantangan
+          .doc(widget.idTantangan)
+          .update({
+        'soal': widget.daftarSoal,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Soal berhasil disimpan ke Firebase.'),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Gagal menyimpan soal: $e'),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => sedangMenyimpan = false);
+      }
+    }
+  }
+
+  // =====================================================
+  // PILIH JENIS SOAL
+  // =====================================================
 
   void tambahSoal() {
     showModalBottomSheet(
@@ -975,37 +833,41 @@ class _KelolaSoalPageState extends State<KelolaSoalPage> {
           top: Radius.circular(25),
         ),
       ),
-      builder: (bottomSheetContext) {
-        final tinggiLayar =
-            MediaQuery.of(bottomSheetContext).size.height;
+      builder: (sheetContext) {
+        final tipeSoal = [
+          {
+            'nama': 'Pilihan Ganda',
+            'keterangan': 'Siswa memilih satu jawaban.',
+            'icon': Icons.radio_button_checked_rounded,
+          },
+          {
+            'nama': 'Benar / Salah',
+            'keterangan': 'Siswa menentukan benar atau salah.',
+            'icon': Icons.check_circle_outline_rounded,
+          },
+          {
+            'nama': 'Pilihan Ganda Kompleks',
+            'keterangan': 'Siswa memilih beberapa jawaban.',
+            'icon': Icons.checklist_rounded,
+          },
+          {
+            'nama': 'Isian Singkat',
+            'keterangan': 'Siswa mengetik jawaban.',
+            'icon': Icons.keyboard_alt_outlined,
+          },
+          {
+            'nama': 'Menjodohkan',
+            'keterangan': 'Siswa memasangkan jawaban.',
+            'icon': Icons.compare_arrows_rounded,
+          },
+        ];
 
-        return ConstrainedBox(
-          constraints: BoxConstraints(
-            maxHeight: tinggiLayar * 0.78,
-          ),
+        return Padding(
+          padding: const EdgeInsets.all(20),
           child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(
-              20,
-              12,
-              20,
-              24,
-            ),
             child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                // Handle
-                Container(
-                  width: 42,
-                  height: 4,
-                  margin: const EdgeInsets.only(
-                    bottom: 18,
-                  ),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFD7DFEA),
-                    borderRadius:
-                        BorderRadius.circular(20),
-                  ),
-                ),
-
                 const Text(
                   'Pilih Model Soal',
                   style: TextStyle(
@@ -1014,59 +876,31 @@ class _KelolaSoalPageState extends State<KelolaSoalPage> {
                     color: textBlue,
                   ),
                 ),
-
-                const SizedBox(height: 6),
-
-                const Text(
-                  'Pilih jenis soal yang ingin ditambahkan',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: mutedBlue,
-                  ),
-                ),
-
-                const SizedBox(height: 18),
-
-                buildTipeSoal(
-                  icon: Icons.radio_button_checked_rounded,
-                  title: 'Pilihan Ganda',
-                  subtitle:
-                      'Siswa memilih satu jawaban',
-                  tipe: 'Pilihan Ganda',
-                ),
-
-                buildTipeSoal(
-                  icon: Icons.check_circle_outline_rounded,
-                  title: 'Benar / Salah',
-                  subtitle:
-                      'Siswa menentukan benar atau salah',
-                  tipe: 'Benar / Salah',
-                ),
-
-                buildTipeSoal(
-                  icon: Icons.checklist_rounded,
-                  title: 'Pilihan Ganda Kompleks',
-                  subtitle:
-                      'Siswa dapat memilih beberapa jawaban',
-                  tipe: 'Pilihan Ganda Kompleks',
-                ),
-
-                buildTipeSoal(
-                  icon: Icons.keyboard_alt_outlined,
-                  title: 'Isian Singkat',
-                  subtitle:
-                      'Siswa mengetik jawaban',
-                  tipe: 'Isian Singkat',
-                ),
-
-                buildTipeSoal(
-                  icon: Icons.compare_arrows_rounded,
-                  title: 'Menjodohkan',
-                  subtitle:
-                      'Siswa memasangkan soal dan jawaban',
-                  tipe: 'Menjodohkan',
-                ),
+                const SizedBox(height: 16),
+                ...tipeSoal.map((item) {
+                  return ListTile(
+                    leading: Icon(
+                      item['icon'] as IconData,
+                      color: royalBlue,
+                    ),
+                    title: Text(
+                      item['nama'] as String,
+                      style: const TextStyle(
+                        color: textBlue,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    subtitle: Text(
+                      item['keterangan'] as String,
+                    ),
+                    onTap: () {
+                      Navigator.pop(sheetContext);
+                      showFormSoal(
+                        item['nama'] as String,
+                      );
+                    },
+                  );
+                }),
               ],
             ),
           ),
@@ -1075,133 +909,41 @@ class _KelolaSoalPageState extends State<KelolaSoalPage> {
     );
   }
 
-  // =========================================================
-  // PILIH MODEL SOAL
-  // =========================================================
-
-  Widget buildTipeSoal({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required String tipe,
-  }) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF7F9FD),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: const Color(0xFFE4EBF5),
-        ),
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(16),
-          onTap: () {
-            Navigator.pop(context);
-            showFormSoal(tipe);
-          },
-          child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 13,
-              vertical: 12,
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 46,
-                  height: 46,
-                  decoration: BoxDecoration(
-                    color: paleBlue,
-                    borderRadius:
-                        BorderRadius.circular(13),
-                  ),
-                  child: Icon(
-                    icon,
-                    color: royalBlue,
-                    size: 24,
-                  ),
-                ),
-
-                const SizedBox(width: 13),
-
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment:
-                        CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        title,
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          color: textBlue,
-                        ),
-                      ),
-
-                      const SizedBox(height: 3),
-
-                      Text(
-                        subtitle,
-                        style: const TextStyle(
-                          fontSize: 11,
-                          color: mutedBlue,
-                          height: 1.3,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                const Icon(
-                  Icons.chevron_right_rounded,
-                  color: mutedBlue,
-                  size: 23,
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  // =========================================================
+  // =====================================================
   // FORM SOAL
-  // =========================================================
+  // =====================================================
 
   void showFormSoal(
     String tipe, {
     int? editIndex,
   }) {
-    final bool isEdit = editIndex != null;
+    final isEdit = editIndex != null;
 
     final Map<String, dynamic>? soalLama =
         isEdit ? widget.daftarSoal[editIndex!] : null;
 
-    final pertanyaanController = TextEditingController(
-      text: soalLama?['pertanyaan'] ?? '',
+    final pertanyaan = TextEditingController(
+      text: soalLama?['pertanyaan']?.toString() ?? '',
     );
 
-    final jawabanController = TextEditingController(
-      text: soalLama?['jawaban'] ?? '',
+    final jawaban = TextEditingController(
+      text: soalLama?['jawaban']?.toString() ?? '',
     );
 
-    final pilihanAController = TextEditingController(
-      text: soalLama?['pilihanA'] ?? '',
+    final pilihanA = TextEditingController(
+      text: soalLama?['pilihanA']?.toString() ?? '',
     );
 
-    final pilihanBController = TextEditingController(
-      text: soalLama?['pilihanB'] ?? '',
+    final pilihanB = TextEditingController(
+      text: soalLama?['pilihanB']?.toString() ?? '',
     );
 
-    final pilihanCController = TextEditingController(
-      text: soalLama?['pilihanC'] ?? '',
+    final pilihanC = TextEditingController(
+      text: soalLama?['pilihanC']?.toString() ?? '',
     );
 
-    final pilihanDController = TextEditingController(
-      text: soalLama?['pilihanD'] ?? '',
+    final pilihanD = TextEditingController(
+      text: soalLama?['pilihanD']?.toString() ?? '',
     );
 
     showDialog(
@@ -1209,35 +951,9 @@ class _KelolaSoalPageState extends State<KelolaSoalPage> {
       builder: (dialogContext) {
         return AlertDialog(
           backgroundColor: Colors.white,
-          insetPadding: const EdgeInsets.symmetric(
-            horizontal: 18,
-            vertical: 24,
-          ),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(24),
-          ),
-          titlePadding: const EdgeInsets.fromLTRB(
-            24,
-            22,
-            24,
-            8,
-          ),
-          contentPadding: const EdgeInsets.fromLTRB(
-            24,
-            8,
-            24,
-            8,
-          ),
-          actionsPadding: const EdgeInsets.fromLTRB(
-            18,
-            4,
-            18,
-            18,
-          ),
           title: Text(
             isEdit ? 'Edit Soal' : 'Tambah Soal',
             style: const TextStyle(
-              fontSize: 21,
               color: textBlue,
               fontWeight: FontWeight.bold,
             ),
@@ -1250,107 +966,44 @@ class _KelolaSoalPageState extends State<KelolaSoalPage> {
                 children: [
                   Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 13,
-                      vertical: 11,
-                    ),
+                    padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
                       color: paleBlue,
-                      borderRadius:
-                          BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Row(
-                      children: [
-                        const Icon(
-                          Icons.category_outlined,
-                          color: royalBlue,
-                          size: 19,
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            tipe,
-                            style: const TextStyle(
-                              color: royalBlue,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 13,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 15),
-
-                  TextField(
-                    controller: pertanyaanController,
-                    maxLines: 4,
-                    decoration: InputDecoration(
-                      labelText: 'Pertanyaan',
-                      hintText:
-                          'Tulis pertanyaan di sini...',
-                      alignLabelWithHint: true,
-                      prefixIcon: const Padding(
-                        padding: EdgeInsets.only(
-                          bottom: 45,
-                        ),
-                        child: Icon(
-                          Icons.help_outline_rounded,
-                          color: royalBlue,
-                        ),
-                      ),
-                      filled: true,
-                      fillColor:
-                          const Color(0xFFF5F8FD),
-                      border: OutlineInputBorder(
-                        borderRadius:
-                            BorderRadius.circular(13),
-                        borderSide: BorderSide.none,
+                    child: Text(
+                      tipe,
+                      style: const TextStyle(
+                        color: royalBlue,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
                   ),
-
                   const SizedBox(height: 14),
-
+                  buildInput(
+                    pertanyaan,
+                    'Pertanyaan',
+                    maxLines: 3,
+                  ),
                   if (tipe == 'Pilihan Ganda' ||
-                      tipe ==
-                          'Pilihan Ganda Kompleks') ...[
-                    buildTextField(
-                      pilihanAController,
-                      'Pilihan A',
-                      icon: Icons.looks_one_outlined,
-                    ),
+                      tipe == 'Pilihan Ganda Kompleks') ...[
+                    const SizedBox(height: 12),
+                    buildInput(pilihanA, 'Pilihan A'),
                     const SizedBox(height: 10),
-                    buildTextField(
-                      pilihanBController,
-                      'Pilihan B',
-                      icon: Icons.looks_two_outlined,
-                    ),
+                    buildInput(pilihanB, 'Pilihan B'),
                     const SizedBox(height: 10),
-                    buildTextField(
-                      pilihanCController,
-                      'Pilihan C',
-                      icon: Icons.looks_3_outlined,
-                    ),
+                    buildInput(pilihanC, 'Pilihan C'),
                     const SizedBox(height: 10),
-                    buildTextField(
-                      pilihanDController,
-                      'Pilihan D',
-                      icon: Icons.looks_4_outlined,
-                    ),
-                    const SizedBox(height: 10),
+                    buildInput(pilihanD, 'Pilihan D'),
                   ],
-
-                  buildTextField(
-                    jawabanController,
+                  const SizedBox(height: 12),
+                  buildInput(
+                    jawaban,
                     tipe == 'Benar / Salah'
                         ? 'Jawaban (Benar / Salah)'
-                        : tipe ==
-                                'Pilihan Ganda Kompleks'
+                        : tipe == 'Pilihan Ganda Kompleks'
                             ? 'Jawaban benar (contoh: A, C)'
                             : 'Jawaban Benar',
-                    icon: Icons.check_circle_outline_rounded,
                   ),
                 ],
               ),
@@ -1358,24 +1011,15 @@ class _KelolaSoalPageState extends State<KelolaSoalPage> {
           ),
           actions: [
             TextButton(
-              onPressed: () {
-                Navigator.pop(dialogContext);
-              },
-              style: TextButton.styleFrom(
-                foregroundColor: mutedBlue,
-              ),
+              onPressed: () =>
+                  Navigator.pop(dialogContext),
               child: const Text('Batal'),
             ),
             ElevatedButton(
-              onPressed: () {
-                if (pertanyaanController.text
-                        .trim()
-                        .isEmpty ||
-                    jawabanController.text
-                        .trim()
-                        .isEmpty) {
-                  ScaffoldMessenger.of(context)
-                      .showSnackBar(
+              onPressed: () async {
+                if (pertanyaan.text.trim().isEmpty ||
+                    jawaban.text.trim().isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
                       content: Text(
                         'Pertanyaan dan jawaban harus diisi.',
@@ -1385,62 +1029,32 @@ class _KelolaSoalPageState extends State<KelolaSoalPage> {
                   return;
                 }
 
-                final data = {
+                final data = <String, dynamic>{
                   'tipe': tipe,
-                  'pertanyaan':
-                      pertanyaanController.text.trim(),
-                  'jawaban':
-                      jawabanController.text.trim(),
-                  'pilihanA':
-                      pilihanAController.text.trim(),
-                  'pilihanB':
-                      pilihanBController.text.trim(),
-                  'pilihanC':
-                      pilihanCController.text.trim(),
-                  'pilihanD':
-                      pilihanDController.text.trim(),
+                  'pertanyaan': pertanyaan.text.trim(),
+                  'jawaban': jawaban.text.trim(),
+                  'pilihanA': pilihanA.text.trim(),
+                  'pilihanB': pilihanB.text.trim(),
+                  'pilihanC': pilihanC.text.trim(),
+                  'pilihanD': pilihanD.text.trim(),
                 };
 
                 setState(() {
                   if (isEdit) {
-                    widget.daftarSoal[editIndex!] =
-                        data;
+                    widget.daftarSoal[editIndex!] = data;
                   } else {
                     widget.daftarSoal.add(data);
                   }
                 });
 
                 Navigator.pop(dialogContext);
-
-                ScaffoldMessenger.of(context)
-                    .showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      isEdit
-                          ? 'Soal berhasil diperbarui.'
-                          : 'Soal berhasil ditambahkan.',
-                    ),
-                  ),
-                );
+                await simpanSoal();
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: royalBlue,
                 foregroundColor: Colors.white,
-                elevation: 0,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 11,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
               ),
-              child: Text(
-                isEdit ? 'Simpan' : 'Tambah',
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+              child: Text(isEdit ? 'Simpan' : 'Tambah'),
             ),
           ],
         );
@@ -1448,23 +1062,20 @@ class _KelolaSoalPageState extends State<KelolaSoalPage> {
     );
   }
 
-  // =========================================================
-  // TEXT FIELD
-  // =========================================================
+  // =====================================================
+  // INPUT
+  // =====================================================
 
-  Widget buildTextField(
+  Widget buildInput(
     TextEditingController controller,
     String label, {
-    IconData icon = Icons.edit_outlined,
+    int maxLines = 1,
   }) {
     return TextField(
       controller: controller,
+      maxLines: maxLines,
       decoration: InputDecoration(
         labelText: label,
-        prefixIcon: Icon(
-          icon,
-          color: royalBlue,
-        ),
         filled: true,
         fillColor: const Color(0xFFF5F8FD),
         border: OutlineInputBorder(
@@ -1475,91 +1086,56 @@ class _KelolaSoalPageState extends State<KelolaSoalPage> {
     );
   }
 
-  // =========================================================
+  // =====================================================
   // HAPUS SOAL
-  // =========================================================
+  // =====================================================
 
-  void hapusSoal(int index) {
-    showDialog(
-      context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          backgroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          title: const Text(
-            'Hapus Soal?',
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: textBlue,
-            ),
-          ),
-          content: const Text(
-            'Soal ini akan dihapus dari tantangan.',
-            style: TextStyle(
-              color: mutedBlue,
-              height: 1.4,
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(dialogContext);
-              },
-              style: TextButton.styleFrom(
-                foregroundColor: mutedBlue,
-              ),
-              child: const Text('Batal'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                setState(() {
-                  widget.daftarSoal.removeAt(index);
-                });
+  Future<void> hapusSoal(int index) async {
+    final soalDihapus = widget.daftarSoal.removeAt(index);
 
-                Navigator.pop(dialogContext);
+    setState(() {});
 
-                ScaffoldMessenger.of(context)
-                    .showSnackBar(
-                  const SnackBar(
-                    content: Text(
-                      'Soal berhasil dihapus.',
-                    ),
-                  ),
-                );
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
-                foregroundColor: Colors.white,
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              child: const Text('Hapus'),
-            ),
-          ],
-        );
-      },
-    );
+    try {
+      await koleksiTantangan
+          .doc(widget.idTantangan)
+          .update({
+        'soal': widget.daftarSoal,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Soal berhasil dihapus.'),
+        ),
+      );
+    } catch (e) {
+      widget.daftarSoal.insert(index, soalDihapus);
+      if (mounted) setState(() {});
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Gagal menghapus soal: $e'),
+        ),
+      );
+    }
   }
 
-  // =========================================================
+  // =====================================================
   // CARD SOAL
-  // =========================================================
+  // =====================================================
 
   Widget buildSoalCard(
     int index,
     Map<String, dynamic> soal,
   ) {
-    final String tipe =
-        soal['tipe']?.toString() ?? '';
-
-    final String pertanyaan =
+    final tipe = soal['tipe']?.toString() ?? '';
+    final pertanyaan =
         soal['pertanyaan']?.toString() ?? '';
-
-    final String jawaban =
+    final jawaban =
         soal['jawaban']?.toString() ?? '';
 
     return Container(
@@ -1571,47 +1147,22 @@ class _KelolaSoalPageState extends State<KelolaSoalPage> {
         border: Border.all(
           color: const Color(0xFFE1E9F5),
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.025),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
       ),
       child: Column(
-        crossAxisAlignment:
-            CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: paleBlue,
-                  borderRadius:
-                      BorderRadius.circular(10),
-                ),
+              Expanded(
                 child: Text(
                   tipe,
                   style: const TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
                     color: royalBlue,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
-
-              const Spacer(),
-
               PopupMenuButton<String>(
-                icon: const Icon(
-                  Icons.more_vert_rounded,
-                  color: mutedBlue,
-                ),
                 onSelected: (value) {
                   if (value == 'edit') {
                     showFormSoal(
@@ -1625,79 +1176,31 @@ class _KelolaSoalPageState extends State<KelolaSoalPage> {
                 itemBuilder: (context) => const [
                   PopupMenuItem(
                     value: 'edit',
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.edit_outlined,
-                          color: royalBlue,
-                        ),
-                        SizedBox(width: 8),
-                        Text('Edit'),
-                      ],
-                    ),
+                    child: Text('Edit'),
                   ),
                   PopupMenuItem(
                     value: 'hapus',
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.delete_outline,
-                          color: Colors.red,
-                        ),
-                        SizedBox(width: 8),
-                        Text('Hapus'),
-                      ],
-                    ),
+                    child: Text('Hapus'),
                   ),
                 ],
               ),
             ],
           ),
-
-          const SizedBox(height: 12),
-
+          const SizedBox(height: 10),
           Text(
             '${index + 1}. $pertanyaan',
             style: const TextStyle(
               fontSize: 15,
-              fontWeight: FontWeight.bold,
               color: textBlue,
-              height: 1.4,
+              fontWeight: FontWeight.bold,
             ),
           ),
-
           const SizedBox(height: 12),
-
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(
-              horizontal: 12,
-              vertical: 10,
-            ),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF7F9FD),
-              borderRadius: BorderRadius.circular(11),
-            ),
-            child: Row(
-              crossAxisAlignment:
-                  CrossAxisAlignment.start,
-              children: [
-                const Icon(
-                  Icons.check_circle_outline_rounded,
-                  size: 17,
-                  color: royalBlue,
-                ),
-                const SizedBox(width: 7),
-                Expanded(
-                  child: Text(
-                    'Jawaban: $jawaban',
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: mutedBlue,
-                    ),
-                  ),
-                ),
-              ],
+          Text(
+            'Jawaban: $jawaban',
+            style: const TextStyle(
+              fontSize: 12,
+              color: mutedBlue,
             ),
           ),
         ],
@@ -1705,9 +1208,9 @@ class _KelolaSoalPageState extends State<KelolaSoalPage> {
     );
   }
 
-  // =========================================================
+  // =====================================================
   // BUILD
-  // =========================================================
+  // =====================================================
 
   @override
   Widget build(BuildContext context) {
@@ -1716,22 +1219,55 @@ class _KelolaSoalPageState extends State<KelolaSoalPage> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        surfaceTintColor: Colors.transparent,
         iconTheme: const IconThemeData(
           color: textBlue,
         ),
-        titleSpacing: 20,
         title: Text(
           widget.judulTantangan,
           style: const TextStyle(
             color: textBlue,
             fontWeight: FontWeight.bold,
-            fontSize: 19,
+            fontSize: 18,
           ),
         ),
       ),
       body: widget.daftarSoal.isEmpty
-          ? buildEmptySoal()
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(
+                    Icons.edit_note_rounded,
+                    color: royalBlue,
+                    size: 60,
+                  ),
+                  const SizedBox(height: 12),
+                  const Text(
+                    'Belum Ada Soal',
+                    style: TextStyle(
+                      color: textBlue,
+                      fontSize: 19,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Tambahkan soal untuk tantangan ini.',
+                    style: TextStyle(color: mutedBlue),
+                  ),
+                  const SizedBox(height: 18),
+                  ElevatedButton.icon(
+                    onPressed: tambahSoal,
+                    icon: const Icon(Icons.add),
+                    label: const Text('Tambah Soal'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: royalBlue,
+                      foregroundColor: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
+            )
           : ListView.builder(
               padding: const EdgeInsets.fromLTRB(
                 20,
@@ -1747,101 +1283,14 @@ class _KelolaSoalPageState extends State<KelolaSoalPage> {
                 );
               },
             ),
-      floatingActionButton:
-          FloatingActionButton.extended(
+      floatingActionButton: FloatingActionButton.extended(
         onPressed: tambahSoal,
         backgroundColor: royalBlue,
         foregroundColor: Colors.white,
-        elevation: 4,
         icon: const Icon(Icons.add_rounded),
         label: const Text(
           'Tambah Soal',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
-    );
-  }
-
-  // =========================================================
-  // EMPTY SOAL
-  // =========================================================
-
-  Widget buildEmptySoal() {
-    return Center(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(30),
-        child: Column(
-          mainAxisAlignment:
-              MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 80,
-              height: 80,
-              decoration: const BoxDecoration(
-                color: paleBlue,
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.edit_note_rounded,
-                color: royalBlue,
-                size: 42,
-              ),
-            ),
-
-            const SizedBox(height: 18),
-
-            const Text(
-              'Belum Ada Soal',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 19,
-                fontWeight: FontWeight.bold,
-                color: textBlue,
-              ),
-            ),
-
-            const SizedBox(height: 8),
-
-            const Text(
-              'Tambahkan soal dengan berbagai model '
-              'untuk tantangan ini.',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 13,
-                color: mutedBlue,
-                height: 1.5,
-              ),
-            ),
-
-            const SizedBox(height: 20),
-
-            ElevatedButton.icon(
-              onPressed: tambahSoal,
-              icon: const Icon(Icons.add_rounded),
-              label: const Text(
-                'Tambah Soal',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: royalBlue,
-                foregroundColor: Colors.white,
-                elevation: 0,
-                padding:
-                    const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 13,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius:
-                      BorderRadius.circular(13),
-                ),
-              ),
-            ),
-          ],
+          style: TextStyle(fontWeight: FontWeight.bold),
         ),
       ),
     );
