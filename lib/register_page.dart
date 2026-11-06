@@ -1,4 +1,8 @@
+
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 import 'Dashboard/dashboard_page.dart';
 import 'Dashboard/guru_dashboard_page.dart';
 
@@ -21,6 +25,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
   bool passwordVisible = false;
   bool confirmPasswordVisible = false;
+  bool isLoading = false;
 
   String selectedRole = 'Siswa';
 
@@ -33,7 +38,9 @@ class _RegisterPageState extends State<RegisterPage> {
     super.dispose();
   }
 
-  void register() {
+  Future<void> register() async {
+    if (isLoading) return;
+
     final name = nameController.text.trim();
     final email = emailController.text.trim();
     final password = passwordController.text;
@@ -72,23 +79,127 @@ class _RegisterPageState extends State<RegisterPage> {
       return;
     }
 
-    // Sementara:
-    // Siswa masuk ke Dashboard Siswa
-    // Guru masuk ke Dashboard Guru
-    if (selectedRole == 'Siswa') {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (_) => DashboardPage(),
+    setState(() {
+      isLoading = true;
+    });
+
+    User? createdUser;
+
+    try {
+      // Membuat akun di Firebase Authentication
+      final credential = await FirebaseAuth.instance
+          .createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      final user = credential.user!;
+      createdUser = user;
+
+      // Menyimpan nama pengguna
+      await user.updateDisplayName(name);
+
+      // Menyimpan data pengguna ke Cloud Firestore
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .set({
+        'uid': user.uid,
+        'name': name,
+        'email': email,
+        'role': selectedRole,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Pendaftaran berhasil! Selamat datang di MindSphere.',
+          ),
+          backgroundColor: Colors.green,
         ),
       );
-    } else {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (_) => const GuruDashboardPage(),
+
+      // Masuk ke dashboard sesuai role
+      if (selectedRole == 'Siswa') {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => DashboardPage(),
+          ),
+        );
+      } else {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const GuruDashboardPage(),
+          ),
+        );
+      }
+    } on FirebaseAuthException catch (e) {
+      if (!mounted) return;
+
+      String message;
+
+      switch (e.code) {
+        case 'email-already-in-use':
+          message = 'Email sudah digunakan.';
+          break;
+        case 'invalid-email':
+          message = 'Format email tidak valid.';
+          break;
+        case 'weak-password':
+          message = 'Password terlalu lemah.';
+          break;
+        case 'network-request-failed':
+          message = 'Periksa koneksi internet kamu.';
+          break;
+        default:
+          message = e.message ?? 'Pendaftaran gagal.';
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: Colors.redAccent,
         ),
       );
+    } on FirebaseException catch (e) {
+      // Jika penyimpanan profil gagal, jangan biarkan akun
+      // setengah terdaftar tanpa dokumen profil.
+      if (createdUser != null) {
+        try {
+          await createdUser.delete();
+        } catch (_) {
+          // Jika penghapusan gagal, akun tetap ada di Authentication.
+        }
+      }
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Gagal menyimpan data: ${e.message}'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Terjadi kesalahan: $e'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
     }
   }
 
@@ -475,32 +586,44 @@ class _RegisterPageState extends State<RegisterPage> {
                             ],
                           ),
                           child: ElevatedButton(
-                            onPressed: register,
+                            onPressed: isLoading ? null : register,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.transparent,
                               foregroundColor: Colors.white,
                               shadowColor: Colors.transparent,
+                              disabledBackgroundColor: Colors.transparent,
+                              disabledForegroundColor: Colors.white,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(18),
                               ),
                             ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(
-                                  'Daftar sebagai $selectedRole',
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w800,
+                            child: isLoading
+                                ? const SizedBox(
+                                    width: 25,
+                                    height: 25,
+                                    child: CircularProgressIndicator(
+                                      color: Colors.white,
+                                      strokeWidth: 2.5,
+                                    ),
+                                  )
+                                : Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.center,
+                                    children: [
+                                      Text(
+                                        'Daftar sebagai $selectedRole',
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w800,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 10),
+                                      const Icon(
+                                        Icons.arrow_forward_rounded,
+                                        size: 22,
+                                      ),
+                                    ],
                                   ),
-                                ),
-                                const SizedBox(width: 10),
-                                const Icon(
-                                  Icons.arrow_forward_rounded,
-                                  size: 22,
-                                ),
-                              ],
-                            ),
                           ),
                         ),
                       ),

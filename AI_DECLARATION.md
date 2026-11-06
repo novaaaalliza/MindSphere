@@ -6,7 +6,7 @@
 **Jenis Project:** Aplikasi Mobile Media Pembelajaran  
 **Framework:** Flutter  
 **Bahasa Pemrograman:** Dart  
-**Target Pengguna:** Siswa dan Guru SMK  
+**Target Pengguna:** Siswa dan Guru 
 
 Dokumen ini dibuat sebagai bentuk transparansi penggunaan Artificial Intelligence (AI) dalam proses pengembangan aplikasi MindSphere. AI digunakan sebagai alat bantu dalam proses pemrograman, terutama untuk memahami error, mencari solusi, menjelaskan kode, dan membantu mengembangkan beberapa fungsi aplikasi.
 
