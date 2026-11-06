@@ -1,5 +1,9 @@
+
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'data_global.dart';
 import 'kelola_materi_page.dart';
@@ -32,9 +36,120 @@ class _DetailKelasGuruPageState
   static const Color textBlue = Color(0xFF18365D);
   static const Color mutedBlue = Color(0xFF7288A8);
 
+  StreamSubscription? _materiSubscription;
+  StreamSubscription? _tantanganSubscription;
+
+  int jumlahMateriFirebase = 0;
+  int jumlahTantanganFirebase = 0;
+
+  bool sedangMemuatMateri = true;
+  bool sedangMemuatTantangan = true;
+
+  String? errorMateri;
+  String? errorTantangan;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _dengarkanMateri();
+    _dengarkanTantangan();
+  }
+
+  @override
+  void dispose() {
+    _materiSubscription?.cancel();
+    _tantanganSubscription?.cancel();
+    super.dispose();
+  }
+
   // ============================================================
-  // DATA KELAS
+  // MENGAMBIL JUMLAH MATERI DARI FIRESTORE
   // ============================================================
+
+  void _dengarkanMateri() {
+    _materiSubscription = FirebaseFirestore.instance
+        .collection('materi')
+        .where(
+          'kodeKelas',
+          isEqualTo: widget.kodeKelas,
+        )
+        .snapshots()
+        .listen(
+      (snapshot) {
+        final jumlah = snapshot.docs.where((doc) {
+          return doc.data()['namaKelas'] ==
+              widget.namaKelas;
+        }).length;
+
+        if (!mounted) return;
+
+        setState(() {
+          jumlahMateriFirebase = jumlah;
+          sedangMemuatMateri = false;
+          errorMateri = null;
+        });
+      },
+      onError: (error) {
+        if (!mounted) return;
+
+        setState(() {
+          sedangMemuatMateri = false;
+          errorMateri = error.toString();
+        });
+
+        debugPrint('Gagal mengambil materi: $error');
+      },
+    );
+  }
+
+  // ============================================================
+  // MENGAMBIL JUMLAH TANTANGAN DARI FIRESTORE
+  // ============================================================
+
+  void _dengarkanTantangan() {
+    _tantanganSubscription = FirebaseFirestore.instance
+        .collection('tantangan')
+        .where(
+          'kodeKelas',
+          isEqualTo: widget.kodeKelas,
+        )
+        .snapshots()
+        .listen(
+      (snapshot) {
+        final jumlah = snapshot.docs.where((doc) {
+          return doc.data()['namaKelas'] ==
+              widget.namaKelas;
+        }).length;
+
+        if (!mounted) return;
+
+        setState(() {
+          jumlahTantanganFirebase = jumlah;
+          sedangMemuatTantangan = false;
+          errorTantangan = null;
+        });
+      },
+      onError: (error) {
+        if (!mounted) return;
+
+        setState(() {
+          sedangMemuatTantangan = false;
+          errorTantangan = error.toString();
+        });
+
+        debugPrint('Gagal mengambil tantangan: $error');
+      },
+    );
+  }
+
+  // ============================================================
+  // DATA SISWA DAN HASIL
+  // ============================================================
+
+  // Sementara masih menggunakan data_global.dart.
+  // Akan disambungkan ke Firestore setelah struktur
+  // penyimpanan siswa dan hasil ditentukan.
 
   int get jumlahSiswaKelas {
     return daftarSiswaGlobal
@@ -46,24 +161,29 @@ class _DetailKelasGuruPageState
         .length;
   }
 
-  int get jumlahMateriKelas {
-    return ambilMateriKelas(
-      widget.kodeKelas,
-      widget.namaKelas,
-    ).length;
-  }
-
-  int get jumlahTantanganKelas {
-    return ambilTantanganKelas(
-      widget.kodeKelas,
-      widget.namaKelas,
-    ).length;
-  }
-
   int get jumlahHasilKelas {
     return hasilSiswaDiKelas(
       widget.kodeKelas,
     ).length;
+  }
+
+  // ============================================================
+  // MEMPERBARUI DATA
+  // ============================================================
+
+  Future<void> _bukaHalaman(
+    Widget halaman,
+  ) async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => halaman,
+      ),
+    );
+
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   // ============================================================
@@ -140,9 +260,7 @@ class _DetailKelasGuruPageState
                       size: 30,
                     ),
                   ),
-
                   const SizedBox(height: 18),
-
                   Text(
                     widget.namaKelas,
                     style: const TextStyle(
@@ -151,9 +269,7 @@ class _DetailKelasGuruPageState
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-
                   const SizedBox(height: 7),
-
                   Text(
                     'Kode Kelas: ${widget.kodeKelas}',
                     style: const TextStyle(
@@ -191,14 +307,16 @@ class _DetailKelasGuruPageState
                     value: jumlahSiswaKelas.toString(),
                   ),
                 ),
-
                 const SizedBox(width: 12),
-
                 Expanded(
                   child: buildInfoCard(
                     icon: Icons.menu_book_rounded,
                     title: 'Materi',
-                    value: jumlahMateriKelas.toString(),
+                    value: sedangMemuatMateri
+                        ? '...'
+                        : errorMateri != null
+                            ? '!'
+                            : jumlahMateriFirebase.toString(),
                   ),
                 ),
               ],
@@ -212,12 +330,14 @@ class _DetailKelasGuruPageState
                   child: buildInfoCard(
                     icon: Icons.quiz_rounded,
                     title: 'Tantangan',
-                    value: jumlahTantanganKelas.toString(),
+                    value: sedangMemuatTantangan
+                        ? '...'
+                        : errorTantangan != null
+                            ? '!'
+                            : jumlahTantanganFirebase.toString(),
                   ),
                 ),
-
                 const SizedBox(width: 12),
-
                 Expanded(
                   child: buildInfoCard(
                     icon: Icons.bar_chart_rounded,
@@ -227,6 +347,26 @@ class _DetailKelasGuruPageState
                 ),
               ],
             ),
+
+            if (errorMateri != null ||
+                errorTantangan != null) ...[
+              const SizedBox(height: 12),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(13),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFF5E5),
+                  borderRadius: BorderRadius.circular(13),
+                ),
+                child: const Text(
+                  'Sebagian data belum dapat dimuat. Periksa koneksi Firebase dan Firestore Rules.',
+                  style: TextStyle(
+                    color: Color(0xFF936018),
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+            ],
 
             const SizedBox(height: 26),
 
@@ -253,18 +393,13 @@ class _DetailKelasGuruPageState
               icon: Icons.people_alt_rounded,
               title: 'Daftar Siswa',
               subtitle: 'Lihat siswa yang bergabung di kelas',
-              onTap: () async {
-                await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => DaftarSiswaPage(
-                      namaKelas: widget.namaKelas,
-                      kodeKelas: widget.kodeKelas,
-                    ),
+              onTap: () {
+                _bukaHalaman(
+                  DaftarSiswaPage(
+                    namaKelas: widget.namaKelas,
+                    kodeKelas: widget.kodeKelas,
                   ),
                 );
-
-                setState(() {});
               },
             ),
 
@@ -275,19 +410,15 @@ class _DetailKelasGuruPageState
             buildMenuItem(
               icon: Icons.menu_book_rounded,
               title: 'Materi Kelas',
-              subtitle: 'Kelola materi pembelajaran kelas',
-              onTap: () async {
-                await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => KelolaMateriPage(
-                      namaKelas: widget.namaKelas,
-                      kodeKelas: widget.kodeKelas,
-                    ),
+              subtitle:
+                  'Kelola materi pembelajaran kelas',
+              onTap: () {
+                _bukaHalaman(
+                  KelolaMateriPage(
+                    namaKelas: widget.namaKelas,
+                    kodeKelas: widget.kodeKelas,
                   ),
                 );
-
-                setState(() {});
               },
             ),
 
@@ -298,19 +429,15 @@ class _DetailKelasGuruPageState
             buildMenuItem(
               icon: Icons.quiz_rounded,
               title: 'Tantangan Kelas',
-              subtitle: 'Kelola soal tantangan untuk siswa',
-              onTap: () async {
-                await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => KelolaTantanganPage(
-                      namaKelas: widget.namaKelas,
-                      kodeKelas: widget.kodeKelas,
-                    ),
+              subtitle:
+                  'Kelola soal tantangan untuk siswa',
+              onTap: () {
+                _bukaHalaman(
+                  KelolaTantanganPage(
+                    namaKelas: widget.namaKelas,
+                    kodeKelas: widget.kodeKelas,
                   ),
                 );
-
-                setState(() {});
               },
             ),
 
@@ -321,19 +448,15 @@ class _DetailKelasGuruPageState
             buildMenuItem(
               icon: Icons.bar_chart_rounded,
               title: 'Hasil Siswa',
-              subtitle: 'Lihat perkembangan dan hasil siswa',
-              onTap: () async {
-                await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => HasilSiswaPage(
-                      namaKelas: widget.namaKelas,
-                      kodeKelas: widget.kodeKelas,
-                    ),
+              subtitle:
+                  'Lihat perkembangan dan hasil siswa',
+              onTap: () {
+                _bukaHalaman(
+                  HasilSiswaPage(
+                    namaKelas: widget.namaKelas,
+                    kodeKelas: widget.kodeKelas,
                   ),
                 );
-
-                setState(() {});
               },
             ),
 
@@ -360,9 +483,7 @@ class _DetailKelasGuruPageState
                     color: royalBlue,
                     size: 30,
                   ),
-
                   const SizedBox(height: 10),
-
                   const Text(
                     'Kode Kelas',
                     style: TextStyle(
@@ -370,9 +491,7 @@ class _DetailKelasGuruPageState
                       color: mutedBlue,
                     ),
                   ),
-
                   const SizedBox(height: 6),
-
                   Text(
                     widget.kodeKelas,
                     style: const TextStyle(
@@ -382,9 +501,7 @@ class _DetailKelasGuruPageState
                       color: textBlue,
                     ),
                   ),
-
                   const SizedBox(height: 14),
-
                   OutlinedButton.icon(
                     onPressed: () {
                       Clipboard.setData(
@@ -466,9 +583,7 @@ class _DetailKelasGuruPageState
               size: 22,
             ),
           ),
-
           const SizedBox(height: 12),
-
           Text(
             value,
             style: const TextStyle(
@@ -477,9 +592,7 @@ class _DetailKelasGuruPageState
               color: textBlue,
             ),
           ),
-
           const SizedBox(height: 3),
-
           Text(
             title,
             style: const TextStyle(
@@ -534,9 +647,7 @@ class _DetailKelasGuruPageState
                     size: 24,
                   ),
                 ),
-
                 const SizedBox(width: 14),
-
                 Expanded(
                   child: Column(
                     crossAxisAlignment:
@@ -550,9 +661,7 @@ class _DetailKelasGuruPageState
                           color: textBlue,
                         ),
                       ),
-
                       const SizedBox(height: 4),
-
                       Text(
                         subtitle,
                         style: const TextStyle(
@@ -564,7 +673,6 @@ class _DetailKelasGuruPageState
                     ],
                   ),
                 ),
-
                 const Icon(
                   Icons.arrow_forward_ios_rounded,
                   size: 16,
