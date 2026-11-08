@@ -40,17 +40,24 @@ class DaftarSiswaPage extends StatelessWidget {
           ),
         ),
       ),
+
       body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
         stream: FirebaseFirestore.instance
             .collection('kelas')
             .where('kode', isEqualTo: kodeKelas)
             .snapshots(),
+
         builder: (context, kelasSnapshot) {
+          // ==========================================
+          // ERROR SAAT MENGAMBIL DATA KELAS
+          // ==========================================
+
           if (kelasSnapshot.hasError) {
-            debugPrint(
-              'Gagal mengambil kelas: ${kelasSnapshot.error}',
-            );
-            return _pesanError();
+            final error = kelasSnapshot.error.toString();
+
+            debugPrint('GAGAL MENGAMBIL KELAS: $error');
+
+            return _pesanError(error);
           }
 
           if (kelasSnapshot.connectionState ==
@@ -60,7 +67,10 @@ class DaftarSiswaPage extends StatelessWidget {
 
           final semuaKelas = kelasSnapshot.data?.docs ?? [];
 
-          // Mencocokkan kode dan nama kelas.
+          // ==========================================
+          // MENCARI KELAS YANG SESUAI
+          // ==========================================
+
           final kelasCocok = semuaKelas.where((doc) {
             final data = doc.data();
 
@@ -73,10 +83,23 @@ class DaftarSiswaPage extends StatelessWidget {
           }).toList();
 
           if (kelasCocok.isEmpty) {
-            return _pesanKosong();
+            debugPrint(
+              'KELAS TIDAK DITEMUKAN: '
+              'kode=$kodeKelas, nama=$namaKelas',
+            );
+
+            return _pesanKelasTidakDitemukan();
           }
 
           final kelasDoc = kelasCocok.first;
+
+          debugPrint(
+            'ID KELAS DITEMUKAN: ${kelasDoc.id}',
+          );
+
+          // ==========================================
+          // MENGAMBIL DATA ANGGOTA KELAS
+          // ==========================================
 
           return StreamBuilder<
               QuerySnapshot<Map<String, dynamic>>>(
@@ -85,12 +108,16 @@ class DaftarSiswaPage extends StatelessWidget {
                 .doc(kelasDoc.id)
                 .collection('anggota')
                 .snapshots(),
+
             builder: (context, anggotaSnapshot) {
               if (anggotaSnapshot.hasError) {
+                final error = anggotaSnapshot.error.toString();
+
                 debugPrint(
-                  'Gagal mengambil anggota: ${anggotaSnapshot.error}',
+                  'GAGAL MENGAMBIL ANGGOTA: $error',
                 );
-                return _pesanError();
+
+                return _pesanError(error);
               }
 
               if (anggotaSnapshot.connectionState ==
@@ -102,7 +129,10 @@ class DaftarSiswaPage extends StatelessWidget {
                 ...(anggotaSnapshot.data?.docs ?? []),
               ];
 
-              // Mengurutkan siswa berdasarkan nama.
+              // ==========================================
+              // MENGURUTKAN SISWA BERDASARKAN NAMA
+              // ==========================================
+
               siswa.sort((a, b) {
                 final namaA = (a.data()['namaSiswa'] ?? '')
                     .toString()
@@ -114,6 +144,10 @@ class DaftarSiswaPage extends StatelessWidget {
 
                 return namaA.compareTo(namaB);
               });
+
+              // ==========================================
+              // MENAMPILKAN DAFTAR SISWA
+              // ==========================================
 
               return SingleChildScrollView(
                 padding: const EdgeInsets.all(20),
@@ -136,6 +170,7 @@ class DaftarSiswaPage extends StatelessWidget {
                             color: textBlue,
                           ),
                         ),
+
                         Container(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 12,
@@ -241,7 +276,9 @@ class DaftarSiswaPage extends StatelessWidget {
               size: 28,
             ),
           ),
+
           const SizedBox(width: 15),
+
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -254,7 +291,9 @@ class DaftarSiswaPage extends StatelessWidget {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
+
                 const SizedBox(height: 5),
+
                 Text(
                   'Kode: $kodeKelas',
                   style: const TextStyle(
@@ -302,7 +341,9 @@ class DaftarSiswaPage extends StatelessWidget {
               size: 25,
             ),
           ),
+
           const SizedBox(width: 14),
+
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -315,7 +356,9 @@ class DaftarSiswaPage extends StatelessWidget {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
+
                 const SizedBox(height: 4),
+
                 const Text(
                   'Siswa',
                   style: TextStyle(
@@ -357,7 +400,9 @@ class DaftarSiswaPage extends StatelessWidget {
               color: royalBlue,
               size: 55,
             ),
+
             SizedBox(height: 15),
+
             Text(
               'Belum Ada Siswa',
               style: TextStyle(
@@ -366,7 +411,9 @@ class DaftarSiswaPage extends StatelessWidget {
                 color: textBlue,
               ),
             ),
+
             SizedBox(height: 8),
+
             Text(
               'Belum ada siswa yang bergabung dengan kelas ini.',
               textAlign: TextAlign.center,
@@ -383,19 +430,88 @@ class DaftarSiswaPage extends StatelessWidget {
   }
 
   // ============================================================
-  // PESAN ERROR
+  // PESAN KELAS TIDAK DITEMUKAN
   // ============================================================
 
-  Widget _pesanError() {
-    return const Center(
+  Widget _pesanKelasTidakDitemukan() {
+    return Center(
       child: Padding(
-        padding: EdgeInsets.all(24),
-        child: Text(
-          'Gagal mengambil data siswa. Periksa koneksi dan aturan Firestore.',
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            color: mutedBlue,
-          ),
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(
+              Icons.search_off_rounded,
+              color: royalBlue,
+              size: 45,
+            ),
+
+            const SizedBox(height: 12),
+
+            const Text(
+              'Kelas Tidak Ditemukan',
+              style: TextStyle(
+                color: textBlue,
+                fontWeight: FontWeight.bold,
+                fontSize: 17,
+              ),
+            ),
+
+            const SizedBox(height: 10),
+
+            Text(
+              'Nama kelas: $namaKelas\nKode kelas: $kodeKelas',
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: mutedBlue,
+                fontSize: 13,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ============================================================
+  // PESAN ERROR FIRESTORE
+  // ============================================================
+
+  Widget _pesanError(String detail) {
+    return Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(
+              Icons.error_outline_rounded,
+              color: Colors.red,
+              size: 45,
+            ),
+
+            const SizedBox(height: 12),
+
+            const Text(
+              'Gagal Mengambil Data Siswa',
+              style: TextStyle(
+                color: textBlue,
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
+            ),
+
+            const SizedBox(height: 10),
+
+            SelectableText(
+              detail,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: mutedBlue,
+                fontSize: 12,
+              ),
+            ),
+          ],
         ),
       ),
     );
