@@ -1,8 +1,8 @@
+
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-import 'data_global.dart';
 import 'hasil_tantangan_page.dart';
 
 class KerjakanTantanganPage extends StatefulWidget {
@@ -22,7 +22,8 @@ class KerjakanTantanganPage extends StatefulWidget {
       _KerjakanTantanganPageState();
 }
 
-class _KerjakanTantanganPageState extends State<KerjakanTantanganPage> {
+class _KerjakanTantanganPageState
+    extends State<KerjakanTantanganPage> {
   int nomorSoal = 0;
 
   final Map<int, dynamic> jawabanSiswa = {};
@@ -30,26 +31,37 @@ class _KerjakanTantanganPageState extends State<KerjakanTantanganPage> {
   bool sudahSubmit = false;
   bool sedangMenyimpan = false;
 
+  static const Color royalBlue = Color(0xFF2166D5);
+  static const Color paleBlue = Color(0xFFDCEBFF);
+  static const Color textBlue = Color(0xFF18365D);
+  static const Color mutedBlue = Color(0xFF7288A8);
+
+  String get idTantangan {
+    return widget.tantangan['id']?.toString() ??
+        widget.tantangan['idTantangan']?.toString() ??
+        '';
+  }
+
+  String get judulTantangan {
+    return widget.tantangan['judul']?.toString() ??
+        'Tantangan';
+  }
+
   List<Map<String, dynamic>> get daftarSoal {
     final soal = widget.tantangan['soal'];
 
-    if (soal is List) {
-      return soal
-          .map((item) => Map<String, dynamic>.from(item as Map))
-          .toList();
-    }
+    if (soal is! List) return [];
 
-    return [];
+    return soal
+        .where((item) => item is Map)
+        .map(
+          (item) => Map<String, dynamic>.from(item as Map),
+        )
+        .toList();
   }
 
   Map<String, dynamic>? get soalSekarang {
-    if (daftarSoal.isEmpty) {
-      return null;
-    }
-
-    if (nomorSoal >= daftarSoal.length) {
-      return daftarSoal.last;
-    }
+    if (daftarSoal.isEmpty) return null;
 
     return daftarSoal[nomorSoal];
   }
@@ -78,10 +90,8 @@ class _KerjakanTantanganPageState extends State<KerjakanTantanganPage> {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F9FF),
       appBar: AppBar(
-        title: Text(
-          widget.tantangan['judul']?.toString() ?? 'Tantangan',
-        ),
-        backgroundColor: const Color(0xFF2166D5),
+        title: Text(judulTantangan),
+        backgroundColor: royalBlue,
         foregroundColor: Colors.white,
         elevation: 0,
       ),
@@ -91,7 +101,12 @@ class _KerjakanTantanganPageState extends State<KerjakanTantanganPage> {
             _buildProgressAtas(),
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
+                padding: const EdgeInsets.fromLTRB(
+                  20,
+                  20,
+                  20,
+                  24,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -128,14 +143,14 @@ class _KerjakanTantanganPageState extends State<KerjakanTantanganPage> {
                 'Soal ${nomorSoal + 1} dari $total',
                 style: const TextStyle(
                   fontWeight: FontWeight.w700,
-                  color: Color(0xFF18365D),
+                  color: textBlue,
                 ),
               ),
               Text(
                 '${(progress * 100).round()}%',
                 style: const TextStyle(
                   fontWeight: FontWeight.w700,
-                  color: Color(0xFF2166D5),
+                  color: royalBlue,
                 ),
               ),
             ],
@@ -146,10 +161,9 @@ class _KerjakanTantanganPageState extends State<KerjakanTantanganPage> {
             child: LinearProgressIndicator(
               value: progress,
               minHeight: 8,
-              backgroundColor: const Color(0xFFDCEBFF),
-              valueColor: const AlwaysStoppedAnimation<Color>(
-                Color(0xFF2166D5),
-              ),
+              backgroundColor: paleBlue,
+              valueColor:
+                  const AlwaysStoppedAnimation<Color>(royalBlue),
             ),
           ),
         ],
@@ -164,13 +178,13 @@ class _KerjakanTantanganPageState extends State<KerjakanTantanganPage> {
         vertical: 8,
       ),
       decoration: BoxDecoration(
-        color: const Color(0xFFDCEBFF),
+        color: paleBlue,
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
         'Pertanyaan ${nomorSoal + 1}',
         style: const TextStyle(
-          color: Color(0xFF2166D5),
+          color: royalBlue,
           fontWeight: FontWeight.w700,
         ),
       ),
@@ -193,12 +207,13 @@ class _KerjakanTantanganPageState extends State<KerjakanTantanganPage> {
         ],
       ),
       child: Text(
-        soal['pertanyaan']?.toString() ?? 'Pertanyaan belum tersedia.',
+        soal['pertanyaan']?.toString() ??
+            'Pertanyaan belum tersedia.',
         style: const TextStyle(
           fontSize: 18,
           height: 1.5,
           fontWeight: FontWeight.w700,
-          color: Color(0xFF18365D),
+          color: textBlue,
         ),
       ),
     );
@@ -212,16 +227,16 @@ class _KerjakanTantanganPageState extends State<KerjakanTantanganPage> {
         return _buildPilihanGanda(soal);
 
       case 'Benar / Salah':
-        return _buildBenarSalah(soal);
+        return _buildBenarSalah();
 
       case 'Pilihan Ganda Kompleks':
         return _buildPilihanGandaKompleks(soal);
 
       case 'Isian Singkat':
-        return _buildIsianSingkat(soal);
+        return _buildIsianSingkat();
 
       case 'Menjodohkan':
-        return _buildMenjodohkan(soal);
+        return _buildMenjodohkan();
 
       default:
         return const Text('Tipe soal belum dikenali.');
@@ -233,15 +248,22 @@ class _KerjakanTantanganPageState extends State<KerjakanTantanganPage> {
 
     return Column(
       children: pilihan.map((huruf) {
-        final teks = soal['pilihan$huruf']?.toString() ?? '';
-        final selected = jawabanSiswa[nomorSoal] == huruf;
+        final teks =
+            soal['pilihan$huruf']?.toString() ?? '';
 
         if (teks.isEmpty) {
           return const SizedBox.shrink();
         }
 
+        final selected = jawabanSiswa[nomorSoal] == huruf;
+
         return _buildOptionCard(
           selected: selected,
+          onTap: () {
+            setState(() {
+              jawabanSiswa[nomorSoal] = huruf;
+            });
+          },
           child: Row(
             children: [
               _buildLingkaranHuruf(huruf),
@@ -251,23 +273,18 @@ class _KerjakanTantanganPageState extends State<KerjakanTantanganPage> {
                   teks,
                   style: const TextStyle(
                     fontSize: 15,
-                    color: Color(0xFF18365D),
+                    color: textBlue,
                   ),
                 ),
               ),
             ],
           ),
-          onTap: () {
-            setState(() {
-              jawabanSiswa[nomorSoal] = huruf;
-            });
-          },
         );
       }).toList(),
     );
   }
 
-  Widget _buildBenarSalah(Map<String, dynamic> soal) {
+  Widget _buildBenarSalah() {
     final pilihan = ['Benar', 'Salah'];
 
     return Column(
@@ -276,44 +293,48 @@ class _KerjakanTantanganPageState extends State<KerjakanTantanganPage> {
 
         return _buildOptionCard(
           selected: selected,
+          onTap: () {
+            setState(() {
+              jawabanSiswa[nomorSoal] = jawaban;
+            });
+          },
           child: Row(
             children: [
               Icon(
                 jawaban == 'Benar'
                     ? Icons.check_circle_outline
                     : Icons.cancel_outlined,
-                color: const Color(0xFF2166D5),
+                color: royalBlue,
               ),
               const SizedBox(width: 14),
               Text(
                 jawaban,
                 style: const TextStyle(
                   fontSize: 15,
-                  color: Color(0xFF18365D),
+                  color: textBlue,
                   fontWeight: FontWeight.w600,
                 ),
               ),
             ],
           ),
-          onTap: () {
-            setState(() {
-              jawabanSiswa[nomorSoal] = jawaban;
-            });
-          },
         );
       }).toList(),
     );
   }
 
-  Widget _buildPilihanGandaKompleks(Map<String, dynamic> soal) {
+  Widget _buildPilihanGandaKompleks(
+    Map<String, dynamic> soal,
+  ) {
     final pilihan = ['A', 'B', 'C', 'D'];
 
     final jawabanSekarang =
-        (jawabanSiswa[nomorSoal] as List?)?.cast<String>() ?? [];
+        (jawabanSiswa[nomorSoal] as List?)?.cast<String>() ??
+            [];
 
     return Column(
       children: pilihan.map((huruf) {
-        final teks = soal['pilihan$huruf']?.toString() ?? '';
+        final teks =
+            soal['pilihan$huruf']?.toString() ?? '';
 
         if (teks.isEmpty) {
           return const SizedBox.shrink();
@@ -323,14 +344,14 @@ class _KerjakanTantanganPageState extends State<KerjakanTantanganPage> {
 
         return _buildOptionCard(
           selected: selected,
+          onTap: () => _ubahJawabanKompleks(huruf),
           child: Row(
             children: [
               Checkbox(
                 value: selected,
-                activeColor: const Color(0xFF2166D5),
-                onChanged: (_) {
-                  _ubahJawabanKompleks(huruf);
-                },
+                activeColor: royalBlue,
+                onChanged: (_) =>
+                    _ubahJawabanKompleks(huruf),
               ),
               const SizedBox(width: 6),
               _buildLingkaranHuruf(huruf),
@@ -340,15 +361,12 @@ class _KerjakanTantanganPageState extends State<KerjakanTantanganPage> {
                   teks,
                   style: const TextStyle(
                     fontSize: 15,
-                    color: Color(0xFF18365D),
+                    color: textBlue,
                   ),
                 ),
               ),
             ],
           ),
-          onTap: () {
-            _ubahJawabanKompleks(huruf);
-          },
         );
       }).toList(),
     );
@@ -356,7 +374,9 @@ class _KerjakanTantanganPageState extends State<KerjakanTantanganPage> {
 
   void _ubahJawabanKompleks(String huruf) {
     final List<String> jawaban =
-        (jawabanSiswa[nomorSoal] as List?)?.cast<String>() ?? [];
+        List<String>.from(
+      (jawabanSiswa[nomorSoal] as List?) ?? [],
+    );
 
     if (jawaban.contains(huruf)) {
       jawaban.remove(huruf);
@@ -369,7 +389,7 @@ class _KerjakanTantanganPageState extends State<KerjakanTantanganPage> {
     });
   }
 
-  Widget _buildIsianSingkat(Map<String, dynamic> soal) {
+  Widget _buildIsianSingkat() {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
@@ -378,7 +398,8 @@ class _KerjakanTantanganPageState extends State<KerjakanTantanganPage> {
       ),
       child: TextFormField(
         key: ValueKey('isian_$nomorSoal'),
-        initialValue: jawabanSiswa[nomorSoal]?.toString() ?? '',
+        initialValue:
+            jawabanSiswa[nomorSoal]?.toString() ?? '',
         maxLines: 3,
         onChanged: (value) {
           jawabanSiswa[nomorSoal] = value;
@@ -396,7 +417,7 @@ class _KerjakanTantanganPageState extends State<KerjakanTantanganPage> {
     );
   }
 
-  Widget _buildMenjodohkan(Map<String, dynamic> soal) {
+  Widget _buildMenjodohkan() {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(18),
@@ -409,14 +430,13 @@ class _KerjakanTantanganPageState extends State<KerjakanTantanganPage> {
         children: [
           const Text(
             'Masukkan pasangan jawaban yang sesuai.',
-            style: TextStyle(
-              color: Color(0xFF7288A8),
-            ),
+            style: TextStyle(color: mutedBlue),
           ),
           const SizedBox(height: 16),
           TextFormField(
             key: ValueKey('jodohkan_$nomorSoal'),
-            initialValue: jawabanSiswa[nomorSoal]?.toString() ?? '',
+            initialValue:
+                jawabanSiswa[nomorSoal]?.toString() ?? '',
             onChanged: (value) {
               jawabanSiswa[nomorSoal] = value;
             },
@@ -448,13 +468,11 @@ class _KerjakanTantanganPageState extends State<KerjakanTantanganPage> {
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: selected
-              ? const Color(0xFFDCEBFF)
-              : Colors.white,
+          color: selected ? paleBlue : Colors.white,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: selected
-                ? const Color(0xFF2166D5)
+                ? royalBlue
                 : const Color(0xFFE2EAF5),
             width: selected ? 1.6 : 1,
           ),
@@ -470,7 +488,7 @@ class _KerjakanTantanganPageState extends State<KerjakanTantanganPage> {
       height: 34,
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: const Color(0xFF2166D5),
+        color: royalBlue,
         borderRadius: BorderRadius.circular(10),
       ),
       child: Text(
@@ -484,7 +502,8 @@ class _KerjakanTantanganPageState extends State<KerjakanTantanganPage> {
   }
 
   Widget _buildTombolNavigasi() {
-    final soalTerakhir = nomorSoal == daftarSoal.length - 1;
+    final soalTerakhir =
+        nomorSoal == daftarSoal.length - 1;
 
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
@@ -503,9 +522,7 @@ class _KerjakanTantanganPageState extends State<KerjakanTantanganPage> {
                       },
                 style: OutlinedButton.styleFrom(
                   minimumSize: const Size(0, 52),
-                  side: const BorderSide(
-                    color: Color(0xFF2166D5),
-                  ),
+                  side: const BorderSide(color: royalBlue),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14),
                   ),
@@ -526,7 +543,7 @@ class _KerjakanTantanganPageState extends State<KerjakanTantanganPage> {
                           });
                         },
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF2166D5),
+                backgroundColor: royalBlue,
                 foregroundColor: Colors.white,
                 minimumSize: const Size(0, 52),
                 shape: RoundedRectangleBorder(
@@ -569,7 +586,20 @@ class _KerjakanTantanganPageState extends State<KerjakanTantanganPage> {
   Future<void> _konfirmasiSelesai() async {
     if (sedangMenyimpan || sudahSubmit) return;
 
-    final belumDijawab = daftarSoal.asMap().entries.where((entry) {
+    if (idTantangan.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'ID tantangan tidak ditemukan. Silakan kembali dan buka tantangan dari daftar kelas.',
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    final belumDijawab =
+        daftarSoal.asMap().entries.where((entry) {
       return _jawabanKosong(jawabanSiswa[entry.key]);
     }).length;
 
@@ -585,15 +615,13 @@ class _KerjakanTantanganPageState extends State<KerjakanTantanganPage> {
             ),
             actions: [
               TextButton(
-                onPressed: () {
-                  Navigator.pop(context, false);
-                },
+                onPressed: () =>
+                    Navigator.pop(context, false),
                 child: const Text('Kembali'),
               ),
               ElevatedButton(
-                onPressed: () {
-                  Navigator.pop(context, true);
-                },
+                onPressed: () =>
+                    Navigator.pop(context, true),
                 child: const Text('Selesaikan'),
               ),
             ],
@@ -605,6 +633,31 @@ class _KerjakanTantanganPageState extends State<KerjakanTantanganPage> {
     }
 
     await _simpanHasil();
+  }
+
+  Future<String> _ambilNamaSiswa(User user) async {
+    try {
+      final snapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
+
+      final data = snapshot.data();
+
+      final nama = data?['nama']?.toString() ??
+          data?['namaLengkap']?.toString() ??
+          data?['name']?.toString() ??
+          user.displayName ??
+          '';
+
+      if (nama.trim().isNotEmpty) {
+        return nama.trim();
+      }
+    } catch (e) {
+      debugPrint('Gagal mengambil nama siswa: $e');
+    }
+
+    return user.email ?? 'Siswa';
   }
 
   Future<void> _simpanHasil() async {
@@ -622,22 +675,46 @@ class _KerjakanTantanganPageState extends State<KerjakanTantanganPage> {
       return;
     }
 
+    if (idTantangan.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('ID tantangan tidak ditemukan.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
     setState(() {
       sedangMenyimpan = true;
     });
 
     try {
+      // Pastikan dokumen tantangan masih tersedia.
+      final tantanganDoc = await FirebaseFirestore.instance
+          .collection('tantangan')
+          .doc(idTantangan)
+          .get();
+
+      if (!tantanganDoc.exists) {
+        throw Exception(
+          'Data tantangan tidak ditemukan di Firestore.',
+        );
+      }
+
       int benar = 0;
 
       for (int i = 0; i < daftarSoal.length; i++) {
         final soal = daftarSoal[i];
+
         final jawabanBenar = soal['jawaban'];
         final jawabanUser = jawabanSiswa[i];
+        final tipe = soal['tipe']?.toString() ?? '';
 
         if (_jawabanBenar(
           jawabanUser,
           jawabanBenar,
-          soal['tipe']?.toString() ?? '',
+          tipe,
         )) {
           benar++;
         }
@@ -650,13 +727,8 @@ class _KerjakanTantanganPageState extends State<KerjakanTantanganPage> {
           ? 0
           : ((benar / totalSoal) * 100).round();
 
-      final judulTantangan =
-          widget.tantangan['judul']?.toString() ?? 'Tantangan';
+      final namaSiswa = await _ambilNamaSiswa(user);
 
-      final idTantangan =
-          widget.tantangan['id']?.toString() ?? '';
-
-      // Ubah nomor soal menjadi String agar bisa disimpan sebagai Map Firestore.
       final Map<String, dynamic> jawabanUntukFirestore = {};
 
       jawabanSiswa.forEach((key, value) {
@@ -665,7 +737,7 @@ class _KerjakanTantanganPageState extends State<KerjakanTantanganPage> {
 
       final hasilBaru = <String, dynamic>{
         'uid': user.uid,
-        'namaSiswa': namaSiswaAktif,
+        'namaSiswa': namaSiswa,
         'namaKelas': widget.namaKelas,
         'kodeKelas': widget.kodeKelas,
         'idTantangan': idTantangan,
@@ -679,39 +751,16 @@ class _KerjakanTantanganPageState extends State<KerjakanTantanganPage> {
         'createdAt': FieldValue.serverTimestamp(),
       };
 
-      // Simpan hasil ke koleksi Firestore.
-      await FirebaseFirestore.instance
+      // Setiap pengerjaan menjadi satu dokumen hasil.
+      final hasilRef = await FirebaseFirestore.instance
           .collection('hasil_tantangan')
           .add(hasilBaru);
 
-      // Tetap simpan ke data lokal agar halaman lama yang masih
-      // menggunakan data_global.dart tidak langsung terganggu.
-      daftarHasilGlobal.add({
-        'namaKelas': widget.namaKelas,
-        'kodeKelas': widget.kodeKelas,
-        'namaSiswa': namaSiswaAktif,
-        'judulTantangan': judulTantangan,
-        'nilai': nilai,
-        'benar': benar,
-        'salah': salah,
-        'totalSoal': totalSoal,
-        'tanggal': _tanggalSekarang(),
-      });
-
-      tambahAktivitas(
-        tipe: 'tantangan',
-        judul: 'Siswa menyelesaikan tantangan',
-        deskripsi:
-            '$namaSiswaAktif menyelesaikan tantangan "$judulTantangan"',
-        namaSiswa: namaSiswaAktif,
-        namaKelas: widget.namaKelas,
-        kodeKelas: widget.kodeKelas,
-        nilai: nilai,
-      );
-
       if (!mounted) return;
 
-      sudahSubmit = true;
+      setState(() {
+        sudahSubmit = true;
+      });
 
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
@@ -726,12 +775,16 @@ class _KerjakanTantanganPageState extends State<KerjakanTantanganPage> {
           ),
         ),
       );
+
+      debugPrint('Hasil tersimpan dengan ID: ${hasilRef.id}');
     } catch (e) {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Gagal menyimpan hasil tantangan: $e'),
+          content: Text(
+            'Gagal menyimpan hasil tantangan: $e',
+          ),
           backgroundColor: Colors.red,
           duration: const Duration(seconds: 5),
         ),
@@ -745,6 +798,27 @@ class _KerjakanTantanganPageState extends State<KerjakanTantanganPage> {
     }
   }
 
+  List<String> _normalisasiJawabanKompleks(dynamic jawaban) {
+    if (jawaban is List) {
+      return jawaban
+          .map((item) => item.toString().trim().toUpperCase())
+          .where((item) => item.isNotEmpty)
+          .toList()
+        ..sort();
+    }
+
+    if (jawaban is String) {
+      return jawaban
+          .split(RegExp(r'[,;]'))
+          .map((item) => item.trim().toUpperCase())
+          .where((item) => item.isNotEmpty)
+          .toList()
+        ..sort();
+    }
+
+    return [];
+  }
+
   bool _jawabanBenar(
     dynamic jawabanUser,
     dynamic jawabanBenar,
@@ -755,22 +829,29 @@ class _KerjakanTantanganPageState extends State<KerjakanTantanganPage> {
     }
 
     if (tipe == 'Pilihan Ganda Kompleks') {
-      final userList = (jawabanUser is List)
-          ? jawabanUser.map((e) => e.toString()).toList()
-          : [];
+      final userList =
+          _normalisasiJawabanKompleks(jawabanUser);
+      final benarList =
+          _normalisasiJawabanKompleks(jawabanBenar);
 
-      final benarList = jawabanBenar is List
-          ? jawabanBenar.map((e) => e.toString()).toList()
-          : [jawabanBenar.toString()];
-
-      userList.sort();
-      benarList.sort();
+      if (userList.isEmpty || benarList.isEmpty) {
+        return false;
+      }
 
       return userList.join(',') == benarList.join(',');
     }
 
-    return jawabanUser.toString().trim().toLowerCase() ==
-        jawabanBenar.toString().trim().toLowerCase();
+    final user = jawabanUser
+        .toString()
+        .trim()
+        .toLowerCase();
+
+    final benar = jawabanBenar
+        .toString()
+        .trim()
+        .toLowerCase();
+
+    return user == benar;
   }
 
   String _tanggalSekarang() {
