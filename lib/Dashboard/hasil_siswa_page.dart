@@ -1,5 +1,10 @@
+
 import 'package:flutter/material.dart';
-import 'data_global.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
+// ============================================================
+// HASIL SISWA - FIRESTORE
+// ============================================================
 
 class HasilSiswaPage extends StatefulWidget {
   final String namaKelas;
@@ -16,31 +21,74 @@ class HasilSiswaPage extends StatefulWidget {
 }
 
 class _HasilSiswaPageState extends State<HasilSiswaPage> {
+  static const Color royalBlue = Color(0xFF2166D5);
+  static const Color skyBlue = Color(0xFF56B4F8);
+  static const Color textBlue = Color(0xFF18365D);
+  static const Color mutedBlue = Color(0xFF7288A8);
+  static const Color paleBlue = Color(0xFFDCEBFF);
+
   // ============================================================
-  // FILTER HASIL BERDASARKAN KELAS
+  // MENGAMBIL HASIL DARI FIRESTORE
   // ============================================================
 
-  List<Map<String, dynamic>> get hasilKelas {
-    return daftarHasilGlobal
-        .where(
-          (hasil) =>
-              hasil['kodeKelas'] == widget.kodeKelas &&
-              hasil['namaKelas'] == widget.namaKelas,
-        )
-        .toList();
+  Stream<QuerySnapshot<Map<String, dynamic>>> _streamHasil() {
+    return FirebaseFirestore.instance
+        .collection('hasil_tantangan')
+        .where('kodeKelas', isEqualTo: widget.kodeKelas)
+        .snapshots();
   }
 
   // ============================================================
-  // JUMLAH SISWA
+  // MEMPROSES DATA HASIL
   // ============================================================
 
-  int get jumlahSiswa {
+  List<Map<String, dynamic>> _prosesHasil(
+    QuerySnapshot<Map<String, dynamic>> snapshot,
+  ) {
+    final hasil = snapshot.docs
+        .map((doc) {
+          return <String, dynamic>{
+            ...doc.data(),
+            'id': doc.id,
+          };
+        })
+        .where((data) {
+          return data['kodeKelas']?.toString() ==
+                  widget.kodeKelas &&
+              data['namaKelas']?.toString() ==
+                  widget.namaKelas;
+        })
+        .toList();
+
+    // Mengurutkan hasil terbaru terlebih dahulu.
+    hasil.sort((a, b) {
+      final waktuA = a['createdAt'];
+      final waktuB = b['createdAt'];
+
+      if (waktuA is Timestamp && waktuB is Timestamp) {
+        return waktuB.compareTo(waktuA);
+      }
+
+      return 0;
+    });
+
+    return hasil;
+  }
+
+  // ============================================================
+  // MENGHITUNG JUMLAH SISWA
+  // ============================================================
+
+  int _jumlahSiswa(List<Map<String, dynamic>> hasil) {
     final siswa = <String>{};
 
-    for (final hasil in hasilKelas) {
-      final nama = hasil['namaSiswa']?.toString() ?? '';
+    for (final data in hasil) {
+      final uid = data['uid']?.toString() ?? '';
+      final nama = data['namaSiswa']?.toString() ?? '';
 
-      if (nama.isNotEmpty) {
+      if (uid.isNotEmpty) {
+        siswa.add(uid);
+      } else if (nama.isNotEmpty) {
         siswa.add(nama);
       }
     }
@@ -49,40 +97,36 @@ class _HasilSiswaPageState extends State<HasilSiswaPage> {
   }
 
   // ============================================================
-  // RATA-RATA NILAI
+  // MENGHITUNG RATA-RATA NILAI
   // ============================================================
 
-  double get rataRata {
-    if (hasilKelas.isEmpty) {
-      return 0;
-    }
+  double _rataRata(List<Map<String, dynamic>> hasil) {
+    if (hasil.isEmpty) return 0;
 
     double total = 0;
 
-    for (final hasil in hasilKelas) {
-      final nilai = hasil['nilai'];
+    for (final data in hasil) {
+      final nilai = data['nilai'];
 
       if (nilai is num) {
         total += nilai.toDouble();
       }
     }
 
-    return total / hasilKelas.length;
+    return total / hasil.length;
   }
 
   // ============================================================
-  // NILAI TERTINGGI
+  // MENCARI NILAI TERTINGGI
   // ============================================================
 
-  int get nilaiTertinggi {
-    if (hasilKelas.isEmpty) {
-      return 0;
-    }
+  int _nilaiTertinggi(List<Map<String, dynamic>> hasil) {
+    if (hasil.isEmpty) return 0;
 
     int tertinggi = 0;
 
-    for (final hasil in hasilKelas) {
-      final nilai = hasil['nilai'];
+    for (final data in hasil) {
+      final nilai = data['nilai'];
 
       if (nilai is num && nilai.toInt() > tertinggi) {
         tertinggi = nilai.toInt();
@@ -103,145 +147,162 @@ class _HasilSiswaPageState extends State<HasilSiswaPage> {
       appBar: AppBar(
         title: const Text(
           'Hasil Siswa',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(fontWeight: FontWeight.bold),
         ),
         backgroundColor: Colors.white,
-        foregroundColor: const Color(0xFF18365D),
+        foregroundColor: textBlue,
         elevation: 0,
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(20),
-        children: [
-          // ========================================================
-          // HEADER KELAS
-          // ========================================================
-
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [
-                  Color(0xFF2166D5),
-                  Color(0xFF56B4F8),
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+      body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+        stream: _streamHasil(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(
+              child: CircularProgressIndicator(
+                color: royalBlue,
               ),
-              borderRadius: BorderRadius.circular(22),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Icon(
-                  Icons.analytics_rounded,
-                  color: Colors.white,
-                  size: 34,
-                ),
-                const SizedBox(height: 14),
-                const Text(
-                  'Hasil Pembelajaran',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 21,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  widget.namaKelas,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Kode kelas: ${widget.kodeKelas}',
-                  style: const TextStyle(
-                    color: Colors.white70,
-                    fontSize: 13,
-                  ),
-                ),
-              ],
-            ),
-          ),
+            );
+          }
 
-          const SizedBox(height: 20),
+          if (snapshot.hasError) {
+            return _buildErrorState(snapshot.error.toString());
+          }
 
-          // ========================================================
-          // RINGKASAN HASIL
-          // ========================================================
+          if (!snapshot.hasData) {
+            return _buildEmptyState();
+          }
 
-          Row(
-            children: [
-              Expanded(
-                child: _buildStatCard(
-                  icon: Icons.people_alt_rounded,
-                  title: 'Siswa',
-                  value: jumlahSiswa.toString(),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildStatCard(
-                  icon: Icons.star_rounded,
-                  title: 'Rata-rata',
-                  value: rataRata.toStringAsFixed(0),
-                ),
-              ),
-            ],
-          ),
+          final hasilKelas = _prosesHasil(snapshot.data!);
 
-          const SizedBox(height: 12),
-
-          Row(
-            children: [
-              Expanded(
-                child: _buildStatCard(
-                  icon: Icons.emoji_events_rounded,
-                  title: 'Tertinggi',
-                  value: nilaiTertinggi.toString(),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildStatCard(
-                  icon: Icons.assignment_turned_in_rounded,
-                  title: 'Pengumpulan',
-                  value: hasilKelas.length.toString(),
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 26),
-
-          // ========================================================
-          // DAFTAR HASIL
-          // ========================================================
-
-          const Text(
-            'Daftar Hasil Siswa',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF18365D),
-            ),
-          ),
-
-          const SizedBox(height: 12),
-
-          if (hasilKelas.isEmpty)
-            _buildEmptyState()
-          else
-            ...hasilKelas.map(
-              (hasil) => _buildResultCard(hasil),
-            ),
-        ],
+          return _buildContent(hasilKelas);
+        },
       ),
+    );
+  }
+
+  // ============================================================
+  // KONTEN UTAMA
+  // ============================================================
+
+  Widget _buildContent(List<Map<String, dynamic>> hasilKelas) {
+    return ListView(
+      padding: const EdgeInsets.all(20),
+      children: [
+        // HEADER KELAS
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [royalBlue, skyBlue],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(22),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Icon(
+                Icons.analytics_rounded,
+                color: Colors.white,
+                size: 34,
+              ),
+              const SizedBox(height: 14),
+              const Text(
+                'Hasil Pembelajaran',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 21,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                widget.namaKelas,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Kode kelas: ${widget.kodeKelas}',
+                style: const TextStyle(
+                  color: Colors.white70,
+                  fontSize: 13,
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 20),
+
+        // RINGKASAN HASIL
+        Row(
+          children: [
+            Expanded(
+              child: _buildStatCard(
+                icon: Icons.people_alt_rounded,
+                title: 'Siswa',
+                value: _jumlahSiswa(hasilKelas).toString(),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildStatCard(
+                icon: Icons.star_rounded,
+                title: 'Rata-rata',
+                value: _rataRata(hasilKelas).toStringAsFixed(0),
+              ),
+            ),
+          ],
+        ),
+
+        const SizedBox(height: 12),
+
+        Row(
+          children: [
+            Expanded(
+              child: _buildStatCard(
+                icon: Icons.emoji_events_rounded,
+                title: 'Tertinggi',
+                value: _nilaiTertinggi(hasilKelas).toString(),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildStatCard(
+                icon: Icons.assignment_turned_in_rounded,
+                title: 'Pengumpulan',
+                value: hasilKelas.length.toString(),
+              ),
+            ),
+          ],
+        ),
+
+        const SizedBox(height: 26),
+
+        // DAFTAR HASIL
+        const Text(
+          'Daftar Hasil Siswa',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: textBlue,
+          ),
+        ),
+
+        const SizedBox(height: 12),
+
+        if (hasilKelas.isEmpty)
+          _buildEmptyState()
+        else
+          ...hasilKelas.map(
+            (hasil) => _buildResultCard(hasil),
+          ),
+      ],
     );
   }
 
@@ -272,12 +333,12 @@ class _HasilSiswaPageState extends State<HasilSiswaPage> {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: const Color(0xFFDCEBFF),
+              color: paleBlue,
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
               icon,
-              color: const Color(0xFF2166D5),
+              color: royalBlue,
               size: 22,
             ),
           ),
@@ -289,7 +350,7 @@ class _HasilSiswaPageState extends State<HasilSiswaPage> {
                 Text(
                   title,
                   style: const TextStyle(
-                    color: Color(0xFF7288A8),
+                    color: mutedBlue,
                     fontSize: 12,
                   ),
                 ),
@@ -297,7 +358,7 @@ class _HasilSiswaPageState extends State<HasilSiswaPage> {
                 Text(
                   value,
                   style: const TextStyle(
-                    color: Color(0xFF18365D),
+                    color: textBlue,
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
                   ),
@@ -330,13 +391,13 @@ class _HasilSiswaPageState extends State<HasilSiswaPage> {
           Container(
             padding: const EdgeInsets.all(18),
             decoration: const BoxDecoration(
-              color: Color(0xFFDCEBFF),
+              color: paleBlue,
               shape: BoxShape.circle,
             ),
             child: const Icon(
               Icons.bar_chart_rounded,
               size: 42,
-              color: Color(0xFF2166D5),
+              color: royalBlue,
             ),
           ),
           const SizedBox(height: 18),
@@ -345,7 +406,7 @@ class _HasilSiswaPageState extends State<HasilSiswaPage> {
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: Color(0xFF18365D),
+              color: textBlue,
             ),
           ),
           const SizedBox(height: 8),
@@ -353,12 +414,58 @@ class _HasilSiswaPageState extends State<HasilSiswaPage> {
             'Hasil siswa akan muncul di sini setelah siswa mengerjakan tantangan.',
             textAlign: TextAlign.center,
             style: TextStyle(
-              color: Color(0xFF7288A8),
+              color: mutedBlue,
               fontSize: 14,
               height: 1.5,
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  // ============================================================
+  // ERROR STATE
+  // ============================================================
+
+  Widget _buildErrorState(String error) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.cloud_off_rounded,
+              size: 48,
+              color: Colors.redAccent,
+            ),
+            const SizedBox(height: 14),
+            const Text(
+              'Gagal Mengambil Hasil',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: textBlue,
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Periksa koneksi internet dan aturan akses Firestore.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: mutedBlue),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              error,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Colors.redAccent,
+                fontSize: 11,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -397,22 +504,18 @@ class _HasilSiswaPageState extends State<HasilSiswaPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // --------------------------------------------------------
-          // NAMA SISWA + NILAI
-          // --------------------------------------------------------
-
           Row(
             children: [
               Container(
                 width: 46,
                 height: 46,
                 decoration: const BoxDecoration(
-                  color: Color(0xFFDCEBFF),
+                  color: paleBlue,
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
                   Icons.person_rounded,
-                  color: Color(0xFF2166D5),
+                  color: royalBlue,
                 ),
               ),
               const SizedBox(width: 12),
@@ -425,7 +528,7 @@ class _HasilSiswaPageState extends State<HasilSiswaPage> {
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF18365D),
+                        color: textBlue,
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -433,7 +536,7 @@ class _HasilSiswaPageState extends State<HasilSiswaPage> {
                       hasil['judulTantangan']?.toString() ?? '-',
                       style: const TextStyle(
                         fontSize: 13,
-                        color: Color(0xFF7288A8),
+                        color: mutedBlue,
                       ),
                     ),
                   ],
@@ -445,13 +548,13 @@ class _HasilSiswaPageState extends State<HasilSiswaPage> {
                   vertical: 8,
                 ),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFDCEBFF),
+                  color: paleBlue,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
                   '$nilai',
                   style: const TextStyle(
-                    color: Color(0xFF2166D5),
+                    color: royalBlue,
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                   ),
@@ -461,10 +564,6 @@ class _HasilSiswaPageState extends State<HasilSiswaPage> {
           ),
 
           const SizedBox(height: 18),
-
-          // --------------------------------------------------------
-          // BENAR / SALAH
-          // --------------------------------------------------------
 
           Row(
             children: [
@@ -488,23 +587,22 @@ class _HasilSiswaPageState extends State<HasilSiswaPage> {
 
           const SizedBox(height: 14),
 
-          // --------------------------------------------------------
-          // TANGGAL
-          // --------------------------------------------------------
-
           Row(
             children: [
               const Icon(
                 Icons.schedule_rounded,
                 size: 17,
-                color: Color(0xFF7288A8),
+                color: mutedBlue,
               ),
               const SizedBox(width: 6),
-              Text(
-                hasil['tanggal']?.toString() ?? 'Belum ada tanggal',
-                style: const TextStyle(
-                  color: Color(0xFF7288A8),
-                  fontSize: 12,
+              Expanded(
+                child: Text(
+                  hasil['tanggal']?.toString() ??
+                      'Belum ada tanggal',
+                  style: const TextStyle(
+                    color: mutedBlue,
+                    fontSize: 12,
+                  ),
                 ),
               ),
             ],
@@ -534,7 +632,7 @@ class _HasilSiswaPageState extends State<HasilSiswaPage> {
           Icon(
             icon,
             size: 20,
-            color: const Color(0xFF2166D5),
+            color: royalBlue,
           ),
           const SizedBox(width: 8),
           Column(
@@ -543,14 +641,14 @@ class _HasilSiswaPageState extends State<HasilSiswaPage> {
               Text(
                 title,
                 style: const TextStyle(
-                  color: Color(0xFF7288A8),
+                  color: mutedBlue,
                   fontSize: 11,
                 ),
               ),
               Text(
                 value,
                 style: const TextStyle(
-                  color: Color(0xFF18365D),
+                  color: textBlue,
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
                 ),
