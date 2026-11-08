@@ -44,28 +44,39 @@ class DaftarSiswaPage extends StatelessWidget {
         stream: FirebaseFirestore.instance
             .collection('kelas')
             .where('kode', isEqualTo: kodeKelas)
-            .limit(1)
             .snapshots(),
         builder: (context, kelasSnapshot) {
           if (kelasSnapshot.hasError) {
+            debugPrint(
+              'Gagal mengambil kelas: ${kelasSnapshot.error}',
+            );
             return _pesanError();
           }
 
           if (kelasSnapshot.connectionState ==
               ConnectionState.waiting) {
-            return const Center(
-              child: CircularProgressIndicator(
-                color: royalBlue,
-              ),
-            );
+            return _loading();
           }
 
-          if (kelasSnapshot.data == null ||
-              kelasSnapshot.data!.docs.isEmpty) {
+          final semuaKelas = kelasSnapshot.data?.docs ?? [];
+
+          // Mencocokkan kode dan nama kelas.
+          final kelasCocok = semuaKelas.where((doc) {
+            final data = doc.data();
+
+            final nama = (data['nama'] ??
+                    data['namaKelas'] ??
+                    '')
+                .toString();
+
+            return nama == namaKelas;
+          }).toList();
+
+          if (kelasCocok.isEmpty) {
             return _pesanKosong();
           }
 
-          final kelasDoc = kelasSnapshot.data!.docs.first;
+          final kelasDoc = kelasCocok.first;
 
           return StreamBuilder<
               QuerySnapshot<Map<String, dynamic>>>(
@@ -76,30 +87,30 @@ class DaftarSiswaPage extends StatelessWidget {
                 .snapshots(),
             builder: (context, anggotaSnapshot) {
               if (anggotaSnapshot.hasError) {
+                debugPrint(
+                  'Gagal mengambil anggota: ${anggotaSnapshot.error}',
+                );
                 return _pesanError();
               }
 
               if (anggotaSnapshot.connectionState ==
                   ConnectionState.waiting) {
-                return const Center(
-                  child: CircularProgressIndicator(
-                    color: royalBlue,
-                  ),
-                );
+                return _loading();
               }
 
-              final siswa = anggotaSnapshot.data?.docs ?? [];
+              final siswa = [
+                ...(anggotaSnapshot.data?.docs ?? []),
+              ];
 
+              // Mengurutkan siswa berdasarkan nama.
               siswa.sort((a, b) {
-                final namaA =
-                    (a.data()['namaSiswa'] ?? '')
-                        .toString()
-                        .toLowerCase();
+                final namaA = (a.data()['namaSiswa'] ?? '')
+                    .toString()
+                    .toLowerCase();
 
-                final namaB =
-                    (b.data()['namaSiswa'] ?? '')
-                        .toString()
-                        .toLowerCase();
+                final namaB = (b.data()['namaSiswa'] ?? '')
+                    .toString()
+                    .toLowerCase();
 
                 return namaA.compareTo(namaB);
               });
@@ -110,6 +121,7 @@ class DaftarSiswaPage extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _headerKelas(),
+
                     const SizedBox(height: 24),
 
                     Row(
@@ -163,8 +175,6 @@ class DaftarSiswaPage extends StatelessWidget {
                             nama: (data['namaSiswa'] ??
                                     'Nama Siswa')
                                 .toString(),
-                            uid: (data['uidSiswa'] ?? '')
-                                .toString(),
                           );
                         },
                       ),
@@ -178,13 +188,32 @@ class DaftarSiswaPage extends StatelessWidget {
     );
   }
 
+  // ============================================================
+  // LOADING
+  // ============================================================
+
+  Widget _loading() {
+    return const Center(
+      child: CircularProgressIndicator(
+        color: royalBlue,
+      ),
+    );
+  }
+
+  // ============================================================
+  // HEADER KELAS
+  // ============================================================
+
   Widget _headerKelas() {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [royalBlue, skyBlue],
+          colors: [
+            royalBlue,
+            skyBlue,
+          ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -241,9 +270,12 @@ class DaftarSiswaPage extends StatelessWidget {
     );
   }
 
+  // ============================================================
+  // KARTU SISWA
+  // ============================================================
+
   Widget _kartuSiswa({
     required String nama,
-    required String uid,
   }) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -299,6 +331,10 @@ class DaftarSiswaPage extends StatelessWidget {
     );
   }
 
+  // ============================================================
+  // PESAN KOSONG
+  // ============================================================
+
   Widget _pesanKosong() {
     return Center(
       child: Container(
@@ -346,6 +382,10 @@ class DaftarSiswaPage extends StatelessWidget {
     );
   }
 
+  // ============================================================
+  // PESAN ERROR
+  // ============================================================
+
   Widget _pesanError() {
     return const Center(
       child: Padding(
@@ -353,7 +393,9 @@ class DaftarSiswaPage extends StatelessWidget {
         child: Text(
           'Gagal mengambil data siswa. Periksa koneksi dan aturan Firestore.',
           textAlign: TextAlign.center,
-          style: TextStyle(color: mutedBlue),
+          style: TextStyle(
+            color: mutedBlue,
+          ),
         ),
       ),
     );
