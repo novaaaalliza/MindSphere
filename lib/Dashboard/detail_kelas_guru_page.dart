@@ -35,20 +35,48 @@ class _DetailKelasGuruPageState
   static const Color textBlue = Color(0xFF18365D);
   static const Color mutedBlue = Color(0xFF7288A8);
 
-  StreamSubscription? _siswaSubscription;
-  StreamSubscription? _materiSubscription;
-  StreamSubscription? _tantanganSubscription;
-  StreamSubscription? _hasilSubscription;
+  // ============================================================
+  // STREAM FIRESTORE
+  // ============================================================
+
+  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>?
+      _kelasSiswaSubscription;
+
+  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>?
+      _anggotaSubscription;
+
+  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>?
+      _materiSubscription;
+
+  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>?
+      _tantanganSubscription;
+
+  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>?
+      _hasilSubscription;
+
+  String? _idKelasSiswaAktif;
+
+  // ============================================================
+  // JUMLAH DATA
+  // ============================================================
 
   int jumlahSiswaFirebase = 0;
   int jumlahMateriFirebase = 0;
   int jumlahTantanganFirebase = 0;
   int jumlahHasilFirebase = 0;
 
+  // ============================================================
+  // STATUS LOADING
+  // ============================================================
+
   bool sedangMemuatSiswa = true;
   bool sedangMemuatMateri = true;
   bool sedangMemuatTantangan = true;
   bool sedangMemuatHasil = true;
+
+  // ============================================================
+  // ERROR FIRESTORE
+  // ============================================================
 
   String? errorSiswa;
   String? errorMateri;
@@ -67,39 +95,117 @@ class _DetailKelasGuruPageState
 
   @override
   void dispose() {
-    _siswaSubscription?.cancel();
+    _kelasSiswaSubscription?.cancel();
+    _anggotaSubscription?.cancel();
     _materiSubscription?.cancel();
     _tantanganSubscription?.cancel();
     _hasilSubscription?.cancel();
+
     super.dispose();
   }
 
   // ============================================================
   // MENGAMBIL JUMLAH SISWA DARI FIRESTORE
+  //
+  // Tidak menggunakan collectionGroup('anggota') lagi.
+  // Data kelas dicari terlebih dahulu, kemudian mengambil
+  // anggota langsung dari subcollection kelas/{id}/anggota.
   // ============================================================
 
   void _dengarkanSiswa() {
-    _siswaSubscription = FirebaseFirestore.instance
-        .collectionGroup('anggota')
+    final firestore = FirebaseFirestore.instance;
+
+    _kelasSiswaSubscription = firestore
+        .collection('kelas')
         .where(
-          'kodeKelas',
+          'kode',
           isEqualTo: widget.kodeKelas,
         )
         .snapshots()
         .listen(
       (snapshot) {
-        final jumlah = snapshot.docs.where((doc) {
-          return doc.data()['namaKelas'] ==
-              widget.namaKelas;
-        }).length;
-
         if (!mounted) return;
 
+        QueryDocumentSnapshot<Map<String, dynamic>>? kelasTerpilih;
+
+        for (final doc in snapshot.docs) {
+          final data = doc.data();
+
+          final nama = (data['nama'] ??
+                  data['namaKelas'] ??
+                  '')
+              .toString()
+              .trim();
+
+          if (nama == widget.namaKelas.trim()) {
+            kelasTerpilih = doc;
+            break;
+          }
+        }
+
+        // Kelas tidak ditemukan.
+        if (kelasTerpilih == null) {
+          _anggotaSubscription?.cancel();
+          _anggotaSubscription = null;
+          _idKelasSiswaAktif = null;
+
+          setState(() {
+            jumlahSiswaFirebase = 0;
+            sedangMemuatSiswa = false;
+            errorSiswa = null;
+          });
+
+          return;
+        }
+
+        final idKelas = kelasTerpilih.id;
+
+        // Jika kelasnya sama, listener tidak perlu dibuat ulang.
+        if (_idKelasSiswaAktif == idKelas &&
+            _anggotaSubscription != null) {
+          return;
+        }
+
+        _idKelasSiswaAktif = idKelas;
+
+        _anggotaSubscription?.cancel();
+
         setState(() {
-          jumlahSiswaFirebase = jumlah;
-          sedangMemuatSiswa = false;
+          sedangMemuatSiswa = true;
           errorSiswa = null;
         });
+
+        // Mengambil anggota langsung dari subcollection kelas.
+        _anggotaSubscription = firestore
+            .collection('kelas')
+            .doc(idKelas)
+            .collection('anggota')
+            .snapshots()
+            .listen(
+          (anggotaSnapshot) {
+            if (!mounted) return;
+
+            setState(() {
+              jumlahSiswaFirebase =
+                  anggotaSnapshot.docs.length;
+
+              sedangMemuatSiswa = false;
+              errorSiswa = null;
+            });
+          },
+          onError: (error) {
+            if (!mounted) return;
+
+            setState(() {
+              sedangMemuatSiswa = false;
+              errorSiswa = error.toString();
+            });
+
+            debugPrint(
+              'Gagal mengambil anggota kelas: $error',
+            );
+          },
+        );
       },
       onError: (error) {
         if (!mounted) return;
@@ -109,7 +215,9 @@ class _DetailKelasGuruPageState
           errorSiswa = error.toString();
         });
 
-        debugPrint('Gagal mengambil siswa: $error');
+        debugPrint(
+          'Gagal mencari kelas siswa: $error',
+        );
       },
     );
   }
@@ -128,15 +236,12 @@ class _DetailKelasGuruPageState
         .snapshots()
         .listen(
       (snapshot) {
-        final jumlah = snapshot.docs.where((doc) {
-          return doc.data()['namaKelas'] ==
-              widget.namaKelas;
-        }).length;
-
         if (!mounted) return;
 
         setState(() {
-          jumlahMateriFirebase = jumlah;
+          // Kode kelas menjadi penanda kelas.
+          jumlahMateriFirebase = snapshot.docs.length;
+
           sedangMemuatMateri = false;
           errorMateri = null;
         });
@@ -149,7 +254,9 @@ class _DetailKelasGuruPageState
           errorMateri = error.toString();
         });
 
-        debugPrint('Gagal mengambil materi: $error');
+        debugPrint(
+          'Gagal mengambil materi: $error',
+        );
       },
     );
   }
@@ -168,15 +275,12 @@ class _DetailKelasGuruPageState
         .snapshots()
         .listen(
       (snapshot) {
-        final jumlah = snapshot.docs.where((doc) {
-          return doc.data()['namaKelas'] ==
-              widget.namaKelas;
-        }).length;
-
         if (!mounted) return;
 
         setState(() {
-          jumlahTantanganFirebase = jumlah;
+          jumlahTantanganFirebase =
+              snapshot.docs.length;
+
           sedangMemuatTantangan = false;
           errorTantangan = null;
         });
@@ -189,7 +293,9 @@ class _DetailKelasGuruPageState
           errorTantangan = error.toString();
         });
 
-        debugPrint('Gagal mengambil tantangan: $error');
+        debugPrint(
+          'Gagal mengambil tantangan: $error',
+        );
       },
     );
   }
@@ -208,15 +314,12 @@ class _DetailKelasGuruPageState
         .snapshots()
         .listen(
       (snapshot) {
-        final jumlah = snapshot.docs.where((doc) {
-          return doc.data()['namaKelas'] ==
-              widget.namaKelas;
-        }).length;
-
         if (!mounted) return;
 
         setState(() {
-          jumlahHasilFirebase = jumlah;
+          jumlahHasilFirebase =
+              snapshot.docs.length;
+
           sedangMemuatHasil = false;
           errorHasil = null;
         });
@@ -229,7 +332,9 @@ class _DetailKelasGuruPageState
           errorHasil = error.toString();
         });
 
-        debugPrint('Gagal mengambil hasil: $error');
+        debugPrint(
+          'Gagal mengambil hasil: $error',
+        );
       },
     );
   }
@@ -243,6 +348,73 @@ class _DetailKelasGuruPageState
       context,
       MaterialPageRoute(
         builder: (_) => halaman,
+      ),
+    );
+  }
+
+  // ============================================================
+  // PESAN ERROR
+  // ============================================================
+
+  Widget _buildErrorInfo() {
+    final daftarError = <String>[];
+
+    if (errorSiswa != null) {
+      daftarError.add('Siswa: $errorSiswa');
+    }
+
+    if (errorMateri != null) {
+      daftarError.add('Materi: $errorMateri');
+    }
+
+    if (errorTantangan != null) {
+      daftarError.add('Tantangan: $errorTantangan');
+    }
+
+    if (errorHasil != null) {
+      daftarError.add('Hasil: $errorHasil');
+    }
+
+    if (daftarError.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(top: 12),
+      padding: const EdgeInsets.all(13),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFF5E5),
+        borderRadius: BorderRadius.circular(13),
+        border: Border.all(
+          color: const Color(0xFFFFE0A8),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Data belum dapat dimuat:',
+            style: TextStyle(
+              color: Color(0xFF936018),
+              fontWeight: FontWeight.bold,
+              fontSize: 12,
+            ),
+          ),
+          const SizedBox(height: 7),
+          ...daftarError.map(
+            (pesan) => Padding(
+              padding: const EdgeInsets.only(bottom: 5),
+              child: Text(
+                pesan,
+                style: const TextStyle(
+                  color: Color(0xFF936018),
+                  fontSize: 11,
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -417,27 +589,7 @@ class _DetailKelasGuruPageState
               ],
             ),
 
-            if (errorSiswa != null ||
-                errorMateri != null ||
-                errorTantangan != null ||
-                errorHasil != null) ...[
-              const SizedBox(height: 12),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(13),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFFF5E5),
-                  borderRadius: BorderRadius.circular(13),
-                ),
-                child: const Text(
-                  'Sebagian data belum dapat dimuat. Periksa koneksi Firebase, Firestore Rules, dan struktur data.',
-                  style: TextStyle(
-                    color: Color(0xFF936018),
-                    fontSize: 12,
-                  ),
-                ),
-              ),
-            ],
+            _buildErrorInfo(),
 
             const SizedBox(height: 26),
 
