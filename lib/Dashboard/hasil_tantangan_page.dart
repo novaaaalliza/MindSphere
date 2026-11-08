@@ -1,6 +1,5 @@
-import 'package:flutter/material.dart';
 
-import 'detail_kelas_siswa_page.dart';
+import 'package:flutter/material.dart';
 
 class HasilTantanganPage extends StatelessWidget {
   final String namaKelas;
@@ -22,16 +21,26 @@ class HasilTantanganPage extends StatelessWidget {
     required this.totalSoal,
   });
 
+  static const Color royalBlue = Color(0xFF2166D5);
+  static const Color skyBlue = Color(0xFF56B4F8);
+  static const Color textBlue = Color(0xFF18365D);
+  static const Color mutedBlue = Color(0xFF7288A8);
+  static const Color backgroundBlue = Color(0xFFF5F9FF);
+  static const Color paleBlue = Color(0xFFDCEBFF);
+
   @override
   Widget build(BuildContext context) {
     final double persentase =
-        totalSoal == 0 ? 0.0 : benar / totalSoal;
+        totalSoal <= 0 ? 0.0 : benar / totalSoal;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F9FF),
+      backgroundColor: backgroundBlue,
       appBar: AppBar(
-        title: const Text('Hasil Tantangan'),
-        backgroundColor: const Color(0xFF2166D5),
+        title: const Text(
+          'Hasil Tantangan',
+          style: TextStyle(fontWeight: FontWeight.w700),
+        ),
+        backgroundColor: royalBlue,
         foregroundColor: Colors.white,
         elevation: 0,
         automaticallyImplyLeading: false,
@@ -64,13 +73,13 @@ class HasilTantanganPage extends StatelessWidget {
           width: 82,
           height: 82,
           decoration: const BoxDecoration(
-            color: Color(0xFFDCEBFF),
+            color: paleBlue,
             shape: BoxShape.circle,
           ),
           child: const Icon(
             Icons.emoji_events_rounded,
             size: 44,
-            color: Color(0xFF2166D5),
+            color: royalBlue,
           ),
         ),
         const SizedBox(height: 16),
@@ -80,7 +89,7 @@ class HasilTantanganPage extends StatelessWidget {
           style: TextStyle(
             fontSize: 25,
             fontWeight: FontWeight.w800,
-            color: Color(0xFF18365D),
+            color: textBlue,
           ),
         ),
         const SizedBox(height: 8),
@@ -89,7 +98,7 @@ class HasilTantanganPage extends StatelessWidget {
           textAlign: TextAlign.center,
           style: const TextStyle(
             fontSize: 15,
-            color: Color(0xFF7288A8),
+            color: mutedBlue,
           ),
         ),
         const SizedBox(height: 5),
@@ -98,7 +107,7 @@ class HasilTantanganPage extends StatelessWidget {
           textAlign: TextAlign.center,
           style: const TextStyle(
             fontSize: 13,
-            color: Color(0xFF7288A8),
+            color: mutedBlue,
           ),
         ),
       ],
@@ -114,15 +123,12 @@ class HasilTantanganPage extends StatelessWidget {
       ),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [
-            Color(0xFF2166D5),
-            Color(0xFF56B4F8),
-          ],
+          colors: [royalBlue, skyBlue],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(24),
-        boxShadow: [
+        boxShadow: const [
           BoxShadow(
             color: Color(0x332166D5),
             blurRadius: 18,
@@ -168,9 +174,7 @@ class HasilTantanganPage extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: const Color(0xFFE2EAF5),
-        ),
+        border: Border.all(color: const Color(0xFFE2EAF5)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -180,7 +184,7 @@ class HasilTantanganPage extends StatelessWidget {
             style: TextStyle(
               fontSize: 17,
               fontWeight: FontWeight.w800,
-              color: Color(0xFF18365D),
+              color: textBlue,
             ),
           ),
           const SizedBox(height: 18),
@@ -227,14 +231,14 @@ class HasilTantanganPage extends StatelessWidget {
         horizontal: 8,
       ),
       decoration: BoxDecoration(
-        color: const Color(0xFFF5F9FF),
+        color: backgroundBlue,
         borderRadius: BorderRadius.circular(15),
       ),
       child: Column(
         children: [
           Icon(
             icon,
-            color: const Color(0xFF2166D5),
+            color: royalBlue,
             size: 27,
           ),
           const SizedBox(height: 8),
@@ -243,7 +247,7 @@ class HasilTantanganPage extends StatelessWidget {
             style: const TextStyle(
               fontSize: 21,
               fontWeight: FontWeight.w800,
-              color: Color(0xFF18365D),
+              color: textBlue,
             ),
           ),
           const SizedBox(height: 3),
@@ -251,7 +255,7 @@ class HasilTantanganPage extends StatelessWidget {
             label,
             style: const TextStyle(
               fontSize: 12,
-              color: Color(0xFF7288A8),
+              color: mutedBlue,
             ),
           ),
         ],
@@ -288,7 +292,7 @@ class HasilTantanganPage extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: const Color(0xFFDCEBFF),
+        color: paleBlue,
         borderRadius: BorderRadius.circular(20),
       ),
       child: Column(
@@ -299,7 +303,7 @@ class HasilTantanganPage extends StatelessWidget {
             style: const TextStyle(
               fontSize: 19,
               fontWeight: FontWeight.w800,
-              color: Color(0xFF18365D),
+              color: textBlue,
             ),
           ),
           const SizedBox(height: 8),
@@ -318,7 +322,7 @@ class HasilTantanganPage extends StatelessWidget {
             style: const TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w700,
-              color: Color(0xFF2166D5),
+              color: royalBlue,
             ),
           ),
         ],
@@ -331,25 +335,19 @@ class HasilTantanganPage extends StatelessWidget {
       width: double.infinity,
       child: ElevatedButton.icon(
         onPressed: () {
-          Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(
-              builder: (_) => DetailKelasSiswaPage(
-                namaKelas: namaKelas,
-                kodeKelas: kodeKelas,
-              ),
-            ),
-            (route) => false,
+          // Kembali ke halaman kelas yang sudah terbuka.
+          // Halaman kelas akan menerima pembaruan dari Firestore.
+          Navigator.of(context).popUntil(
+            (route) => route.isFirst,
           );
         },
         icon: const Icon(Icons.home_rounded),
         label: const Text(
           'Kembali ke Kelas',
-          style: TextStyle(
-            fontWeight: FontWeight.w700,
-          ),
+          style: TextStyle(fontWeight: FontWeight.w700),
         ),
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF2166D5),
+          backgroundColor: royalBlue,
           foregroundColor: Colors.white,
           minimumSize: const Size(double.infinity, 54),
           shape: RoundedRectangleBorder(
