@@ -21,9 +21,14 @@ class _DashboardPageState extends State<DashboardPage> {
   final Color textBlue = const Color(0xFF18365D);
   final Color mutedBlue = const Color(0xFF7288A8);
 
+  // KELAS YANG SEDANG DIPILIH
   String? namaKelas;
   String? kodeKelas;
   String? idKelas;
+
+  // SEMUA KELAS YANG DIIKUTI SISWA
+  List<Map<String, String>> daftarKelasDiikuti = [];
+
   String namaSiswaAktif = 'Siswa';
 
   bool sedangMemuatKelas = true;
@@ -49,17 +54,25 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   // ============================================================
-  // MEMUAT PROFIL DAN KELAS SISWA
+  // MEMUAT SEMUA KELAS YANG DIIKUTI SISWA
   // ============================================================
 
-  Future<void> _muatKelasDiikuti() async {
+  Future<void> _muatKelasDiikuti({String? pilihId}) async {
     final user = _user;
 
     if (user == null) {
       if (mounted) {
-        setState(() => sedangMemuatKelas = false);
+        setState(() {
+          sedangMemuatKelas = false;
+        });
       }
       return;
+    }
+
+    if (mounted) {
+      setState(() {
+        sedangMemuatKelas = true;
+      });
     }
 
     try {
@@ -76,81 +89,97 @@ class _DashboardPageState extends State<DashboardPage> {
               'Siswa')
           .toString();
 
-      if (mounted) {
-        setState(() {
-          namaSiswaAktif = nama;
-        });
-      }
-
       final daftarDiikuti = await _firestore
           .collection('users')
           .doc(user.uid)
           .collection('kelas_diikuti')
           .get();
 
-      if (daftarDiikuti.docs.isEmpty) {
-        if (mounted) {
-          setState(() {
-            namaKelas = null;
-            kodeKelas = null;
-            idKelas = null;
-            sedangMemuatKelas = false;
-          });
+      final List<Map<String, String>> kelasBaru = [];
+
+      // MEMERIKSA SETIAP KELAS, BUKAN HANYA DOKUMEN PERTAMA
+      for (final keanggotaan in daftarDiikuti.docs) {
+        final id = keanggotaan.id;
+
+        final kelasDoc = await _kelasCollection.doc(id).get();
+
+        // Hapus keanggotaan yang kelasnya sudah tidak ada.
+        if (!kelasDoc.exists) {
+          await keanggotaan.reference.delete();
+          continue;
         }
-        return;
-      }
 
-      // Menggunakan kelas pertama yang ditemukan.
-      // Semua kelas tetap tersimpan di Firestore.
-      final keanggotaan = daftarDiikuti.docs.first;
-      final id = keanggotaan.id;
+        final dataKelas = kelasDoc.data() ?? {};
+        final dataKeanggotaan = keanggotaan.data();
 
-      final kelasDoc = await _kelasCollection.doc(id).get();
+        final namaBaru = (dataKelas['nama'] ??
+                dataKelas['namaKelas'] ??
+                dataKeanggotaan['namaKelas'] ??
+                '')
+            .toString();
 
-      if (!kelasDoc.exists) {
-        await keanggotaan.reference.delete();
+        final kodeBaru = (dataKelas['kode'] ??
+                dataKelas['kodeKelas'] ??
+                dataKeanggotaan['kodeKelas'] ??
+                '')
+            .toString();
 
-        if (mounted) {
-          setState(() {
-            namaKelas = null;
-            kodeKelas = null;
-            idKelas = null;
-            sedangMemuatKelas = false;
-          });
+        if (namaBaru.isEmpty || kodeBaru.isEmpty) {
+          continue;
         }
-        return;
-      }
 
-      final dataKelas = kelasDoc.data() ?? {};
-      final dataKeanggotaan = keanggotaan.data();
-
-      final namaBaru = (dataKelas['nama'] ??
-              dataKelas['namaKelas'] ??
-              dataKeanggotaan['namaKelas'] ??
-              '')
-          .toString();
-
-      final kodeBaru = (dataKelas['kode'] ??
-              dataKelas['kodeKelas'] ??
-              dataKeanggotaan['kodeKelas'] ??
-              '')
-          .toString();
-
-      if (mounted) {
-        setState(() {
-          namaKelas = namaBaru;
-          kodeKelas = kodeBaru;
-          idKelas = id;
-          sedangMemuatKelas = false;
+        kelasBaru.add({
+          'id': id,
+          'namaKelas': namaBaru,
+          'kodeKelas': kodeBaru,
         });
       }
 
-      await _muatDataKelas();
+      if (!mounted) return;
+
+      setState(() {
+        namaSiswaAktif = nama;
+        daftarKelasDiikuti = kelasBaru;
+        sedangMemuatKelas = false;
+      });
+
+      if (kelasBaru.isEmpty) {
+        _kosongkanDataKelas();
+        return;
+      }
+
+      // Pertahankan kelas aktif jika masih diikuti.
+      Map<String, String>? kelasDipilih;
+
+      if (pilihId != null) {
+        for (final kelas in kelasBaru) {
+          if (kelas['id'] == pilihId) {
+            kelasDipilih = kelas;
+            break;
+          }
+        }
+      }
+
+      if (kelasDipilih == null && idKelas != null) {
+        for (final kelas in kelasBaru) {
+          if (kelas['id'] == idKelas) {
+            kelasDipilih = kelas;
+            break;
+          }
+        }
+      }
+
+      kelasDipilih ??= kelasBaru.first;
+
+      await _pilihKelas(kelasDipilih, tampilkanLoading: false);
     } catch (e) {
       debugPrint('Gagal memuat kelas siswa: $e');
 
       if (mounted) {
-        setState(() => sedangMemuatKelas = false);
+        setState(() {
+          sedangMemuatKelas = false;
+        });
+
         _tampilkanPesan(
           'Gagal memuat kelas. Periksa koneksi dan aturan Firebase.',
         );
@@ -159,27 +188,80 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   // ============================================================
-  // MEMUAT MATERI, TANTANGAN, HASIL, DAN PROGRESS
+  // MEMILIH KELAS AKTIF
   // ============================================================
 
-  Future<void> _muatDataKelas() async {
+  Future<void> _pilihKelas(
+    Map<String, String> kelas, {
+    bool tampilkanLoading = true,
+  }) async {
+    if (!mounted) return;
+
+    setState(() {
+      idKelas = kelas['id'];
+      namaKelas = kelas['namaKelas'];
+      kodeKelas = kelas['kodeKelas'];
+
+      daftarMateriFirebase = [];
+      daftarTantanganFirebase = [];
+      daftarHasilFirebase = [];
+      materiSelesaiFirebase = {};
+    });
+
+    await _muatDataKelas(
+      tampilkanLoading: tampilkanLoading,
+    );
+  }
+
+  void _kosongkanDataKelas() {
+    if (!mounted) return;
+
+    setState(() {
+      idKelas = null;
+      namaKelas = null;
+      kodeKelas = null;
+
+      daftarMateriFirebase = [];
+      daftarTantanganFirebase = [];
+      daftarHasilFirebase = [];
+      materiSelesaiFirebase = {};
+
+      sedangMemuatData = false;
+    });
+  }
+
+  // ============================================================
+  // MEMUAT MATERI, TANTANGAN, HASIL, DAN PROGRESS
+  // SESUAI KELAS YANG SEDANG DIPILIH
+  // ============================================================
+
+  Future<void> _muatDataKelas({
+    bool tampilkanLoading = true,
+  }) async {
     final user = _user;
+    final kodeAktif = kodeKelas;
+    final namaAktif = namaKelas;
 
-    if (user == null || kodeKelas == null) return;
+    if (user == null || kodeAktif == null) {
+      _kosongkanDataKelas();
+      return;
+    }
 
-    if (mounted) {
-      setState(() => sedangMemuatData = true);
+    if (tampilkanLoading && mounted) {
+      setState(() {
+        sedangMemuatData = true;
+      });
     }
 
     try {
       final hasilMateri = await _firestore
           .collection('materi')
-          .where('kodeKelas', isEqualTo: kodeKelas)
+          .where('kodeKelas', isEqualTo: kodeAktif)
           .get();
 
       final hasilTantangan = await _firestore
           .collection('tantangan')
-          .where('kodeKelas', isEqualTo: kodeKelas)
+          .where('kodeKelas', isEqualTo: kodeAktif)
           .get();
 
       final hasilSiswa = await _firestore
@@ -191,42 +273,43 @@ class _DashboardPageState extends State<DashboardPage> {
           .collection('users')
           .doc(user.uid)
           .collection('progress_materi')
-          .where('kodeKelas', isEqualTo: kodeKelas)
+          .where('kodeKelas', isEqualTo: kodeAktif)
           .get();
 
-      final materiBaru = hasilMateri.docs
-          .map((doc) {
-            final data = doc.data();
+      final materiBaru = hasilMateri.docs.map((doc) {
+        final data = doc.data();
 
-            return <String, String>{
-              'id': doc.id,
-              'namaKelas': (data['namaKelas'] ?? '').toString(),
-              'kodeKelas': (data['kodeKelas'] ?? '').toString(),
-              'judul': (data['judul'] ?? '').toString(),
-              'isi': (data['isi'] ?? '').toString(),
-              'deskripsi': (data['deskripsi'] ?? '').toString(),
-              'sumber': (data['sumber'] ?? '').toString(),
-              'link': (data['link'] ?? '').toString(),
-            };
-          })
-          .where((item) => item['namaKelas'] == namaKelas)
-          .toList();
+        return <String, String>{
+          'id': doc.id,
+          'namaKelas': (data['namaKelas'] ?? '').toString(),
+          'kodeKelas': (data['kodeKelas'] ?? '').toString(),
+          'judul': (data['judul'] ?? '').toString(),
+          'isi': (data['isi'] ?? '').toString(),
+          'deskripsi': (data['deskripsi'] ?? '').toString(),
+          'sumber': (data['sumber'] ?? '').toString(),
+          'link': (data['link'] ?? '').toString(),
+        };
+      }).where((item) {
+        return item['namaKelas'] == namaAktif;
+      }).toList();
 
       final tantanganBaru = hasilTantangan.docs
           .map((doc) => <String, dynamic>{
                 ...doc.data(),
                 'id': doc.id,
               })
-          .where((item) => item['namaKelas'] == namaKelas)
-          .toList();
+          .where((item) {
+        return item['namaKelas'] == namaAktif;
+      }).toList();
 
       final hasilBaru = hasilSiswa.docs
           .map((doc) => <String, dynamic>{
                 ...doc.data(),
                 'id': doc.id,
               })
-          .where((item) => item['kodeKelas'] == kodeKelas)
-          .toList();
+          .where((item) {
+        return item['kodeKelas'] == kodeAktif;
+      }).toList();
 
       final materiSelesai = hasilProgress.docs
           .where((doc) => doc.data()['selesai'] == true)
@@ -235,6 +318,9 @@ class _DashboardPageState extends State<DashboardPage> {
           .toSet();
 
       if (!mounted) return;
+
+      // Mencegah data kelas lama menimpa kelas yang baru dipilih.
+      if (kodeKelas != kodeAktif || idKelas == null) return;
 
       setState(() {
         daftarMateriFirebase = materiBaru;
@@ -247,7 +333,10 @@ class _DashboardPageState extends State<DashboardPage> {
       debugPrint('Gagal memuat data kelas: $e');
 
       if (mounted) {
-        setState(() => sedangMemuatData = false);
+        setState(() {
+          sedangMemuatData = false;
+        });
+
         _tampilkanPesan(
           'Gagal memuat materi, tantangan, atau progress.',
         );
@@ -355,7 +444,7 @@ class _DashboardPageState extends State<DashboardPage> {
               'Lanjutkan Belajar',
               namaKelas == null
                   ? 'Materi akan muncul setelah kamu bergabung'
-                  : 'Materi dari kelasmu',
+                  : 'Materi dari $namaKelas',
             ),
             const SizedBox(height: 14),
             _buildLearningCard(),
@@ -496,119 +585,22 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   // ============================================================
-  // KELAS SAYA
+  // KELAS SAYA - MENAMPILKAN SEMUA KELAS
   // ============================================================
 
   Widget _buildClassCard() {
-    if (kodeKelas == null || namaKelas == null) {
-      return Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(22),
-          border: Border.all(color: paleBlue, width: 1.3),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.blue.withOpacity(0.06),
-              blurRadius: 15,
-              offset: const Offset(0, 6),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                _iconBox(Icons.class_rounded, paleBlue, royalBlue, 45),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Kelas Saya',
-                        style: TextStyle(
-                          color: textBlue,
-                          fontSize: 17,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Text(
-                        'Belum bergabung dengan kelas',
-                        style: TextStyle(
-                          color: mutedBlue,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 18),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(15),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF5F9FF),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.info_outline_rounded, color: royalBlue),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      'Masukkan kode kelas dari guru untuk mulai belajar.',
-                      style: TextStyle(
-                        color: textBlue,
-                        fontSize: 12.5,
-                        height: 1.4,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 15),
-            SizedBox(
-              width: double.infinity,
-              height: 48,
-              child: ElevatedButton.icon(
-                onPressed: sedangGabung ? null : _showJoinClassDialog,
-                icon: const Icon(Icons.add_rounded),
-                label: const Text(
-                  'Gabung Kelas',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: royalBlue,
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        gradient: LinearGradient(colors: [deepBlue, royalBlue]),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: paleBlue),
         boxShadow: [
           BoxShadow(
-            color: royalBlue.withOpacity(0.18),
-            blurRadius: 15,
-            offset: const Offset(0, 7),
+            color: Colors.blue.withOpacity(0.05),
+            blurRadius: 14,
+            offset: const Offset(0, 5),
           ),
         ],
       ),
@@ -619,29 +611,28 @@ class _DashboardPageState extends State<DashboardPage> {
             children: [
               _iconBox(
                 Icons.class_rounded,
-                Colors.white.withOpacity(0.15),
-                Colors.white,
-                48,
+                paleBlue,
+                royalBlue,
+                45,
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'Kelas Saya',
                       style: TextStyle(
-                        color: Colors.white70,
-                        fontSize: 12,
+                        color: textBlue,
+                        fontSize: 17,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
-                    const SizedBox(height: 3),
                     Text(
-                      namaKelas!,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
+                      '${daftarKelasDiikuti.length} kelas diikuti',
+                      style: TextStyle(
+                        color: mutedBlue,
+                        fontSize: 12,
                       ),
                     ),
                   ],
@@ -649,56 +640,156 @@ class _DashboardPageState extends State<DashboardPage> {
               ),
             ],
           ),
-          const SizedBox(height: 18),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(
-              horizontal: 14,
-              vertical: 11,
-            ),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.12),
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: Row(
-              children: [
-                const Icon(Icons.key_rounded, color: Colors.white),
-                const SizedBox(width: 9),
-                const Text(
-                  'Kode Kelas',
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 12,
+          const SizedBox(height: 16),
+
+          if (daftarKelasDiikuti.isEmpty)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(15),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF5F9FF),
+                borderRadius: BorderRadius.circular(15),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.info_outline_rounded, color: royalBlue),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'Kamu belum bergabung dengan kelas. Masukkan kode kelas dari guru untuk mulai belajar.',
+                      style: TextStyle(
+                        color: textBlue,
+                        fontSize: 12,
+                        height: 1.4,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            )
+          else
+            ...daftarKelasDiikuti.map((kelas) {
+              final aktif = kelas['id'] == idKelas;
+
+              return Container(
+                margin: const EdgeInsets.only(bottom: 10),
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: aktif
+                      ? const Color(0xFFEAF2FF)
+                      : const Color(0xFFF8FAFE),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: aktif ? royalBlue : paleBlue,
+                    width: aktif ? 1.5 : 1,
                   ),
                 ),
-                const Spacer(),
-                Text(
-                  kodeKelas!,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 1,
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.school_rounded,
+                          color: royalBlue,
+                          size: 22,
+                        ),
+                        const SizedBox(width: 9),
+                        Expanded(
+                          child: Text(
+                            kelas['namaKelas'] ?? 'Kelas',
+                            style: TextStyle(
+                              color: textBlue,
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        if (aktif)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 9,
+                              vertical: 5,
+                            ),
+                            decoration: BoxDecoration(
+                              color: royalBlue,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: const Text(
+                              'Dipilih',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.key_rounded,
+                          color: mutedBlue,
+                          size: 15,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          kelas['kodeKelas'] ?? '',
+                          style: TextStyle(
+                            color: mutedBlue,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 11),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 39,
+                      child: ElevatedButton(
+                        onPressed: aktif
+                            ? _openClass
+                            : () => _pilihKelas(kelas),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: aktif
+                              ? deepBlue
+                              : royalBlue,
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(11),
+                          ),
+                        ),
+                        child: Text(
+                          aktif ? 'Masuk Kelas' : 'Pilih Kelas',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 15),
+              );
+            }),
+
+          const SizedBox(height: 5),
           SizedBox(
             width: double.infinity,
-            height: 45,
-            child: ElevatedButton.icon(
-              onPressed: _openClass,
-              icon: const Icon(Icons.arrow_forward_rounded),
+            height: 46,
+            child: OutlinedButton.icon(
+              onPressed: sedangGabung ? null : _showJoinClassDialog,
+              icon: const Icon(Icons.add_rounded),
               label: const Text(
-                'Masuk Kelas',
+                'Gabung Kelas Lain',
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white,
+              style: OutlinedButton.styleFrom(
                 foregroundColor: royalBlue,
-                elevation: 0,
+                side: BorderSide(color: royalBlue),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(13),
                 ),
@@ -732,7 +823,7 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   // ============================================================
-  // GABUNG KELAS
+  // GABUNG KELAS LAIN
   // ============================================================
 
   void _showJoinClassDialog() {
@@ -760,7 +851,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Masukkan kode kelas yang diberikan oleh guru.',
+                    'Masukkan kode kelas lain yang diberikan oleh guru.',
                     style: TextStyle(
                       color: mutedBlue,
                       fontSize: 13,
@@ -814,7 +905,7 @@ class _DashboardPageState extends State<DashboardPage> {
 
                           if (user == null) {
                             _tampilkanPesan(
-                              'Sesi login tidak ditemukan. Silakan login kembali.',
+                              'Silakan login kembali.',
                             );
                             return;
                           }
@@ -823,127 +914,41 @@ class _DashboardPageState extends State<DashboardPage> {
                           setDialogState(() {});
 
                           try {
+                            // Cari kelas berdasarkan kode.
                             final hasilCari = await _kelasCollection
                                 .where('kode', isEqualTo: kode)
                                 .limit(1)
                                 .get();
 
                             if (hasilCari.docs.isEmpty) {
-                              throw Exception(
-                                'Kode kelas tidak ditemukan. Periksa kembali kode dari guru.',
+                              // Mendukung data kelas yang menggunakan kodeKelas.
+                              final hasilAlternatif =
+                                  await _kelasCollection
+                                      .where(
+                                        'kodeKelas',
+                                        isEqualTo: kode,
+                                      )
+                                      .limit(1)
+                                      .get();
+
+                              if (hasilAlternatif.docs.isEmpty) {
+                                throw Exception(
+                                  'Kode kelas tidak ditemukan. Periksa kembali kode dari guru.',
+                                );
+                              }
+
+                              await _prosesGabungKelas(
+                                user,
+                                hasilAlternatif.docs.first,
+                                dialogContext,
+                              );
+                            } else {
+                              await _prosesGabungKelas(
+                                user,
+                                hasilCari.docs.first,
+                                dialogContext,
                               );
                             }
-
-                            final kelasDoc = hasilCari.docs.first;
-                            final dataKelas = kelasDoc.data();
-
-                            final namaBaru = (dataKelas['nama'] ??
-                                    dataKelas['namaKelas'] ??
-                                    '')
-                                .toString();
-
-                            final kodeBaru = (dataKelas['kode'] ??
-                                    dataKelas['kodeKelas'] ??
-                                    '')
-                                .toString();
-
-                            if (namaBaru.isEmpty || kodeBaru.isEmpty) {
-                              throw Exception(
-                                'Data kelas di Firestore belum lengkap.',
-                              );
-                            }
-
-                            final profil = await _firestore
-                                .collection('users')
-                                .doc(user.uid)
-                                .get();
-
-                            final dataProfil = profil.data() ?? {};
-
-                            final role =
-                                (dataProfil['role'] ?? '').toString();
-
-                            if (role.isNotEmpty &&
-                                role.toLowerCase() != 'siswa') {
-                              throw Exception(
-                                'Akun ini bukan akun siswa.',
-                              );
-                            }
-
-                            final namaSiswa = (dataProfil['name'] ??
-                                    dataProfil['nama'] ??
-                                    dataProfil['namaLengkap'] ??
-                                    user.displayName ??
-                                    'Siswa')
-                                .toString();
-
-                            final batch = _firestore.batch();
-
-                            final anggotaRef = _kelasCollection
-                                .doc(kelasDoc.id)
-                                .collection('anggota')
-                                .doc(user.uid);
-
-                            final kelasDiikutiRef = _firestore
-                                .collection('users')
-                                .doc(user.uid)
-                                .collection('kelas_diikuti')
-                                .doc(kelasDoc.id);
-
-                            batch.set(
-                              anggotaRef,
-                              {
-                                'uidSiswa': user.uid,
-                                'namaSiswa': namaSiswa,
-                                'namaKelas': namaBaru,
-                                'kodeKelas': kodeBaru,
-                                'joinedAt': FieldValue.serverTimestamp(),
-                              },
-                            );
-
-                            batch.set(
-                              kelasDiikutiRef,
-                              {
-                                'idKelas': kelasDoc.id,
-                                'namaKelas': namaBaru,
-                                'kodeKelas': kodeBaru,
-                                'joinedAt': FieldValue.serverTimestamp(),
-                              },
-                            );
-
-                            await batch.commit();
-
-                            if (!mounted) return;
-
-                            setState(() {
-                              namaKelas = namaBaru;
-                              kodeKelas = kodeBaru;
-                              idKelas = kelasDoc.id;
-                              namaSiswaAktif = namaSiswa;
-                              sedangGabung = false;
-
-                              daftarMateriFirebase = [];
-                              daftarTantanganFirebase = [];
-                              daftarHasilFirebase = [];
-                              materiSelesaiFirebase = {};
-                            });
-
-                            await _muatDataKelas();
-
-                            if (!mounted) return;
-
-                            Navigator.pop(dialogContext);
-
-                            _tampilkanPesan(
-                              'Berhasil bergabung ke kelas $namaBaru.',
-                            );
-
-                            Future.delayed(
-                              const Duration(milliseconds: 250),
-                              () {
-                                if (mounted) _openClass();
-                              },
-                            );
                           } catch (e) {
                             debugPrint('Gagal gabung kelas: $e');
 
@@ -984,6 +989,119 @@ class _DashboardPageState extends State<DashboardPage> {
     ).then((_) => controller.dispose());
   }
 
+  Future<void> _prosesGabungKelas(
+    User user,
+    QueryDocumentSnapshot<Map<String, dynamic>> kelasDoc,
+    BuildContext dialogContext,
+  ) async {
+    final dataKelas = kelasDoc.data();
+
+    final namaBaru = (dataKelas['nama'] ??
+            dataKelas['namaKelas'] ??
+            '')
+        .toString();
+
+    final kodeBaru = (dataKelas['kode'] ??
+            dataKelas['kodeKelas'] ??
+            '')
+        .toString();
+
+    if (namaBaru.isEmpty || kodeBaru.isEmpty) {
+      throw Exception('Data kelas di Firestore belum lengkap.');
+    }
+
+    final profil = await _firestore
+        .collection('users')
+        .doc(user.uid)
+        .get();
+
+    final dataProfil = profil.data() ?? {};
+    final role = (dataProfil['role'] ?? '').toString();
+
+    if (role.isNotEmpty && role.toLowerCase() != 'siswa') {
+      throw Exception('Akun ini bukan akun siswa.');
+    }
+
+    final namaSiswa = (dataProfil['name'] ??
+            dataProfil['nama'] ??
+            dataProfil['namaLengkap'] ??
+            user.displayName ??
+            'Siswa')
+        .toString();
+
+    final anggotaRef = _kelasCollection
+        .doc(kelasDoc.id)
+        .collection('anggota')
+        .doc(user.uid);
+
+    final kelasDiikutiRef = _firestore
+        .collection('users')
+        .doc(user.uid)
+        .collection('kelas_diikuti')
+        .doc(kelasDoc.id);
+
+    // Periksa apakah siswa sudah menjadi anggota kelas ini.
+    final anggotaLama = await anggotaRef.get();
+    final keanggotaanLama = await kelasDiikutiRef.get();
+
+    if (anggotaLama.exists && keanggotaanLama.exists) {
+      await _muatKelasDiikuti(pilihId: kelasDoc.id);
+
+      if (!mounted) return;
+
+      Navigator.pop(dialogContext);
+      setState(() => sedangGabung = false);
+
+      _tampilkanPesan(
+        'Kamu sudah bergabung dengan kelas $namaBaru.',
+      );
+      return;
+    }
+
+    // Hanya menambahkan dokumen yang belum ada.
+    // Keanggotaan kelas lain tidak dihapus atau ditimpa.
+    final batch = _firestore.batch();
+
+    if (!anggotaLama.exists) {
+      batch.set(anggotaRef, {
+        'uidSiswa': user.uid,
+        'namaSiswa': namaSiswa,
+        'namaKelas': namaBaru,
+        'kodeKelas': kodeBaru,
+        'joinedAt': FieldValue.serverTimestamp(),
+      });
+    }
+
+    if (!keanggotaanLama.exists) {
+      batch.set(kelasDiikutiRef, {
+        'idKelas': kelasDoc.id,
+        'namaKelas': namaBaru,
+        'kodeKelas': kodeBaru,
+        'joinedAt': FieldValue.serverTimestamp(),
+      });
+    }
+
+    await batch.commit();
+
+    if (!mounted) return;
+
+    setState(() {
+      namaSiswaAktif = namaSiswa;
+      sedangGabung = false;
+    });
+
+    // Muat semua kelas dan pilih kelas yang baru saja diikuti.
+    await _muatKelasDiikuti(pilihId: kelasDoc.id);
+
+    if (!mounted) return;
+
+    Navigator.pop(dialogContext);
+
+    _tampilkanPesan(
+      'Berhasil bergabung ke kelas $namaBaru.',
+    );
+  }
+
   // ============================================================
   // MEMBUKA DETAIL KELAS
   // ============================================================
@@ -1005,7 +1123,9 @@ class _DashboardPageState extends State<DashboardPage> {
         ),
       ),
     ).then((_) {
-      if (mounted) _muatDataKelas();
+      if (mounted) {
+        _muatDataKelas();
+      }
     });
   }
 
@@ -1185,12 +1305,7 @@ class _DashboardPageState extends State<DashboardPage> {
         ),
         child: Row(
           children: [
-            _iconBox(
-              Icons.menu_book_rounded,
-              paleBlue,
-              royalBlue,
-              55,
-            ),
+            _iconBox(Icons.menu_book_rounded, paleBlue, royalBlue, 55),
             const SizedBox(width: 13),
             Expanded(
               child: Column(
@@ -1198,10 +1313,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 children: [
                   Text(
                     'Materi Terbaru',
-                    style: TextStyle(
-                      color: mutedBlue,
-                      fontSize: 11,
-                    ),
+                    style: TextStyle(color: mutedBlue, fontSize: 11),
                   ),
                   const SizedBox(height: 4),
                   Text(
@@ -1217,10 +1329,7 @@ class _DashboardPageState extends State<DashboardPage> {
                   const SizedBox(height: 4),
                   Text(
                     '${materiKelas.length} materi tersedia',
-                    style: TextStyle(
-                      color: mutedBlue,
-                      fontSize: 11,
-                    ),
+                    style: TextStyle(color: mutedBlue, fontSize: 11),
                   ),
                 ],
               ),
@@ -1323,10 +1432,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 children: [
                   Text(
                     'Tantangan Terbaru',
-                    style: TextStyle(
-                      color: mutedBlue,
-                      fontSize: 11,
-                    ),
+                    style: TextStyle(color: mutedBlue, fontSize: 11),
                   ),
                   const SizedBox(height: 4),
                   Text(
@@ -1344,10 +1450,7 @@ class _DashboardPageState extends State<DashboardPage> {
                   const SizedBox(height: 4),
                   Text(
                     '${tantanganKelas.length} tantangan tersedia',
-                    style: TextStyle(
-                      color: mutedBlue,
-                      fontSize: 11,
-                    ),
+                    style: TextStyle(color: mutedBlue, fontSize: 11),
                   ),
                 ],
               ),
@@ -1420,7 +1523,7 @@ class _DashboardPageState extends State<DashboardPage> {
           Text(
             kodeKelas == null
                 ? 'Bergabung dengan kelas untuk mulai belajar.'
-                : 'Terus tingkatkan hasil belajarmu!',
+                : 'Progress kelas $namaKelas',
             style: const TextStyle(
               color: Colors.white70,
               fontSize: 12,
@@ -1569,7 +1672,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 const SizedBox(height: 4),
                 Text(
                   punyaPencapaian
-                      ? 'Kamu sudah memiliki $jumlahHasil hasil aktivitas belajar.'
+                      ? 'Kamu sudah memiliki $jumlahHasil hasil aktivitas belajar di kelas ini.'
                       : 'Kerjakan tantangan untuk mulai mendapatkan hasil belajar.',
                   style: TextStyle(
                     color: mutedBlue,
@@ -1614,9 +1717,9 @@ class _DashboardPageState extends State<DashboardPage> {
             ],
           ),
           content: Text(
-            kodeKelas == null
+            daftarKelasDiikuti.isEmpty
                 ? 'Kamu belum bergabung dengan kelas. Masukkan kode kelas dari guru untuk mulai belajar.'
-                : 'Kamu sudah bergabung dengan kelas $namaKelas. Silakan cek materi dan tantangan yang tersedia.',
+                : 'Kamu sudah bergabung dengan ${daftarKelasDiikuti.length} kelas. Pilih kelas yang ingin kamu pelajari.',
             style: TextStyle(
               color: mutedBlue,
               fontSize: 13,
