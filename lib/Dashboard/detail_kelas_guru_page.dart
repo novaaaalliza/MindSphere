@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-import 'data_global.dart';
 import 'kelola_materi_page.dart';
 import 'kelola_tantangan_page.dart';
 import 'daftar_siswa_page.dart';
@@ -36,31 +35,83 @@ class _DetailKelasGuruPageState
   static const Color textBlue = Color(0xFF18365D);
   static const Color mutedBlue = Color(0xFF7288A8);
 
+  StreamSubscription? _siswaSubscription;
   StreamSubscription? _materiSubscription;
   StreamSubscription? _tantanganSubscription;
+  StreamSubscription? _hasilSubscription;
 
+  int jumlahSiswaFirebase = 0;
   int jumlahMateriFirebase = 0;
   int jumlahTantanganFirebase = 0;
+  int jumlahHasilFirebase = 0;
 
+  bool sedangMemuatSiswa = true;
   bool sedangMemuatMateri = true;
   bool sedangMemuatTantangan = true;
+  bool sedangMemuatHasil = true;
 
+  String? errorSiswa;
   String? errorMateri;
   String? errorTantangan;
+  String? errorHasil;
 
   @override
   void initState() {
     super.initState();
 
+    _dengarkanSiswa();
     _dengarkanMateri();
     _dengarkanTantangan();
+    _dengarkanHasil();
   }
 
   @override
   void dispose() {
+    _siswaSubscription?.cancel();
     _materiSubscription?.cancel();
     _tantanganSubscription?.cancel();
+    _hasilSubscription?.cancel();
     super.dispose();
+  }
+
+  // ============================================================
+  // MENGAMBIL JUMLAH SISWA DARI FIRESTORE
+  // ============================================================
+
+  void _dengarkanSiswa() {
+    _siswaSubscription = FirebaseFirestore.instance
+        .collectionGroup('anggota')
+        .where(
+          'kodeKelas',
+          isEqualTo: widget.kodeKelas,
+        )
+        .snapshots()
+        .listen(
+      (snapshot) {
+        final jumlah = snapshot.docs.where((doc) {
+          return doc.data()['namaKelas'] ==
+              widget.namaKelas;
+        }).length;
+
+        if (!mounted) return;
+
+        setState(() {
+          jumlahSiswaFirebase = jumlah;
+          sedangMemuatSiswa = false;
+          errorSiswa = null;
+        });
+      },
+      onError: (error) {
+        if (!mounted) return;
+
+        setState(() {
+          sedangMemuatSiswa = false;
+          errorSiswa = error.toString();
+        });
+
+        debugPrint('Gagal mengambil siswa: $error');
+      },
+    );
   }
 
   // ============================================================
@@ -144,46 +195,56 @@ class _DetailKelasGuruPageState
   }
 
   // ============================================================
-  // DATA SISWA DAN HASIL
+  // MENGAMBIL JUMLAH HASIL SISWA DARI FIRESTORE
   // ============================================================
 
-  // Sementara masih menggunakan data_global.dart.
-  // Akan disambungkan ke Firestore setelah struktur
-  // penyimpanan siswa dan hasil ditentukan.
-
-  int get jumlahSiswaKelas {
-    return daftarSiswaGlobal
+  void _dengarkanHasil() {
+    _hasilSubscription = FirebaseFirestore.instance
+        .collection('hasil_tantangan')
         .where(
-          (siswa) =>
-              siswa['kodeKelas'] == widget.kodeKelas &&
-              siswa['namaKelas'] == widget.namaKelas,
+          'kodeKelas',
+          isEqualTo: widget.kodeKelas,
         )
-        .length;
-  }
+        .snapshots()
+        .listen(
+      (snapshot) {
+        final jumlah = snapshot.docs.where((doc) {
+          return doc.data()['namaKelas'] ==
+              widget.namaKelas;
+        }).length;
 
-  int get jumlahHasilKelas {
-    return hasilSiswaDiKelas(
-      widget.kodeKelas,
-    ).length;
+        if (!mounted) return;
+
+        setState(() {
+          jumlahHasilFirebase = jumlah;
+          sedangMemuatHasil = false;
+          errorHasil = null;
+        });
+      },
+      onError: (error) {
+        if (!mounted) return;
+
+        setState(() {
+          sedangMemuatHasil = false;
+          errorHasil = error.toString();
+        });
+
+        debugPrint('Gagal mengambil hasil: $error');
+      },
+    );
   }
 
   // ============================================================
-  // MEMPERBARUI DATA
+  // MEMBUKA HALAMAN LAIN
   // ============================================================
 
-  Future<void> _bukaHalaman(
-    Widget halaman,
-  ) async {
+  Future<void> _bukaHalaman(Widget halaman) async {
     await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (_) => halaman,
       ),
     );
-
-    if (mounted) {
-      setState(() {});
-    }
   }
 
   // ============================================================
@@ -304,7 +365,11 @@ class _DetailKelasGuruPageState
                   child: buildInfoCard(
                     icon: Icons.people_alt_rounded,
                     title: 'Siswa',
-                    value: jumlahSiswaKelas.toString(),
+                    value: sedangMemuatSiswa
+                        ? '...'
+                        : errorSiswa != null
+                            ? '!'
+                            : jumlahSiswaFirebase.toString(),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -342,14 +407,20 @@ class _DetailKelasGuruPageState
                   child: buildInfoCard(
                     icon: Icons.bar_chart_rounded,
                     title: 'Hasil',
-                    value: jumlahHasilKelas.toString(),
+                    value: sedangMemuatHasil
+                        ? '...'
+                        : errorHasil != null
+                            ? '!'
+                            : jumlahHasilFirebase.toString(),
                   ),
                 ),
               ],
             ),
 
-            if (errorMateri != null ||
-                errorTantangan != null) ...[
+            if (errorSiswa != null ||
+                errorMateri != null ||
+                errorTantangan != null ||
+                errorHasil != null) ...[
               const SizedBox(height: 12),
               Container(
                 width: double.infinity,
@@ -359,7 +430,7 @@ class _DetailKelasGuruPageState
                   borderRadius: BorderRadius.circular(13),
                 ),
                 child: const Text(
-                  'Sebagian data belum dapat dimuat. Periksa koneksi Firebase dan Firestore Rules.',
+                  'Sebagian data belum dapat dimuat. Periksa koneksi Firebase, Firestore Rules, dan struktur data.',
                   style: TextStyle(
                     color: Color(0xFF936018),
                     fontSize: 12,
@@ -385,9 +456,7 @@ class _DetailKelasGuruPageState
 
             const SizedBox(height: 12),
 
-            // ====================================================
             // DAFTAR SISWA
-            // ====================================================
 
             buildMenuItem(
               icon: Icons.people_alt_rounded,
@@ -403,15 +472,12 @@ class _DetailKelasGuruPageState
               },
             ),
 
-            // ====================================================
             // MATERI KELAS
-            // ====================================================
 
             buildMenuItem(
               icon: Icons.menu_book_rounded,
               title: 'Materi Kelas',
-              subtitle:
-                  'Kelola materi pembelajaran kelas',
+              subtitle: 'Kelola materi pembelajaran kelas',
               onTap: () {
                 _bukaHalaman(
                   KelolaMateriPage(
@@ -422,15 +488,12 @@ class _DetailKelasGuruPageState
               },
             ),
 
-            // ====================================================
             // TANTANGAN KELAS
-            // ====================================================
 
             buildMenuItem(
               icon: Icons.quiz_rounded,
               title: 'Tantangan Kelas',
-              subtitle:
-                  'Kelola soal tantangan untuk siswa',
+              subtitle: 'Kelola soal tantangan untuk siswa',
               onTap: () {
                 _bukaHalaman(
                   KelolaTantanganPage(
@@ -441,15 +504,12 @@ class _DetailKelasGuruPageState
               },
             ),
 
-            // ====================================================
             // HASIL SISWA
-            // ====================================================
 
             buildMenuItem(
               icon: Icons.bar_chart_rounded,
               title: 'Hasil Siswa',
-              subtitle:
-                  'Lihat perkembangan dan hasil siswa',
+              subtitle: 'Lihat perkembangan dan hasil siswa',
               onTap: () {
                 _bukaHalaman(
                   HasilSiswaPage(
@@ -534,8 +594,7 @@ class _DetailKelasGuruPageState
                         vertical: 11,
                       ),
                       shape: RoundedRectangleBorder(
-                        borderRadius:
-                            BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(12),
                       ),
                     ),
                   ),
@@ -567,8 +626,7 @@ class _DetailKelasGuruPageState
         ),
       ),
       child: Column(
-        crossAxisAlignment:
-            CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
             width: 42,
@@ -638,8 +696,7 @@ class _DetailKelasGuruPageState
                   height: 48,
                   decoration: BoxDecoration(
                     color: paleBlue,
-                    borderRadius:
-                        BorderRadius.circular(14),
+                    borderRadius: BorderRadius.circular(14),
                   ),
                   child: Icon(
                     icon,
@@ -650,8 +707,7 @@ class _DetailKelasGuruPageState
                 const SizedBox(width: 14),
                 Expanded(
                   child: Column(
-                    crossAxisAlignment:
-                        CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         title,
