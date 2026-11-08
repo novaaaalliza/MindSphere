@@ -1,9 +1,9 @@
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-import 'data_global.dart';
 import 'detail_kelas_guru_page.dart';
 import 'kelola_materi_page.dart';
 import 'kelola_tantangan_page.dart';
@@ -30,6 +30,39 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
 
   final FirebaseFirestore firestore =
       FirebaseFirestore.instance;
+
+  User? get user => FirebaseAuth.instance.currentUser;
+
+  late Future<Map<String, int>> ringkasanFuture;
+  late Future<List<Map<String, dynamic>>> aktivitasFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _refreshData();
+  }
+
+  // ============================================================
+  // REFRESH DATA FIRESTORE
+  // ============================================================
+
+  void _refreshData() {
+    ringkasanFuture = _muatRingkasan();
+    aktivitasFuture = _muatAktivitas();
+  }
+
+  Future<void> _refreshDashboard() async {
+    if (!mounted) return;
+
+    setState(() {
+      _refreshData();
+    });
+
+    await Future.wait([
+      ringkasanFuture,
+      aktivitasFuture,
+    ]);
+  }
 
   // ============================================================
   // KODE KELAS OTOMATIS
@@ -90,41 +123,150 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
   }
 
   // ============================================================
-  // JUMLAH SISWA PER KELAS (DATA LOKAL LAMA)
+  // MEMUAT RINGKASAN DARI FIRESTORE
   // ============================================================
 
-  int jumlahSiswaKelas(
-    String kodeKelas,
-    String namaKelas,
-  ) {
-    return daftarSiswaGlobal.where((siswa) {
-      return siswa['kodeKelas'] == kodeKelas &&
-          siswa['namaKelas'] == namaKelas;
-    }).length;
+  Future<Map<String, int>> _muatRingkasan() async {
+    final currentUser = user;
+
+    if (currentUser == null) {
+      return {
+        'siswa': 0,
+        'materi': 0,
+        'tantangan': 0,
+      };
+    }
+
+    try {
+      final kelasSnapshot = await firestore
+          .collection('kelas')
+          .where('uidGuru', isEqualTo: currentUser.uid)
+          .get();
+
+      int totalSiswa = 0;
+      int totalMateri = 0;
+      int totalTantangan = 0;
+
+      final pekerjaan = kelasSnapshot.docs.map((kelas) async {
+        final kode = kelas.data()['kode']?.toString() ?? '';
+
+        if (kode.isEmpty) return;
+
+        final hasil = await Future.wait([
+          firestore
+              .collection('kelas')
+              .doc(kelas.id)
+              .collection('anggota')
+              .get(),
+
+          firestore
+              .collection('materi')
+              .where('kodeKelas', isEqualTo: kode)
+              .get(),
+
+          firestore
+              .collection('tantangan')
+              .where('kodeKelas', isEqualTo: kode)
+              .get(),
+        ]);
+
+        totalSiswa += hasil[0].docs.length;
+        totalMateri += hasil[1].docs.length;
+        totalTantangan += hasil[2].docs.length;
+      });
+
+      await Future.wait(pekerjaan);
+
+      return {
+        'siswa': totalSiswa,
+        'materi': totalMateri,
+        'tantangan': totalTantangan,
+      };
+    } catch (e) {
+      debugPrint('Gagal memuat ringkasan: $e');
+
+      return {
+        'siswa': 0,
+        'materi': 0,
+        'tantangan': 0,
+      };
+    }
   }
 
   // ============================================================
-  // JUMLAH MATERI
+  // MEMUAT AKTIVITAS TERBARU DARI FIRESTORE
   // ============================================================
 
-  int jumlahMateri() {
-    return daftarMateriGlobal.length;
+  Future<List<Map<String, dynamic>>> _muatAktivitas() async {
+    final currentUser = user;
+
+    if (currentUser == null) return [];
+
+    try {
+      final kelasSnapshot = await firestore
+          .collection('kelas')
+          .where('uidGuru', isEqualTo: currentUser.uid)
+          .get();
+
+      final List<Map<String, dynamic>> semuaAktivitas = [];
+
+      final pekerjaan = kelasSnapshot.docs.map((kelas) async {
+        final dataKelas = kelas.data();
+
+        final kodeKelas =
+            dataKelas['kode']?.toString() ?? '';
+
+        final namaKelas =
+            dataKelas['nama']?.toString() ?? '';
+
+        if (kodeKelas.isEmpty) return;
+
+        final hasilSnapshot = await firestore
+            .collection('hasil_tantangan')
+            .where('kodeKelas', isEqualTo: kodeKelas)
+            .get();
+
+        for (final doc in hasilSnapshot.docs) {
+          final data = doc.data();
+
+          semuaAktivitas.add({
+            'tipe': 'tantangan',
+            'judul':
+                '${data['namaSiswa'] ?? 'Siswa'} mengerjakan tantangan',
+            'deskripsi':
+                '${data['judulTantangan'] ?? 'Tantangan'} • $namaKelas',
+            'waktu': data['createdAt'] ?? data['tanggal'],
+            'nilai': data['nilai'],
+          });
+        }
+      });
+
+      await Future.wait(pekerjaan);
+
+      semuaAktivitas.sort((a, b) {
+        DateTime waktuA = _ambilWaktu(a['waktu']);
+        DateTime waktuB = _ambilWaktu(b['waktu']);
+
+        return waktuB.compareTo(waktuA);
+      });
+
+      return semuaAktivitas.take(5).toList();
+    } catch (e) {
+      debugPrint('Gagal memuat aktivitas: $e');
+      return [];
+    }
   }
 
-  // ============================================================
-  // JUMLAH TANTANGAN
-  // ============================================================
+  DateTime _ambilWaktu(dynamic waktu) {
+    if (waktu is Timestamp) {
+      return waktu.toDate();
+    }
 
-  int jumlahTantangan() {
-    return daftarTantanganGlobal.length;
-  }
+    if (waktu is DateTime) {
+      return waktu;
+    }
 
-  // ============================================================
-  // TOTAL SISWA
-  // ============================================================
-
-  int totalSiswa() {
-    return daftarSiswaGlobal.length;
+    return DateTime(2000);
   }
 
   // ============================================================
@@ -167,8 +309,7 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
                   TextField(
                     controller: namaKelasController,
                     enabled: !sedangMenyimpan,
-                    textCapitalization:
-                        TextCapitalization.words,
+                    textCapitalization: TextCapitalization.words,
                     decoration: InputDecoration(
                       labelText: 'Nama Kelas',
                       hintText: 'Contoh: Pemrograman Dasar X',
@@ -194,18 +335,13 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
                 ],
               ),
               actionsPadding: const EdgeInsets.fromLTRB(
-                20,
-                0,
-                20,
-                18,
+                20, 0, 20, 18,
               ),
               actions: [
                 TextButton(
                   onPressed: sedangMenyimpan
                       ? null
-                      : () {
-                          Navigator.pop(dialogContext);
-                        },
+                      : () => Navigator.pop(dialogContext),
                   child: const Text(
                     'Batal',
                     style: TextStyle(color: mutedBlue),
@@ -230,10 +366,9 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
                             return;
                           }
 
-                          final user =
-                              FirebaseAuth.instance.currentUser;
+                          final currentUser = user;
 
-                          if (user == null) {
+                          if (currentUser == null) {
                             ScaffoldMessenger.of(context)
                                 .showSnackBar(
                               const SnackBar(
@@ -255,32 +390,24 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
                               namaKelas,
                             );
 
-                            final docKelas =
-                                await firestore
-                                    .collection('kelas')
-                                    .add({
+                            await firestore
+                                .collection('kelas')
+                                .add({
                               'nama': namaKelas,
                               'kode': kodeKelas,
                               'jumlahSiswa': 0,
-                              'uidGuru': user.uid,
+                              'uidGuru': currentUser.uid,
                               'createdAt':
                                   FieldValue.serverTimestamp(),
                             });
 
                             if (!mounted) return;
 
-                            // Data lokal hanya untuk kompatibilitas
-                            // dengan bagian aplikasi yang masih lama.
-                            setState(() {
-                              daftarKelasGlobal.add({
-                                'id': docKelas.id,
-                                'nama': namaKelas,
-                                'kode': kodeKelas,
-                                'jumlahSiswa': 0,
-                              });
-                            });
-
                             Navigator.pop(dialogContext);
+
+                            await _refreshDashboard();
+
+                            if (!mounted) return;
 
                             showKodeKelasDialog(
                               namaKelas,
@@ -471,9 +598,7 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
                   backgroundColor: royalBlue,
                   foregroundColor: Colors.white,
                   elevation: 0,
-                  padding: const EdgeInsets.symmetric(
-                    vertical: 13,
-                  ),
+                  padding: const EdgeInsets.symmetric(vertical: 13),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(13),
                   ),
@@ -512,34 +637,34 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
   // NAVIGASI MATERI
   // ============================================================
 
-  void bukaMateri() {
-    Navigator.push(
+  Future<void> bukaMateri() async {
+    await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => const KelolaMateriPage(),
       ),
-    ).then((_) {
-      if (mounted) {
-        setState(() {});
-      }
-    });
+    );
+
+    if (mounted) {
+      await _refreshDashboard();
+    }
   }
 
   // ============================================================
   // NAVIGASI TANTANGAN
   // ============================================================
 
-  void bukaTantangan() {
-    Navigator.push(
+  Future<void> bukaTantangan() async {
+    await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => const KelolaTantanganPage(),
       ),
-    ).then((_) {
-      if (mounted) {
-        setState(() {});
-      }
-    });
+    );
+
+    if (mounted) {
+      await _refreshDashboard();
+    }
   }
 
   // ============================================================
@@ -547,9 +672,9 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
   // ============================================================
 
   Future<void> bukaHasil() async {
-    final user = FirebaseAuth.instance.currentUser;
+    final currentUser = user;
 
-    if (user == null) {
+    if (currentUser == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Silakan login terlebih dahulu.'),
@@ -561,7 +686,7 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
     try {
       final hasil = await firestore
           .collection('kelas')
-          .where('uidGuru', isEqualTo: user.uid)
+          .where('uidGuru', isEqualTo: currentUser.uid)
           .limit(1)
           .get();
 
@@ -580,7 +705,7 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
 
       final kelas = hasil.docs.first.data();
 
-      Navigator.push(
+      await Navigator.push(
         context,
         MaterialPageRoute(
           builder: (context) => HasilSiswaPage(
@@ -588,11 +713,11 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
             kodeKelas: kelas['kode']?.toString() ?? '',
           ),
         ),
-      ).then((_) {
-        if (mounted) {
-          setState(() {});
-        }
-      });
+      );
+
+      if (mounted) {
+        await _refreshDashboard();
+      }
     } catch (e) {
       if (!mounted) return;
 
@@ -608,8 +733,8 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
   // NAVIGASI PROFIL
   // ============================================================
 
-  void bukaProfil() {
-    Navigator.push(
+  Future<void> bukaProfil() async {
+    await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => const ProfilGuruPage(),
@@ -840,7 +965,7 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
   // ============================================================
 
   Widget buildKelasSaya() {
-    final user = FirebaseAuth.instance.currentUser;
+    final currentUser = user;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -871,13 +996,13 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
           ],
         ),
         const SizedBox(height: 10),
-        if (user == null)
+        if (currentUser == null)
           buildEmptyClass()
         else
           StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
             stream: firestore
                 .collection('kelas')
-                .where('uidGuru', isEqualTo: user.uid)
+                .where('uidGuru', isEqualTo: currentUser.uid)
                 .snapshots(),
             builder: (context, snapshot) {
               if (snapshot.hasError) {
@@ -1152,12 +1277,8 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
                   label: const Text('Salin Kode'),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: royalBlue,
-                    side: const BorderSide(
-                      color: royalBlue,
-                    ),
-                    padding: const EdgeInsets.symmetric(
-                      vertical: 11,
-                    ),
+                    side: const BorderSide(color: royalBlue),
+                    padding: const EdgeInsets.symmetric(vertical: 11),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -1167,8 +1288,8 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
               const SizedBox(width: 10),
               Expanded(
                 child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.push(
+                  onPressed: () async {
+                    await Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (_) => DetailKelasGuruPage(
@@ -1177,19 +1298,17 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
                           jumlahSiswa: jumlahSiswa,
                         ),
                       ),
-                    ).then((_) {
-                      if (mounted) {
-                        setState(() {});
-                      }
-                    });
+                    );
+
+                    if (mounted) {
+                      await _refreshDashboard();
+                    }
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: royalBlue,
                     foregroundColor: Colors.white,
                     elevation: 0,
-                    padding: const EdgeInsets.symmetric(
-                      vertical: 11,
-                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 11),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -1333,7 +1452,7 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
   }
 
   // ============================================================
-  // RINGKASAN PEMBELAJARAN
+  // RINGKASAN PEMBELAJARAN - FIRESTORE
   // ============================================================
 
   Widget buildRingkasan() {
@@ -1349,32 +1468,51 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
           ),
         ),
         const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: buildStatCard(
-                icon: Icons.people_alt_rounded,
-                title: 'Siswa',
-                value: totalSiswa().toString(),
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: buildStatCard(
-                icon: Icons.menu_book_rounded,
-                title: 'Materi',
-                value: jumlahMateri().toString(),
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: buildStatCard(
-                icon: Icons.quiz_rounded,
-                title: 'Tantangan',
-                value: jumlahTantangan().toString(),
-              ),
-            ),
-          ],
+        FutureBuilder<Map<String, int>>(
+          future: ringkasanFuture,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState ==
+                ConnectionState.waiting) {
+              return const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(15),
+                  child: CircularProgressIndicator(
+                    color: royalBlue,
+                  ),
+                ),
+              );
+            }
+
+            final data = snapshot.data ?? {};
+
+            return Row(
+              children: [
+                Expanded(
+                  child: buildStatCard(
+                    icon: Icons.people_alt_rounded,
+                    title: 'Siswa',
+                    value: '${data['siswa'] ?? 0}',
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: buildStatCard(
+                    icon: Icons.menu_book_rounded,
+                    title: 'Materi',
+                    value: '${data['materi'] ?? 0}',
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: buildStatCard(
+                    icon: Icons.quiz_rounded,
+                    title: 'Tantangan',
+                    value: '${data['tantangan'] ?? 0}',
+                  ),
+                ),
+              ],
+            );
+          },
         ),
       ],
     );
@@ -1438,7 +1576,7 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
     final sekarang = DateTime.now();
     final selisih = sekarang.difference(waktu);
 
-    if (selisih.inSeconds < 10) {
+    if (selisih.isNegative || selisih.inSeconds < 10) {
       return 'Baru saja';
     }
 
@@ -1507,17 +1645,8 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
     final deskripsi =
         aktivitas['deskripsi']?.toString() ?? '';
 
-    final waktu = aktivitas['waktu'];
-
-    DateTime waktuAktivitas;
-
-    if (waktu is DateTime) {
-      waktuAktivitas = waktu;
-    } else if (waktu is Timestamp) {
-      waktuAktivitas = waktu.toDate();
-    } else {
-      waktuAktivitas = DateTime.now();
-    }
+    final waktuAktivitas =
+        _ambilWaktu(aktivitas['waktu']);
 
     final nilai = aktivitas['nilai'];
 
@@ -1617,80 +1746,94 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
   }
 
   // ============================================================
-  // AKTIVITAS TERBARU
+  // AKTIVITAS TERBARU - FIRESTORE
   // ============================================================
 
   Widget buildAktivitas() {
-    final aktivitasTerbaru =
-        daftarAktivitasGlobal.take(5).toList();
-
-    if (aktivitasTerbaru.isEmpty) {
-      return Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(22),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(22),
-          border: Border.all(
-            color: const Color(0xFFE3EAF4),
-          ),
-        ),
-        child: Column(
-          children: [
-            Container(
-              width: 58,
-              height: 58,
-              decoration: const BoxDecoration(
-                color: paleBlue,
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.notifications_none_rounded,
+    return FutureBuilder<List<Map<String, dynamic>>>(
+      future: aktivitasFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState ==
+            ConnectionState.waiting) {
+          return const Center(
+            child: Padding(
+              padding: EdgeInsets.all(20),
+              child: CircularProgressIndicator(
                 color: royalBlue,
-                size: 30,
               ),
             ),
-            const SizedBox(height: 12),
-            const Text(
-              'Belum Ada Aktivitas',
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.bold,
-                color: textBlue,
-              ),
-            ),
-            const SizedBox(height: 5),
-            const Text(
-              'Aktivitas siswa akan muncul di sini setelah kelas mulai digunakan.',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 12,
-                color: mutedBlue,
-                height: 1.4,
-              ),
-            ),
-          ],
-        ),
-      );
-    }
+          );
+        }
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(
-          color: const Color(0xFFE3EAF4),
-        ),
-      ),
-      child: Column(
-        children: [
-          ...aktivitasTerbaru.map(
-            (aktivitas) => buildActivityItem(aktivitas),
+        final aktivitasTerbaru = snapshot.data ?? [];
+
+        if (aktivitasTerbaru.isEmpty) {
+          return Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(22),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(
+                color: const Color(0xFFE3EAF4),
+              ),
+            ),
+            child: Column(
+              children: [
+                Container(
+                  width: 58,
+                  height: 58,
+                  decoration: const BoxDecoration(
+                    color: paleBlue,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.notifications_none_rounded,
+                    color: royalBlue,
+                    size: 30,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                const Text(
+                  'Belum Ada Aktivitas',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                    color: textBlue,
+                  ),
+                ),
+                const SizedBox(height: 5),
+                const Text(
+                  'Aktivitas pengerjaan tantangan siswa akan muncul di sini.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: mutedBlue,
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+
+        return Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(
+              color: const Color(0xFFE3EAF4),
+            ),
           ),
-        ],
-      ),
+          child: Column(
+            children: aktivitasTerbaru.map((aktivitas) {
+              return buildActivityItem(aktivitas);
+            }).toList(),
+          ),
+        );
+      },
     );
   }
 
@@ -1830,38 +1973,40 @@ class _GuruDashboardPageState extends State<GuruDashboardPage> {
         child: Column(
           children: [
             Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(
-                  20,
-                  18,
-                  20,
-                  10,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    buildHeader(),
-                    const SizedBox(height: 22),
-                    buildWelcomeCard(),
-                    const SizedBox(height: 26),
-                    buildKelasSaya(),
-                    const SizedBox(height: 26),
-                    buildKelolaPembelajaran(),
-                    const SizedBox(height: 26),
-                    buildRingkasan(),
-                    const SizedBox(height: 26),
-                    const Text(
-                      'Aktivitas Terbaru',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: textBlue,
+              child: RefreshIndicator(
+                color: royalBlue,
+                onRefresh: _refreshDashboard,
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.fromLTRB(
+                    20, 18, 20, 10,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      buildHeader(),
+                      const SizedBox(height: 22),
+                      buildWelcomeCard(),
+                      const SizedBox(height: 26),
+                      buildKelasSaya(),
+                      const SizedBox(height: 26),
+                      buildKelolaPembelajaran(),
+                      const SizedBox(height: 26),
+                      buildRingkasan(),
+                      const SizedBox(height: 26),
+                      const Text(
+                        'Aktivitas Terbaru',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: textBlue,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 12),
-                    buildAktivitas(),
-                    const SizedBox(height: 20),
-                  ],
+                      const SizedBox(height: 12),
+                      buildAktivitas(),
+                      const SizedBox(height: 20),
+                    ],
+                  ),
                 ),
               ),
             ),
