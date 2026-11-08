@@ -1,8 +1,8 @@
+
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-import 'data_global.dart';
 import 'detail_kelas_siswa_page.dart';
 import 'profil_siswa_page.dart';
 
@@ -24,14 +24,23 @@ class _DashboardPageState extends State<DashboardPage> {
   String? namaKelas;
   String? kodeKelas;
   String? idKelas;
+  String namaSiswaAktif = 'Siswa';
 
   bool sedangMemuatKelas = true;
+  bool sedangMemuatData = false;
   bool sedangGabung = false;
+
+  List<Map<String, String>> daftarMateriFirebase = [];
+  List<Map<String, dynamic>> daftarTantanganFirebase = [];
+  List<Map<String, dynamic>> daftarHasilFirebase = [];
+  Set<String> materiSelesaiFirebase = {};
 
   User? get _user => FirebaseAuth.instance.currentUser;
 
+  FirebaseFirestore get _firestore => FirebaseFirestore.instance;
+
   CollectionReference<Map<String, dynamic>> get _kelasCollection =>
-      FirebaseFirestore.instance.collection('kelas');
+      _firestore.collection('kelas');
 
   @override
   void initState() {
@@ -40,7 +49,7 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   // ============================================================
-  // MEMUAT KELAS DARI FIRESTORE
+  // MEMUAT PROFIL DAN KELAS SISWA
   // ============================================================
 
   Future<void> _muatKelasDiikuti() async {
@@ -54,11 +63,29 @@ class _DashboardPageState extends State<DashboardPage> {
     }
 
     try {
-      final daftarDiikuti = await FirebaseFirestore.instance
+      final profil = await _firestore
+          .collection('users')
+          .doc(user.uid)
+          .get();
+
+      final dataProfil = profil.data() ?? {};
+
+      final nama = (dataProfil['name'] ??
+              dataProfil['nama'] ??
+              dataProfil['namaLengkap'] ??
+              'Siswa')
+          .toString();
+
+      if (mounted) {
+        setState(() {
+          namaSiswaAktif = nama;
+        });
+      }
+
+      final daftarDiikuti = await _firestore
           .collection('users')
           .doc(user.uid)
           .collection('kelas_diikuti')
-          .limit(1)
           .get();
 
       if (daftarDiikuti.docs.isEmpty) {
@@ -73,18 +100,15 @@ class _DashboardPageState extends State<DashboardPage> {
         return;
       }
 
-      final id = daftarDiikuti.docs.first.id;
-      final dataKeanggotaan = daftarDiikuti.docs.first.data();
+      // Menggunakan kelas pertama yang ditemukan.
+      // Semua kelas tetap tersimpan di Firestore.
+      final keanggotaan = daftarDiikuti.docs.first;
+      final id = keanggotaan.id;
 
       final kelasDoc = await _kelasCollection.doc(id).get();
 
       if (!kelasDoc.exists) {
-        await FirebaseFirestore.instance
-            .collection('users')
-            .doc(user.uid)
-            .collection('kelas_diikuti')
-            .doc(id)
-            .delete();
+        await keanggotaan.reference.delete();
 
         if (mounted) {
           setState(() {
@@ -98,14 +122,15 @@ class _DashboardPageState extends State<DashboardPage> {
       }
 
       final dataKelas = kelasDoc.data() ?? {};
+      final dataKeanggotaan = keanggotaan.data();
 
-      final nama = (dataKelas['nama'] ??
+      final namaBaru = (dataKelas['nama'] ??
               dataKelas['namaKelas'] ??
               dataKeanggotaan['namaKelas'] ??
               '')
           .toString();
 
-      final kode = (dataKelas['kode'] ??
+      final kodeBaru = (dataKelas['kode'] ??
               dataKelas['kodeKelas'] ??
               dataKeanggotaan['kodeKelas'] ??
               '')
@@ -113,18 +138,19 @@ class _DashboardPageState extends State<DashboardPage> {
 
       if (mounted) {
         setState(() {
-          namaKelas = nama;
-          kodeKelas = kode;
+          namaKelas = namaBaru;
+          kodeKelas = kodeBaru;
           idKelas = id;
           sedangMemuatKelas = false;
         });
       }
+
+      await _muatDataKelas();
     } catch (e) {
       debugPrint('Gagal memuat kelas siswa: $e');
 
       if (mounted) {
         setState(() => sedangMemuatKelas = false);
-
         _tampilkanPesan(
           'Gagal memuat kelas. Periksa koneksi dan aturan Firebase.',
         );
@@ -133,37 +159,146 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   // ============================================================
-  // DATA MATERI, TANTANGAN, DAN HASIL
+  // MEMUAT MATERI, TANTANGAN, HASIL, DAN PROGRESS
   // ============================================================
 
-  List<Map<String, String>> get materiKelas {
-    if (kodeKelas == null || namaKelas == null) {
-      return [];
+  Future<void> _muatDataKelas() async {
+    final user = _user;
+
+    if (user == null || kodeKelas == null) return;
+
+    if (mounted) {
+      setState(() => sedangMemuatData = true);
     }
 
-    return ambilMateriKelas(
-      kodeKelas!,
-      namaKelas!,
-    );
+    try {
+      final hasilMateri = await _firestore
+          .collection('materi')
+          .where('kodeKelas', isEqualTo: kodeKelas)
+          .get();
+
+      final hasilTantangan = await _firestore
+          .collection('tantangan')
+          .where('kodeKelas', isEqualTo: kodeKelas)
+          .get();
+
+      final hasilSiswa = await _firestore
+          .collection('hasil_tantangan')
+          .where('uid', isEqualTo: user.uid)
+          .get();
+
+      final hasilProgress = await _firestore
+          .collection('users')
+          .doc(user.uid)
+          .collection('progress_materi')
+          .where('kodeKelas', isEqualTo: kodeKelas)
+          .get();
+
+      final materiBaru = hasilMateri.docs
+          .map((doc) {
+            final data = doc.data();
+
+            return <String, String>{
+              'id': doc.id,
+              'namaKelas': (data['namaKelas'] ?? '').toString(),
+              'kodeKelas': (data['kodeKelas'] ?? '').toString(),
+              'judul': (data['judul'] ?? '').toString(),
+              'isi': (data['isi'] ?? '').toString(),
+              'deskripsi': (data['deskripsi'] ?? '').toString(),
+              'sumber': (data['sumber'] ?? '').toString(),
+              'link': (data['link'] ?? '').toString(),
+            };
+          })
+          .where((item) => item['namaKelas'] == namaKelas)
+          .toList();
+
+      final tantanganBaru = hasilTantangan.docs
+          .map((doc) => <String, dynamic>{
+                ...doc.data(),
+                'id': doc.id,
+              })
+          .where((item) => item['namaKelas'] == namaKelas)
+          .toList();
+
+      final hasilBaru = hasilSiswa.docs
+          .map((doc) => <String, dynamic>{
+                ...doc.data(),
+                'id': doc.id,
+              })
+          .where((item) => item['kodeKelas'] == kodeKelas)
+          .toList();
+
+      final materiSelesai = hasilProgress.docs
+          .where((doc) => doc.data()['selesai'] == true)
+          .map((doc) => (doc.data()['idMateri'] ?? '').toString())
+          .where((id) => id.isNotEmpty)
+          .toSet();
+
+      if (!mounted) return;
+
+      setState(() {
+        daftarMateriFirebase = materiBaru;
+        daftarTantanganFirebase = tantanganBaru;
+        daftarHasilFirebase = hasilBaru;
+        materiSelesaiFirebase = materiSelesai;
+        sedangMemuatData = false;
+      });
+    } catch (e) {
+      debugPrint('Gagal memuat data kelas: $e');
+
+      if (mounted) {
+        setState(() => sedangMemuatData = false);
+        _tampilkanPesan(
+          'Gagal memuat materi, tantangan, atau progress.',
+        );
+      }
+    }
   }
 
-  List<Map<String, dynamic>> get tantanganKelas {
-    if (kodeKelas == null || namaKelas == null) {
-      return [];
-    }
+  List<Map<String, String>> get materiKelas => daftarMateriFirebase;
 
-    return ambilTantanganKelas(
-      kodeKelas!,
-      namaKelas!,
-    );
+  List<Map<String, dynamic>> get tantanganKelas =>
+      daftarTantanganFirebase;
+
+  List<Map<String, dynamic>> get hasilKelas => daftarHasilFirebase;
+
+  // ============================================================
+  // PERHITUNGAN PROGRESS
+  // ============================================================
+
+  bool _tantanganSudahDikerjakan(
+    Map<String, dynamic> tantangan,
+  ) {
+    final idTantangan = (tantangan['id'] ?? '').toString();
+    final judul = (tantangan['judul'] ?? '').toString();
+
+    return hasilKelas.any((hasil) {
+      final idHasil = (hasil['idTantangan'] ?? '').toString();
+      final judulHasil = (hasil['judulTantangan'] ?? '').toString();
+
+      return (idTantangan.isNotEmpty && idHasil == idTantangan) ||
+          (judul.isNotEmpty && judulHasil == judul);
+    });
   }
 
-  List<Map<String, dynamic>> get hasilKelas {
-    if (kodeKelas == null) {
-      return [];
-    }
+  int get jumlahMateriSelesai {
+    return daftarMateriFirebase.where((materi) {
+      return materiSelesaiFirebase.contains(materi['id']);
+    }).length;
+  }
 
-    return hasilSiswaDiKelas(kodeKelas!);
+  int get jumlahTantanganSelesai {
+    return daftarTantanganFirebase.where(_tantanganSudahDikerjakan).length;
+  }
+
+  double get progressBelajar {
+    final total = materiKelas.length + tantanganKelas.length;
+
+    if (total == 0) return 0;
+
+    final selesai = jumlahMateriSelesai + jumlahTantanganSelesai;
+
+    return (selesai / total).clamp(0.0, 1.0);
   }
 
   void _tampilkanPesan(String pesan) {
@@ -175,61 +310,8 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   // ============================================================
-  // HOME CONTENT
+  // BUILD UTAMA
   // ============================================================
-
-  Widget _buildHomeContent() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(20, 18, 20, 30),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildHeader(),
-          const SizedBox(height: 20),
-
-          _buildWelcomeCard(),
-          const SizedBox(height: 20),
-
-          _buildClassCard(context),
-          const SizedBox(height: 24),
-
-          _buildSectionTitle(
-            'Perjalanan Belajar',
-            'Mulai perjalanan belajarmu',
-          ),
-          const SizedBox(height: 14),
-
-          _buildLearningJourney(),
-          const SizedBox(height: 24),
-
-          _buildSectionTitle(
-            'Lanjutkan Belajar',
-            namaKelas == null
-                ? 'Materi akan muncul setelah kamu bergabung'
-                : 'Materi dari kelasmu',
-          ),
-          const SizedBox(height: 14),
-
-          _buildLearningCard(),
-          const SizedBox(height: 24),
-
-          _buildSectionTitle(
-            'Tantangan',
-            'Selesaikan tantangan dari kelasmu',
-          ),
-          const SizedBox(height: 14),
-
-          _buildChallengeCard(),
-          const SizedBox(height: 24),
-
-          _buildProgressCard(),
-          const SizedBox(height: 24),
-
-          _buildAchievementCard(),
-        ],
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -238,13 +320,59 @@ class _DashboardPageState extends State<DashboardPage> {
       body: SafeArea(
         child: sedangMemuatKelas
             ? Center(
-                child: CircularProgressIndicator(
-                  color: royalBlue,
-                ),
+                child: CircularProgressIndicator(color: royalBlue),
               )
             : _buildHomeContent(),
       ),
       bottomNavigationBar: _buildBottomNavigation(),
+    );
+  }
+
+  Widget _buildHomeContent() {
+    return RefreshIndicator(
+      color: royalBlue,
+      onRefresh: _muatKelasDiikuti,
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(20, 18, 20, 30),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildHeader(),
+            const SizedBox(height: 20),
+            _buildWelcomeCard(),
+            const SizedBox(height: 20),
+            _buildClassCard(),
+            const SizedBox(height: 24),
+            _buildSectionTitle(
+              'Perjalanan Belajar',
+              'Mulai perjalanan belajarmu',
+            ),
+            const SizedBox(height: 14),
+            _buildLearningJourney(),
+            const SizedBox(height: 24),
+            _buildSectionTitle(
+              'Lanjutkan Belajar',
+              namaKelas == null
+                  ? 'Materi akan muncul setelah kamu bergabung'
+                  : 'Materi dari kelasmu',
+            ),
+            const SizedBox(height: 14),
+            _buildLearningCard(),
+            const SizedBox(height: 24),
+            _buildSectionTitle(
+              'Tantangan',
+              'Selesaikan tantangan dari kelasmu',
+            ),
+            const SizedBox(height: 14),
+            _buildChallengeCard(),
+            const SizedBox(height: 24),
+            _buildProgressCard(),
+            const SizedBox(height: 24),
+            _buildAchievementCard(),
+          ],
+        ),
+      ),
     );
   }
 
@@ -261,8 +389,6 @@ class _DashboardPageState extends State<DashboardPage> {
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [royalBlue, skyBlue],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
             ),
             borderRadius: BorderRadius.circular(15),
           ),
@@ -287,10 +413,7 @@ class _DashboardPageState extends State<DashboardPage> {
               ),
               Text(
                 'Dashboard Siswa',
-                style: TextStyle(
-                  color: mutedBlue,
-                  fontSize: 12,
-                ),
+                style: TextStyle(color: mutedBlue, fontSize: 12),
               ),
             ],
           ),
@@ -315,7 +438,7 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   // ============================================================
-  // WELCOME
+  // WELCOME CARD
   // ============================================================
 
   Widget _buildWelcomeCard() {
@@ -325,8 +448,6 @@ class _DashboardPageState extends State<DashboardPage> {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [deepBlue, royalBlue],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(24),
       ),
@@ -336,9 +457,9 @@ class _DashboardPageState extends State<DashboardPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Halo, Siswa! 👋',
-                  style: TextStyle(
+                Text(
+                  'Halo, $namaSiswaAktif! 👋',
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 21,
                     fontWeight: FontWeight.bold,
@@ -378,7 +499,7 @@ class _DashboardPageState extends State<DashboardPage> {
   // KELAS SAYA
   // ============================================================
 
-  Widget _buildClassCard(BuildContext context) {
+  Widget _buildClassCard() {
     if (kodeKelas == null || namaKelas == null) {
       return Container(
         width: double.infinity,
@@ -386,10 +507,7 @@ class _DashboardPageState extends State<DashboardPage> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(22),
-          border: Border.all(
-            color: paleBlue,
-            width: 1.3,
-          ),
+          border: Border.all(color: paleBlue, width: 1.3),
           boxShadow: [
             BoxShadow(
               color: Colors.blue.withOpacity(0.06),
@@ -403,12 +521,7 @@ class _DashboardPageState extends State<DashboardPage> {
           children: [
             Row(
               children: [
-                _iconBox(
-                  Icons.class_rounded,
-                  paleBlue,
-                  royalBlue,
-                  45,
-                ),
+                _iconBox(Icons.class_rounded, paleBlue, royalBlue, 45),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
@@ -422,7 +535,6 @@ class _DashboardPageState extends State<DashboardPage> {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      const SizedBox(height: 3),
                       Text(
                         'Belum bergabung dengan kelas',
                         style: TextStyle(
@@ -445,11 +557,7 @@ class _DashboardPageState extends State<DashboardPage> {
               ),
               child: Row(
                 children: [
-                  Icon(
-                    Icons.info_outline_rounded,
-                    color: royalBlue,
-                    size: 22,
-                  ),
+                  Icon(Icons.info_outline_rounded, color: royalBlue),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
@@ -469,18 +577,11 @@ class _DashboardPageState extends State<DashboardPage> {
               width: double.infinity,
               height: 48,
               child: ElevatedButton.icon(
-                onPressed: sedangGabung
-                    ? null
-                    : () => _showJoinClassDialog(context),
-                icon: const Icon(
-                  Icons.add_rounded,
-                  size: 21,
-                ),
+                onPressed: sedangGabung ? null : _showJoinClassDialog,
+                icon: const Icon(Icons.add_rounded),
                 label: const Text(
                   'Gabung Kelas',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontWeight: FontWeight.bold),
                 ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: royalBlue,
@@ -501,11 +602,7 @@ class _DashboardPageState extends State<DashboardPage> {
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [deepBlue, royalBlue],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        gradient: LinearGradient(colors: [deepBlue, royalBlue]),
         borderRadius: BorderRadius.circular(22),
         boxShadow: [
           BoxShadow(
@@ -565,11 +662,7 @@ class _DashboardPageState extends State<DashboardPage> {
             ),
             child: Row(
               children: [
-                const Icon(
-                  Icons.key_rounded,
-                  color: Colors.white,
-                  size: 20,
-                ),
+                const Icon(Icons.key_rounded, color: Colors.white),
                 const SizedBox(width: 9),
                 const Text(
                   'Kode Kelas',
@@ -637,40 +730,13 @@ class _DashboardPageState extends State<DashboardPage> {
       ),
     );
   }
-    // ============================================================
-  // OPEN CLASS
-  // ============================================================
-
-  void _openClass() {
-    if (namaKelas == null || kodeKelas == null) {
-      _showJoinClassMessage();
-      return;
-    }
-
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => DetailKelasSiswaPage(
-          namaKelas: namaKelas!,
-          kodeKelas: kodeKelas!,
-        ),
-      ),
-    );
-  }
-
-  void _showJoinClassMessage() {
-    _tampilkanPesan(
-      'Gabung kelas terlebih dahulu untuk mengakses pembelajaran.',
-    );
-  }
 
   // ============================================================
-  // GABUNG KELAS - FIRESTORE
+  // GABUNG KELAS
   // ============================================================
 
-  void _showJoinClassDialog(BuildContext context) {
-    final TextEditingController codeController =
-        TextEditingController();
+  void _showJoinClassDialog() {
+    final controller = TextEditingController();
 
     showDialog(
       context: context,
@@ -703,9 +769,8 @@ class _DashboardPageState extends State<DashboardPage> {
                   ),
                   const SizedBox(height: 18),
                   TextField(
-                    controller: codeController,
-                    textCapitalization:
-                        TextCapitalization.characters,
+                    controller: controller,
+                    textCapitalization: TextCapitalization.characters,
                     enabled: !sedangGabung,
                     decoration: InputDecoration(
                       hintText: 'Contoh: PDX-01',
@@ -727,9 +792,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 TextButton(
                   onPressed: sedangGabung
                       ? null
-                      : () {
-                          Navigator.pop(dialogContext);
-                        },
+                      : () => Navigator.pop(dialogContext),
                   child: Text(
                     'Batal',
                     style: TextStyle(color: mutedBlue),
@@ -740,12 +803,10 @@ class _DashboardPageState extends State<DashboardPage> {
                       ? null
                       : () async {
                           final kode =
-                              codeController.text.trim().toUpperCase();
+                              controller.text.trim().toUpperCase();
 
                           if (kode.isEmpty) {
-                            _tampilkanPesan(
-                              'Kode kelas harus diisi.',
-                            );
+                            _tampilkanPesan('Kode kelas harus diisi.');
                             return;
                           }
 
@@ -758,87 +819,49 @@ class _DashboardPageState extends State<DashboardPage> {
                             return;
                           }
 
-                          setState(() {
-                            sedangGabung = true;
-                          });
-
+                          setState(() => sedangGabung = true);
                           setDialogState(() {});
 
                           try {
-                            // MENCARI KELAS DI FIRESTORE
-                            final hasilCari =
-                                await _kelasCollection
-                                    .where(
-                                      'kode',
-                                      isEqualTo: kode,
-                                    )
-                                    .limit(1)
-                                    .get();
+                            final hasilCari = await _kelasCollection
+                                .where('kode', isEqualTo: kode)
+                                .limit(1)
+                                .get();
 
                             if (hasilCari.docs.isEmpty) {
-                              if (mounted) {
-                                setState(() {
-                                  sedangGabung = false;
-                                });
-                              }
-
-                              setDialogState(() {});
-
-                              _tampilkanPesan(
+                              throw Exception(
                                 'Kode kelas tidak ditemukan. Periksa kembali kode dari guru.',
                               );
-                              return;
                             }
 
-                            final kelasDoc =
-                                hasilCari.docs.first;
+                            final kelasDoc = hasilCari.docs.first;
+                            final dataKelas = kelasDoc.data();
 
-                            final dataKelas =
-                                kelasDoc.data();
+                            final namaBaru = (dataKelas['nama'] ??
+                                    dataKelas['namaKelas'] ??
+                                    '')
+                                .toString();
 
-                            final namaBaru =
-                                (dataKelas['nama'] ??
-                                        dataKelas['namaKelas'] ??
-                                        '')
-                                    .toString();
+                            final kodeBaru = (dataKelas['kode'] ??
+                                    dataKelas['kodeKelas'] ??
+                                    '')
+                                .toString();
 
-                            final kodeBaru =
-                                (dataKelas['kode'] ?? '')
-                                    .toString();
-
-                            if (namaBaru.isEmpty ||
-                                kodeBaru.isEmpty) {
+                            if (namaBaru.isEmpty || kodeBaru.isEmpty) {
                               throw Exception(
                                 'Data kelas di Firestore belum lengkap.',
                               );
                             }
 
-                            // MENGAMBIL NAMA SISWA
-                            String namaSiswa =
-                                namaSiswaAktif;
+                            final profil = await _firestore
+                                .collection('users')
+                                .doc(user.uid)
+                                .get();
 
-                            final profil =
-                                await FirebaseFirestore.instance
-                                    .collection('users')
-                                    .doc(user.uid)
-                                    .get();
+                            final dataProfil = profil.data() ?? {};
 
-                            if (profil.exists) {
-                              final dataProfil =
-                                  profil.data() ?? {};
-
-                              namaSiswa =
-                                  (dataProfil['nama'] ??
-                                          dataProfil['name'] ??
-                                          dataProfil['namaLengkap'] ??
-                                          namaSiswaAktif)
-                                      .toString();
-                            }
-
-                            // MEMASTIKAN ROLE SISWA
                             final role =
-                                (profil.data()?['role'] ?? '')
-                                    .toString();
+                                (dataProfil['role'] ?? '').toString();
 
                             if (role.isNotEmpty &&
                                 role.toLowerCase() != 'siswa') {
@@ -847,26 +870,26 @@ class _DashboardPageState extends State<DashboardPage> {
                               );
                             }
 
-                            // MEMBUAT FIRESTORE BATCH
-                            final batch =
-                                FirebaseFirestore.instance.batch();
+                            final namaSiswa = (dataProfil['name'] ??
+                                    dataProfil['nama'] ??
+                                    dataProfil['namaLengkap'] ??
+                                    user.displayName ??
+                                    'Siswa')
+                                .toString();
 
-                            // REFERENSI ANGGOTA KELAS
-                            final anggotaRef =
-                                _kelasCollection
-                                    .doc(kelasDoc.id)
-                                    .collection('anggota')
-                                    .doc(user.uid);
+                            final batch = _firestore.batch();
 
-                            // REFERENSI KELAS YANG DIIKUTI SISWA
-                            final kelasDiikutiRef =
-                                FirebaseFirestore.instance
-                                    .collection('users')
-                                    .doc(user.uid)
-                                    .collection('kelas_diikuti')
-                                    .doc(kelasDoc.id);
+                            final anggotaRef = _kelasCollection
+                                .doc(kelasDoc.id)
+                                .collection('anggota')
+                                .doc(user.uid);
 
-                            // SIMPAN ANGGOTA KE KELAS
+                            final kelasDiikutiRef = _firestore
+                                .collection('users')
+                                .doc(user.uid)
+                                .collection('kelas_diikuti')
+                                .doc(kelasDoc.id);
+
                             batch.set(
                               anggotaRef,
                               {
@@ -874,36 +897,40 @@ class _DashboardPageState extends State<DashboardPage> {
                                 'namaSiswa': namaSiswa,
                                 'namaKelas': namaBaru,
                                 'kodeKelas': kodeBaru,
-                                'joinedAt':
-                                    FieldValue.serverTimestamp(),
+                                'joinedAt': FieldValue.serverTimestamp(),
                               },
                             );
 
-                            // SIMPAN KELAS KE PROFIL SISWA
                             batch.set(
                               kelasDiikutiRef,
                               {
                                 'idKelas': kelasDoc.id,
                                 'namaKelas': namaBaru,
                                 'kodeKelas': kodeBaru,
-                                'joinedAt':
-                                    FieldValue.serverTimestamp(),
+                                'joinedAt': FieldValue.serverTimestamp(),
                               },
                             );
 
-                            // SIMPAN KEDUA DOKUMEN
                             await batch.commit();
 
                             if (!mounted) return;
 
-                            // PERBARUI DASHBOARD
                             setState(() {
                               namaKelas = namaBaru;
                               kodeKelas = kodeBaru;
                               idKelas = kelasDoc.id;
                               namaSiswaAktif = namaSiswa;
                               sedangGabung = false;
+
+                              daftarMateriFirebase = [];
+                              daftarTantanganFirebase = [];
+                              daftarHasilFirebase = [];
+                              materiSelesaiFirebase = {};
                             });
+
+                            await _muatDataKelas();
+
+                            if (!mounted) return;
 
                             Navigator.pop(dialogContext);
 
@@ -914,34 +941,23 @@ class _DashboardPageState extends State<DashboardPage> {
                             Future.delayed(
                               const Duration(milliseconds: 250),
                               () {
-                                if (mounted) {
-                                  _openClass();
-                                }
+                                if (mounted) _openClass();
                               },
                             );
                           } catch (e) {
-                            debugPrint(
-                              'Gagal gabung kelas: $e',
-                            );
+                            debugPrint('Gagal gabung kelas: $e');
 
                             if (mounted) {
-                              setState(() {
-                                sedangGabung = false;
-                              });
+                              setState(() => sedangGabung = false);
                             }
 
                             setDialogState(() {});
 
                             final pesan = e
                                 .toString()
-                                .replaceFirst(
-                                  'Exception: ',
-                                  '',
-                                );
+                                .replaceFirst('Exception: ', '');
 
-                            _tampilkanPesan(
-                              'Gagal bergabung: $pesan',
-                            );
+                            _tampilkanPesan('Gagal bergabung: $pesan');
                           }
                         },
                   style: ElevatedButton.styleFrom(
@@ -965,19 +981,39 @@ class _DashboardPageState extends State<DashboardPage> {
           },
         );
       },
+    ).then((_) => controller.dispose());
+  }
+
+  // ============================================================
+  // MEMBUKA DETAIL KELAS
+  // ============================================================
+
+  void _openClass() {
+    if (namaKelas == null || kodeKelas == null) {
+      _tampilkanPesan(
+        'Gabung kelas terlebih dahulu untuk mengakses pembelajaran.',
+      );
+      return;
+    }
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => DetailKelasSiswaPage(
+          namaKelas: namaKelas!,
+          kodeKelas: kodeKelas!,
+        ),
+      ),
     ).then((_) {
-      codeController.dispose();
+      if (mounted) _muatDataKelas();
     });
   }
 
   // ============================================================
-  // SECTION TITLE
+  // JUDUL BAGIAN
   // ============================================================
 
-  Widget _buildSectionTitle(
-    String title,
-    String subtitle,
-  ) {
+  Widget _buildSectionTitle(String title, String subtitle) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1000,12 +1036,13 @@ class _DashboardPageState extends State<DashboardPage> {
       ],
     );
   }
-    // ============================================================
-  // LEARNING JOURNEY
+
+  // ============================================================
+  // PERJALANAN BELAJAR
   // ============================================================
 
   Widget _buildLearningJourney() {
-    final bool sudahBergabung = kodeKelas != null;
+    final sudahBergabung = kodeKelas != null;
 
     return Container(
       width: double.infinity,
@@ -1024,7 +1061,6 @@ class _DashboardPageState extends State<DashboardPage> {
                 ? '${materiKelas.length} materi tersedia'
                 : 'Belum dimulai',
             active: materiKelas.isNotEmpty,
-            onTap: _openClass,
           ),
           _journeyLine(),
           _journeyItem(
@@ -1034,7 +1070,6 @@ class _DashboardPageState extends State<DashboardPage> {
                 ? 'Jelajahi materi kelas'
                 : 'Belum dimulai',
             active: sudahBergabung,
-            onTap: _openClass,
           ),
           _journeyLine(),
           _journeyItem(
@@ -1044,7 +1079,6 @@ class _DashboardPageState extends State<DashboardPage> {
                 ? '${tantanganKelas.length} tantangan tersedia'
                 : 'Belum dimulai',
             active: tantanganKelas.isNotEmpty,
-            onTap: _openClass,
           ),
         ],
       ),
@@ -1056,10 +1090,9 @@ class _DashboardPageState extends State<DashboardPage> {
     required String title,
     required String subtitle,
     required bool active,
-    required VoidCallback onTap,
   }) {
     return InkWell(
-      onTap: onTap,
+      onTap: _openClass,
       borderRadius: BorderRadius.circular(14),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 4),
@@ -1069,9 +1102,7 @@ class _DashboardPageState extends State<DashboardPage> {
               width: 43,
               height: 43,
               decoration: BoxDecoration(
-                color: active
-                    ? royalBlue
-                    : const Color(0xFFEAF1FC),
+                color: active ? royalBlue : const Color(0xFFEAF1FC),
                 shape: BoxShape.circle,
               ),
               child: Icon(
@@ -1117,11 +1148,7 @@ class _DashboardPageState extends State<DashboardPage> {
 
   Widget _journeyLine() {
     return Container(
-      margin: const EdgeInsets.only(
-        left: 21,
-        top: 4,
-        bottom: 4,
-      ),
+      margin: const EdgeInsets.only(left: 21, top: 4, bottom: 4),
       width: 2,
       height: 25,
       color: paleBlue,
@@ -1129,56 +1156,17 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   // ============================================================
-  // LEARNING CARD
+  // KARTU MATERI
   // ============================================================
 
   Widget _buildLearningCard() {
-    if (kodeKelas == null) {
-      return _buildEmptyLearningCard();
-    }
-
-    if (materiKelas.isEmpty) {
-      return InkWell(
-        onTap: _openClass,
-        borderRadius: BorderRadius.circular(22),
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(22),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: paleBlue),
-          ),
-          child: Column(
-            children: [
-              _iconBox(
-                Icons.menu_book_outlined,
-                paleBlue,
-                royalBlue,
-                58,
-              ),
-              const SizedBox(height: 12),
-              Text(
-                'Belum ada materi',
-                style: TextStyle(
-                  color: textBlue,
-                  fontSize: 15,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 5),
-              Text(
-                'Guru belum menambahkan materi untuk kelas ini.',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: mutedBlue,
-                  fontSize: 12,
-                  height: 1.4,
-                ),
-              ),
-            ],
-          ),
-        ),
+    if (kodeKelas == null || materiKelas.isEmpty) {
+      return _emptyCard(
+        icon: Icons.menu_book_outlined,
+        title: 'Belum ada materi',
+        description: kodeKelas == null
+            ? 'Bergabung dengan kelas terlebih dahulu untuk melihat materi.'
+            : 'Guru belum menambahkan materi untuk kelas ini.',
       );
     }
 
@@ -1194,32 +1182,14 @@ class _DashboardPageState extends State<DashboardPage> {
           color: Colors.white,
           borderRadius: BorderRadius.circular(22),
           border: Border.all(color: paleBlue),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.blue.withOpacity(0.05),
-              blurRadius: 12,
-              offset: const Offset(0, 5),
-            ),
-          ],
         ),
         child: Row(
           children: [
-            Container(
-              width: 55,
-              height: 55,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [royalBlue, skyBlue],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: const Icon(
-                Icons.menu_book_rounded,
-                color: Colors.white,
-                size: 28,
-              ),
+            _iconBox(
+              Icons.menu_book_rounded,
+              paleBlue,
+              royalBlue,
+              55,
             ),
             const SizedBox(width: 13),
             Expanded(
@@ -1266,7 +1236,11 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  Widget _buildEmptyLearningCard() {
+  Widget _emptyCard({
+    required IconData icon,
+    required String title,
+    required String description,
+  }) {
     return InkWell(
       onTap: _openClass,
       borderRadius: BorderRadius.circular(22),
@@ -1280,15 +1254,10 @@ class _DashboardPageState extends State<DashboardPage> {
         ),
         child: Column(
           children: [
-            _iconBox(
-              Icons.menu_book_outlined,
-              paleBlue,
-              royalBlue,
-              58,
-            ),
+            _iconBox(icon, paleBlue, royalBlue, 58),
             const SizedBox(height: 12),
             Text(
-              'Belum ada materi',
+              title,
               style: TextStyle(
                 color: textBlue,
                 fontSize: 15,
@@ -1297,7 +1266,7 @@ class _DashboardPageState extends State<DashboardPage> {
             ),
             const SizedBox(height: 5),
             Text(
-              'Bergabung dengan kelas terlebih dahulu untuk melihat materi.',
+              description,
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: mutedBlue,
@@ -1312,65 +1281,17 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   // ============================================================
-  // CHALLENGE CARD
+  // KARTU TANTANGAN
   // ============================================================
 
   Widget _buildChallengeCard() {
     if (kodeKelas == null || tantanganKelas.isEmpty) {
-      return InkWell(
-        onTap: _openClass,
-        borderRadius: BorderRadius.circular(22),
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: const Color(0xFFF5F9FF),
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: paleBlue),
-          ),
-          child: Row(
-            children: [
-              _iconBox(
-                Icons.flag_outlined,
-                Colors.white,
-                royalBlue,
-                52,
-              ),
-              const SizedBox(width: 13),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Belum ada tantangan',
-                      style: TextStyle(
-                        color: textBlue,
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      kodeKelas == null
-                          ? 'Tantangan akan tersedia setelah kamu bergabung dengan kelas.'
-                          : 'Guru belum menambahkan tantangan untuk kelas ini.',
-                      style: TextStyle(
-                        color: mutedBlue,
-                        fontSize: 11.5,
-                        height: 1.4,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Icon(
-                Icons.arrow_forward_ios_rounded,
-                color: mutedBlue,
-                size: 14,
-              ),
-            ],
-          ),
-        ),
+      return _emptyCard(
+        icon: Icons.flag_outlined,
+        title: 'Belum ada tantangan',
+        description: kodeKelas == null
+            ? 'Tantangan akan tersedia setelah kamu bergabung dengan kelas.'
+            : 'Guru belum menambahkan tantangan untuk kelas ini.',
       );
     }
 
@@ -1440,23 +1361,19 @@ class _DashboardPageState extends State<DashboardPage> {
         ),
       ),
     );
-  }  // ============================================================
-  // PROGRESS CARD
+  }
+
+  // ============================================================
+  // PROGRESS BELAJAR
   // ============================================================
 
   Widget _buildProgressCard() {
-    final int jumlahMateri = materiKelas.length;
-    final int jumlahTantangan = tantanganKelas.length;
-    final int jumlahHasil = hasilKelas.length;
+    final jumlahMateri = materiKelas.length;
+    final jumlahTantangan = tantanganKelas.length;
+    final jumlahSelesai =
+        jumlahMateriSelesai + jumlahTantanganSelesai;
 
-    final int totalAktivitas =
-        jumlahMateri + jumlahTantangan;
-
-    final double progress = totalAktivitas == 0
-        ? 0
-        : (jumlahHasil / totalAktivitas).clamp(0.0, 1.0);
-
-    final int persentase = (progress * 100).round();
+    final persentase = (progressBelajar * 100).round();
 
     return Container(
       width: double.infinity,
@@ -1467,8 +1384,6 @@ class _DashboardPageState extends State<DashboardPage> {
             Color(0xFF2166D5),
             Color(0xFF398CEB),
           ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(22),
         boxShadow: [
@@ -1525,7 +1440,7 @@ class _DashboardPageState extends State<DashboardPage> {
               ),
               const Spacer(),
               Text(
-                '$jumlahHasil aktivitas',
+                '$jumlahSelesai aktivitas selesai',
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 12,
@@ -1537,7 +1452,7 @@ class _DashboardPageState extends State<DashboardPage> {
           ClipRRect(
             borderRadius: BorderRadius.circular(20),
             child: LinearProgressIndicator(
-              value: progress,
+              value: progressBelajar,
               minHeight: 9,
               backgroundColor: Colors.white24,
               valueColor: const AlwaysStoppedAnimation<Color>(
@@ -1550,20 +1465,14 @@ class _DashboardPageState extends State<DashboardPage> {
             children: [
               _progressInfo(
                 Icons.menu_book_rounded,
-                '$jumlahMateri',
-                'Materi',
+                '$jumlahMateriSelesai/$jumlahMateri',
+                'Materi selesai',
               ),
-              const SizedBox(width: 20),
+              const SizedBox(width: 12),
               _progressInfo(
                 Icons.flag_rounded,
-                '$jumlahTantangan',
-                'Tantangan',
-              ),
-              const SizedBox(width: 20),
-              _progressInfo(
-                Icons.assignment_turned_in_rounded,
-                '$jumlahHasil',
-                'Hasil',
+                '$jumlahTantanganSelesai/$jumlahTantangan',
+                'Tantangan selesai',
               ),
             ],
           ),
@@ -1580,11 +1489,7 @@ class _DashboardPageState extends State<DashboardPage> {
     return Expanded(
       child: Row(
         children: [
-          Icon(
-            icon,
-            color: Colors.white,
-            size: 18,
-          ),
+          Icon(icon, color: Colors.white, size: 18),
           const SizedBox(width: 6),
           Expanded(
             child: Column(
@@ -1614,13 +1519,12 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   // ============================================================
-  // ACHIEVEMENT CARD
+  // PENCAPAIAN
   // ============================================================
 
   Widget _buildAchievementCard() {
-    final int jumlahHasil = hasilKelas.length;
-
-    final bool punyaPencapaian = jumlahHasil > 0;
+    final jumlahHasil = hasilKelas.length;
+    final punyaPencapaian = jumlahHasil > 0;
 
     return Container(
       width: double.infinity,
@@ -1643,9 +1547,7 @@ class _DashboardPageState extends State<DashboardPage> {
             ),
             child: Icon(
               Icons.emoji_events_rounded,
-              color: punyaPencapaian
-                  ? Colors.orange
-                  : mutedBlue,
+              color: punyaPencapaian ? Colors.orange : mutedBlue,
               size: 29,
             ),
           ),
@@ -1684,13 +1586,13 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   // ============================================================
-  // NOTIFICATION DIALOG
+  // NOTIFIKASI
   // ============================================================
 
   void _showNotificationDialog() {
     showDialog(
       context: context,
-      builder: (context) {
+      builder: (dialogContext) {
         return AlertDialog(
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
@@ -1723,9 +1625,7 @@ class _DashboardPageState extends State<DashboardPage> {
           ),
           actions: [
             TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
+              onPressed: () => Navigator.pop(dialogContext),
               child: Text(
                 'Tutup',
                 style: TextStyle(
@@ -1819,9 +1719,8 @@ class _DashboardPageState extends State<DashboardPage> {
               style: TextStyle(
                 color: active ? royalBlue : mutedBlue,
                 fontSize: 10,
-                fontWeight: active
-                    ? FontWeight.bold
-                    : FontWeight.normal,
+                fontWeight:
+                    active ? FontWeight.bold : FontWeight.normal,
               ),
             ),
           ],
@@ -1834,7 +1733,7 @@ class _DashboardPageState extends State<DashboardPage> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => const ProfilSiswaPage(),
+        builder: (_) => const ProfilSiswaPage(),
       ),
     );
   }
