@@ -1,4 +1,3 @@
-
 import 'dart:async';
 import 'dart:convert';
 
@@ -6,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-import 'data_global.dart';
 import 'kerjakan_tantangan_page.dart';
 
 // ============================================================
@@ -51,10 +49,12 @@ class _DetailKelasSiswaPageState
   List<Map<String, dynamic>> daftarTantanganFirebase = [];
 
   Set<String> materiSelesaiFirebase = {};
+  Set<String> tantanganSelesaiFirebase = {};
 
   StreamSubscription? _materiSubscription;
   StreamSubscription? _progressSubscription;
   StreamSubscription? _tantanganSubscription;
+  StreamSubscription? _hasilTantanganSubscription;
 
   bool sedangMemuatMateri = true;
   bool sedangMemuatTantangan = true;
@@ -65,9 +65,11 @@ class _DetailKelasSiswaPageState
   @override
   void initState() {
     super.initState();
+
     _dengarkanMateriFirebase();
     _dengarkanProgressFirebase();
     _dengarkanTantanganFirebase();
+    _dengarkanHasilTantanganFirebase();
   }
 
   @override
@@ -75,6 +77,8 @@ class _DetailKelasSiswaPageState
     _materiSubscription?.cancel();
     _progressSubscription?.cancel();
     _tantanganSubscription?.cancel();
+    _hasilTantanganSubscription?.cancel();
+
     super.dispose();
   }
 
@@ -248,6 +252,52 @@ class _DetailKelasSiswaPageState
   }
 
   // ============================================================
+  // MENGAMBIL HASIL TANTANGAN SISWA DARI FIRESTORE
+  // ============================================================
+
+  void _dengarkanHasilTantanganFirebase() {
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) return;
+
+    _hasilTantanganSubscription = FirebaseFirestore.instance
+        .collection('hasil_tantangan')
+        .where('uid', isEqualTo: user.uid)
+        .snapshots()
+        .listen(
+      (snapshot) {
+        final Set<String> hasilSelesai = {};
+
+        for (final doc in snapshot.docs) {
+          final data = doc.data();
+
+          final String kodeKelasHasil =
+              data['kodeKelas']?.toString() ?? '';
+
+          final String idTantangan =
+              data['idTantangan']?.toString() ?? '';
+
+          if (kodeKelasHasil == widget.kodeKelas &&
+              idTantangan.isNotEmpty) {
+            hasilSelesai.add(idTantangan);
+          }
+        }
+
+        if (!mounted) return;
+
+        setState(() {
+          tantanganSelesaiFirebase = hasilSelesai;
+        });
+      },
+      onError: (error) {
+        debugPrint(
+          'Gagal mengambil hasil tantangan: $error',
+        );
+      },
+    );
+  }
+
+  // ============================================================
   // DATA KELAS
   // ============================================================
 
@@ -257,15 +307,6 @@ class _DetailKelasSiswaPageState
 
   List<Map<String, dynamic>> get daftarTantanganKelas {
     return daftarTantanganFirebase;
-  }
-
-  List<Map<String, dynamic>> get daftarHasilKelas {
-    return hasilSiswaDiKelas(widget.kodeKelas)
-        .where(
-          (hasil) =>
-              hasil['namaSiswa'] == namaSiswaAktif,
-        )
-        .toList();
   }
 
   // ============================================================
@@ -320,6 +361,7 @@ class _DetailKelasSiswaPageState
                       sedangMemuatMateri = true;
                       errorMateri = null;
                     });
+
                     _materiSubscription?.cancel();
                     _dengarkanMateriFirebase();
                   },
@@ -687,19 +729,27 @@ class _DetailKelasSiswaPageState
     final int jumlahMateri = daftarMateriKelas.length;
     final int jumlahTantangan = daftarTantanganKelas.length;
 
-    final int materiSelesai = materiSelesaiFirebase.length;
+    final Set<String> idMateriKelas = daftarMateriKelas
+        .map((materi) => materi['id'] ?? '')
+        .where((id) => id.isNotEmpty)
+        .toSet();
 
-    // Catatan: hasil tantangan masih menggunakan data lokal.
-    final int jumlahTantanganSelesai =
-        daftarTantanganKelas.where((tantangan) {
-      final String judul =
-          tantangan['judul']?.toString() ?? '';
+    final Set<String> idTantanganKelas =
+        daftarTantanganKelas
+            .map(
+              (tantangan) =>
+                  tantangan['id']?.toString() ?? '',
+            )
+            .where((id) => id.isNotEmpty)
+            .toSet();
 
-      return daftarHasilKelas.any(
-        (hasil) =>
-            hasil['judulTantangan']?.toString() == judul,
-      );
-    }).length;
+    final int materiSelesai = idMateriKelas
+        .intersection(materiSelesaiFirebase)
+        .length;
+
+    final int jumlahTantanganSelesai = idTantanganKelas
+        .intersection(tantanganSelesaiFirebase)
+        .length;
 
     final int totalAktivitas =
         jumlahMateri + jumlahTantangan;
@@ -1603,7 +1653,8 @@ class EksplorasiSiswaPage extends StatelessWidget {
                           builder: (_) => BacaMateriPage(
                             namaKelas: namaKelas,
                             judul: materi['judul'] ?? '',
-                            deskripsi: materi['deskripsi'] ?? '',
+                            deskripsi:
+                                materi['deskripsi'] ?? '',
                             isi: materi['isi'] ?? '',
                             link: materi['link'] ?? '',
                             idMateri: idMateri,
@@ -1624,7 +1675,7 @@ class EksplorasiSiswaPage extends StatelessWidget {
 // TANTANGAN SISWA
 // ============================================================
 
-class TantanganSiswaPage extends StatelessWidget {
+class TantanganSiswaPage extends StatefulWidget {
   final String namaKelas;
   final String kodeKelas;
   final List<Map<String, dynamic>> daftarTantangan;
@@ -1636,10 +1687,79 @@ class TantanganSiswaPage extends StatelessWidget {
     required this.daftarTantangan,
   });
 
+  @override
+  State<TantanganSiswaPage> createState() =>
+      _TantanganSiswaPageState();
+}
+
+class _TantanganSiswaPageState
+    extends State<TantanganSiswaPage> {
   static const Color royalBlue = Color(0xFF2166D5);
   static const Color paleBlue = Color(0xFFDCEBFF);
   static const Color textBlue = Color(0xFF18365D);
   static const Color mutedBlue = Color(0xFF7288A8);
+
+  Set<String> tantanganSelesai = {};
+
+  StreamSubscription? _hasilSubscription;
+
+  @override
+  void initState() {
+    super.initState();
+    _dengarkanHasilTantangan();
+  }
+
+  @override
+  void dispose() {
+    _hasilSubscription?.cancel();
+    super.dispose();
+  }
+
+  // ============================================================
+  // MENGAMBIL STATUS TANTANGAN SISWA
+  // ============================================================
+
+  void _dengarkanHasilTantangan() {
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) return;
+
+    _hasilSubscription = FirebaseFirestore.instance
+        .collection('hasil_tantangan')
+        .where('uid', isEqualTo: user.uid)
+        .snapshots()
+        .listen(
+      (snapshot) {
+        final Set<String> hasilSelesai = {};
+
+        for (final doc in snapshot.docs) {
+          final data = doc.data();
+
+          final String kodeKelasHasil =
+              data['kodeKelas']?.toString() ?? '';
+
+          final String idTantangan =
+              data['idTantangan']?.toString() ?? '';
+
+          if (kodeKelasHasil == widget.kodeKelas &&
+              idTantangan.isNotEmpty) {
+            hasilSelesai.add(idTantangan);
+          }
+        }
+
+        if (!mounted) return;
+
+        setState(() {
+          tantanganSelesai = hasilSelesai;
+        });
+      },
+      onError: (error) {
+        debugPrint(
+          'Gagal mengambil status tantangan: $error',
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -1663,13 +1783,14 @@ class TantanganSiswaPage extends StatelessWidget {
           ),
         ),
       ),
-      body: daftarTantangan.isEmpty
+      body: widget.daftarTantangan.isEmpty
           ? _buildEmpty()
           : ListView.builder(
               padding: const EdgeInsets.all(20),
-              itemCount: daftarTantangan.length,
+              itemCount: widget.daftarTantangan.length,
               itemBuilder: (context, index) {
-                final tantangan = daftarTantangan[index];
+                final tantangan =
+                    widget.daftarTantangan[index];
 
                 return _buildChallengeCard(
                   context,
@@ -1725,6 +1846,10 @@ class TantanganSiswaPage extends StatelessWidget {
     );
   }
 
+  // ============================================================
+  // KARTU TANTANGAN
+  // ============================================================
+
   Widget _buildChallengeCard(
     BuildContext context,
     Map<String, dynamic> tantangan,
@@ -1738,10 +1863,12 @@ class TantanganSiswaPage extends StatelessWidget {
 
     final List soal = (tantangan['soal'] as List?) ?? [];
 
-    final bool sudahDikerjakan = tantanganSudahDikerjakan(
-      kodeKelas: kodeKelas,
-      judulTantangan: judul,
-    );
+    final String idTantangan =
+        tantangan['id']?.toString() ?? '';
+
+    final bool sudahDikerjakan =
+        idTantangan.isNotEmpty &&
+        tantanganSelesai.contains(idTantangan);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
@@ -1764,7 +1891,10 @@ class TantanganSiswaPage extends StatelessWidget {
       ),
       child: InkWell(
         borderRadius: BorderRadius.circular(20),
-        onTap: () => _showChallengeInfo(context, tantangan),
+        onTap: () => _showChallengeInfo(
+          context,
+          tantangan,
+        ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -1853,10 +1983,12 @@ class TantanganSiswaPage extends StatelessWidget {
 
     final List soal = (tantangan['soal'] as List?) ?? [];
 
-    final bool sudahDikerjakan = tantanganSudahDikerjakan(
-      kodeKelas: kodeKelas,
-      judulTantangan: judul,
-    );
+    final String idTantangan =
+        tantangan['id']?.toString() ?? '';
+
+    final bool sudahDikerjakan =
+        idTantangan.isNotEmpty &&
+        tantanganSelesai.contains(idTantangan);
 
     showModalBottomSheet(
       context: context,
@@ -1962,8 +2094,8 @@ class TantanganSiswaPage extends StatelessWidget {
                               builder: (_) =>
                                   KerjakanTantanganPage(
                                 tantangan: tantangan,
-                                namaKelas: namaKelas,
-                                kodeKelas: kodeKelas,
+                                namaKelas: widget.namaKelas,
+                                kodeKelas: widget.kodeKelas,
                               ),
                             ),
                           );
