@@ -1,5 +1,6 @@
+
 import 'package:flutter/material.dart';
-import 'data_global.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class DaftarSiswaPage extends StatefulWidget {
   final String namaKelas;
@@ -22,32 +23,23 @@ class _DaftarSiswaPageState extends State<DaftarSiswaPage> {
   static const Color textBlue = Color(0xFF18365D);
   static const Color mutedBlue = Color(0xFF7288A8);
 
-  // ============================================================
-  // MENGAMBIL DATA SISWA SESUAI KELAS
-  // ============================================================
-
-  List<Map<String, String>> get daftarSiswa {
-    return daftarSiswaGlobal
-        .where(
-          (siswa) =>
-              siswa['kodeKelas'] == widget.kodeKelas &&
-              siswa['namaKelas'] == widget.namaKelas,
-        )
-        .toList();
+  // Mengambil data siswa dari Firestore berdasarkan kode kelas.
+  Stream<QuerySnapshot<Map<String, dynamic>>> _streamSiswa() {
+    return FirebaseFirestore.instance
+        .collection('users')
+        .where('kodeKelas', isEqualTo: widget.kodeKelas)
+        .snapshots();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F8FD),
-
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          onPressed: () {
-            Navigator.pop(context);
-          },
+          onPressed: () => Navigator.pop(context),
           icon: const Icon(
             Icons.arrow_back_rounded,
             color: textBlue,
@@ -62,155 +54,207 @@ class _DaftarSiswaPageState extends State<DaftarSiswaPage> {
         ),
       ),
 
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // ====================================================
-            // HEADER KELAS
-            // ====================================================
+      body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+        stream: _streamSiswa(),
+        builder: (context, snapshot) {
+          if (snapshot.hasError) {
+            return _buildErrorState();
+          }
 
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [
-                    royalBlue,
-                    skyBlue,
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(22),
-                boxShadow: [
-                  BoxShadow(
-                    color: royalBlue.withOpacity(0.18),
-                    blurRadius: 15,
-                    offset: const Offset(0, 7),
-                  ),
-                ],
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(
+              child: CircularProgressIndicator(
+                color: royalBlue,
               ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 52,
-                    height: 52,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.18),
-                      borderRadius: BorderRadius.circular(15),
-                    ),
-                    child: const Icon(
-                      Icons.people_alt_rounded,
-                      color: Colors.white,
-                      size: 28,
-                    ),
-                  ),
+            );
+          }
 
-                  const SizedBox(width: 15),
+          final semuaDokumen = snapshot.data?.docs ?? [];
 
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          widget.namaKelas,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 19,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+          // Hanya mengambil akun siswa yang sesuai dengan kelas ini.
+          final daftarSiswa = semuaDokumen.where((doc) {
+            final data = doc.data();
 
-                        const SizedBox(height: 5),
+            final role = (data['role'] ?? '')
+                .toString()
+                .toLowerCase();
 
-                        Text(
-                          'Kode: ${widget.kodeKelas}',
-                          style: const TextStyle(
-                            color: Colors.white70,
-                            fontSize: 13,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            final namaKelas = (data['namaKelas'] ?? '')
+                .toString();
 
-            const SizedBox(height: 24),
+            return role == 'siswa' &&
+                (namaKelas.isEmpty ||
+                    namaKelas == widget.namaKelas);
+          }).toList();
 
-            // ====================================================
-            // JUDUL DAN JUMLAH SISWA
-            // ====================================================
+          // Mengurutkan nama siswa.
+          daftarSiswa.sort((a, b) {
+            final namaA = (a.data()['nama'] ??
+                    a.data()['namaSiswa'] ??
+                    a.data()['name'] ??
+                    '')
+                .toString()
+                .toLowerCase();
 
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            final namaB = (b.data()['nama'] ??
+                    b.data()['namaSiswa'] ??
+                    b.data()['name'] ??
+                    '')
+                .toString()
+                .toLowerCase();
+
+            return namaA.compareTo(namaB);
+          });
+
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Siswa yang Bergabung',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: textBlue,
-                  ),
+                _buildHeader(),
+
+                const SizedBox(height: 24),
+
+                Row(
+                  mainAxisAlignment:
+                      MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Siswa yang Bergabung',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: textBlue,
+                      ),
+                    ),
+
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: paleBlue,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        '${daftarSiswa.length} Siswa',
+                        style: const TextStyle(
+                          color: royalBlue,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
 
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
+                const SizedBox(height: 14),
+
+                if (daftarSiswa.isEmpty)
+                  _buildEmptyState()
+                else
+                  ListView.builder(
+                    itemCount: daftarSiswa.length,
+                    shrinkWrap: true,
+                    physics:
+                        const NeverScrollableScrollPhysics(),
+                    itemBuilder: (context, index) {
+                      final data = daftarSiswa[index].data();
+
+                      final nama = (data['nama'] ??
+                              data['namaSiswa'] ??
+                              data['name'] ??
+                              'Nama Siswa')
+                          .toString();
+
+                      final email =
+                          (data['email'] ?? '-').toString();
+
+                      return _buildStudentCard(
+                        nama: nama,
+                        email: email,
+                      );
+                    },
                   ),
-                  decoration: BoxDecoration(
-                    color: paleBlue,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    '${daftarSiswa.length} Siswa',
-                    style: const TextStyle(
-                      color: royalBlue,
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
               ],
             ),
-
-            const SizedBox(height: 14),
-
-            // ====================================================
-            // DAFTAR SISWA
-            // ====================================================
-
-            if (daftarSiswa.isEmpty)
-              buildEmptyState()
-            else
-              ListView.builder(
-                itemCount: daftarSiswa.length,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemBuilder: (context, index) {
-                  final siswa = daftarSiswa[index];
-
-                  return buildStudentCard(
-                    nama: siswa['namaSiswa'] ?? 'Nama Siswa',
-                    email: '-',
-                  );
-                },
-              ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
 
-  // ============================================================
-  // EMPTY STATE
-  // ============================================================
+  // HEADER KELAS
+  Widget _buildHeader() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [royalBlue, skyBlue],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(22),
+        boxShadow: [
+          BoxShadow(
+            color: royalBlue.withValues(alpha: 0.18),
+            blurRadius: 15,
+            offset: const Offset(0, 7),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 52,
+            height: 52,
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.18),
+              borderRadius: BorderRadius.circular(15),
+            ),
+            child: const Icon(
+              Icons.people_alt_rounded,
+              color: Colors.white,
+              size: 28,
+            ),
+          ),
 
-  Widget buildEmptyState() {
+          const SizedBox(width: 15),
+
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  widget.namaKelas,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 19,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+
+                const SizedBox(height: 5),
+
+                Text(
+                  'Kode: ${widget.kodeKelas}',
+                  style: const TextStyle(
+                    color: Colors.white70,
+                    fontSize: 13,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // EMPTY STATE
+  Widget _buildEmptyState() {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(
@@ -301,11 +345,8 @@ class _DaftarSiswaPageState extends State<DaftarSiswaPage> {
     );
   }
 
-  // ============================================================
   // STUDENT CARD
-  // ============================================================
-
-  Widget buildStudentCard({
+  Widget _buildStudentCard({
     required String nama,
     required String email,
   }) {
@@ -363,6 +404,39 @@ class _DaftarSiswaPageState extends State<DaftarSiswaPage> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  // ERROR STATE
+  Widget _buildErrorState() {
+    return const Center(
+      child: Padding(
+        padding: EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.cloud_off_rounded,
+              size: 45,
+              color: Colors.redAccent,
+            ),
+            SizedBox(height: 12),
+            Text(
+              'Gagal mengambil data siswa.',
+              style: TextStyle(
+                color: textBlue,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            SizedBox(height: 6),
+            Text(
+              'Periksa koneksi Firebase dan aturan Firestore.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: mutedBlue),
+            ),
+          ],
+        ),
       ),
     );
   }
