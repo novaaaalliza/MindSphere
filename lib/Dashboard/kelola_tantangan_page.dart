@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -170,7 +169,10 @@ class _KelolaTantanganPageState
                   return;
                 }
 
-                if (!sudahLogin) {
+                final user =
+                    FirebaseAuth.instance.currentUser;
+
+                if (user == null) {
                   tampilkanPesan(
                     'Silakan login terlebih dahulu.',
                   );
@@ -184,8 +186,7 @@ class _KelolaTantanganPageState
                     'judul': judul,
                     'deskripsi': deskripsi,
                     'soal': <Map<String, dynamic>>[],
-                    'createdBy':
-                        FirebaseAuth.instance.currentUser!.uid,
+                    'createdBy': user.uid,
                     'createdAt':
                         FieldValue.serverTimestamp(),
                     'updatedAt':
@@ -193,7 +194,9 @@ class _KelolaTantanganPageState
                   });
 
                   if (!mounted) return;
+
                   Navigator.pop(dialogContext);
+
                   tampilkanPesan(
                     'Tantangan berhasil dibuat.',
                   );
@@ -291,7 +294,9 @@ class _KelolaTantanganPageState
                   });
 
                   if (!mounted) return;
+
                   Navigator.pop(dialogContext);
+
                   tampilkanPesan(
                     'Tantangan berhasil diperbarui.',
                   );
@@ -348,7 +353,9 @@ class _KelolaTantanganPageState
                   await koleksiTantangan.doc(id).delete();
 
                   if (!mounted) return;
+
                   Navigator.pop(dialogContext);
+
                   tampilkanPesan(
                     'Tantangan berhasil dihapus.',
                   );
@@ -643,14 +650,11 @@ class _KelolaTantanganPageState
             );
           }
 
+          // Data sudah difilter berdasarkan kode kelas
+          // pada streamTantangan.
           final docs = snapshot.data?.docs ?? [];
 
-          final daftar = docs.where((doc) {
-            if (!sedangDiDalamKelas) return true;
-
-            return doc.data()['namaKelas'] ==
-                widget.namaKelas;
-          }).toList();
+          final daftar = docs;
 
           if (daftar.isEmpty) {
             return buildEmptyState();
@@ -1112,6 +1116,7 @@ class _KelolaSoalPageState extends State<KelolaSoalPage> {
       );
     } catch (e) {
       widget.daftarSoal.insert(index, soalDihapus);
+
       if (mounted) setState(() {});
 
       if (!mounted) return;
