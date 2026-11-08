@@ -28,7 +28,7 @@ class _HasilSiswaPageState extends State<HasilSiswaPage> {
   static const Color paleBlue = Color(0xFFDCEBFF);
 
   // ============================================================
-  // MENGAMBIL HASIL DARI FIRESTORE
+  // STREAM HASIL DARI FIRESTORE
   // ============================================================
 
   Stream<QuerySnapshot<Map<String, dynamic>>> _streamHasil() {
@@ -39,7 +39,7 @@ class _HasilSiswaPageState extends State<HasilSiswaPage> {
   }
 
   // ============================================================
-  // MEMPROSES DATA HASIL
+  // MEMPROSES DAN MENGURUTKAN HASIL
   // ============================================================
 
   List<Map<String, dynamic>> _prosesHasil(
@@ -53,30 +53,42 @@ class _HasilSiswaPageState extends State<HasilSiswaPage> {
           };
         })
         .where((data) {
-          return data['kodeKelas']?.toString() ==
-                  widget.kodeKelas &&
-              data['namaKelas']?.toString() ==
-                  widget.namaKelas;
+          return data['kodeKelas']?.toString() == widget.kodeKelas &&
+              data['namaKelas']?.toString() == widget.namaKelas;
         })
         .toList();
 
-    // Mengurutkan hasil terbaru terlebih dahulu.
     hasil.sort((a, b) {
       final waktuA = a['createdAt'];
       final waktuB = b['createdAt'];
 
-      if (waktuA is Timestamp && waktuB is Timestamp) {
-        return waktuB.compareTo(waktuA);
+      DateTime? tanggalA;
+      DateTime? tanggalB;
+
+      if (waktuA is Timestamp) {
+        tanggalA = waktuA.toDate();
+      } else if (waktuA is DateTime) {
+        tanggalA = waktuA;
       }
 
-      return 0;
+      if (waktuB is Timestamp) {
+        tanggalB = waktuB.toDate();
+      } else if (waktuB is DateTime) {
+        tanggalB = waktuB;
+      }
+
+      if (tanggalA == null && tanggalB == null) return 0;
+      if (tanggalA == null) return 1;
+      if (tanggalB == null) return -1;
+
+      return tanggalB.compareTo(tanggalA);
     });
 
     return hasil;
   }
 
   // ============================================================
-  // MENGHITUNG JUMLAH SISWA
+  // JUMLAH SISWA
   // ============================================================
 
   int _jumlahSiswa(List<Map<String, dynamic>> hasil) {
@@ -97,27 +109,27 @@ class _HasilSiswaPageState extends State<HasilSiswaPage> {
   }
 
   // ============================================================
-  // MENGHITUNG RATA-RATA NILAI
+  // RATA-RATA NILAI
   // ============================================================
 
   double _rataRata(List<Map<String, dynamic>> hasil) {
-    if (hasil.isEmpty) return 0;
+    final dataValid = hasil
+        .where((data) => data['nilai'] is num)
+        .toList();
+
+    if (dataValid.isEmpty) return 0;
 
     double total = 0;
 
-    for (final data in hasil) {
-      final nilai = data['nilai'];
-
-      if (nilai is num) {
-        total += nilai.toDouble();
-      }
+    for (final data in dataValid) {
+      total += (data['nilai'] as num).toDouble();
     }
 
-    return total / hasil.length;
+    return total / dataValid.length;
   }
 
   // ============================================================
-  // MENCARI NILAI TERTINGGI
+  // NILAI TERTINGGI
   // ============================================================
 
   int _nilaiTertinggi(List<Map<String, dynamic>> hasil) {
@@ -134,6 +146,35 @@ class _HasilSiswaPageState extends State<HasilSiswaPage> {
     }
 
     return tertinggi;
+  }
+
+  // ============================================================
+  // FORMAT TANGGAL
+  // ============================================================
+
+  String _formatTanggal(dynamic tanggal) {
+    DateTime? waktu;
+
+    if (tanggal is Timestamp) {
+      waktu = tanggal.toDate();
+    } else if (tanggal is DateTime) {
+      waktu = tanggal;
+    } else if (tanggal is String) {
+      waktu = DateTime.tryParse(tanggal);
+    }
+
+    if (waktu == null) {
+      return 'Tanggal tidak tersedia';
+    }
+
+    final hari = waktu.day.toString().padLeft(2, '0');
+    final bulan = waktu.month.toString().padLeft(2, '0');
+    final tahun = waktu.year;
+
+    final jam = waktu.hour.toString().padLeft(2, '0');
+    final menit = waktu.minute.toString().padLeft(2, '0');
+
+    return '$hari/$bulan/$tahun • $jam:$menit';
   }
 
   // ============================================================
@@ -188,7 +229,6 @@ class _HasilSiswaPageState extends State<HasilSiswaPage> {
     return ListView(
       padding: const EdgeInsets.all(20),
       children: [
-        // HEADER KELAS
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
@@ -239,7 +279,6 @@ class _HasilSiswaPageState extends State<HasilSiswaPage> {
 
         const SizedBox(height: 20),
 
-        // RINGKASAN HASIL
         Row(
           children: [
             Expanded(
@@ -284,7 +323,6 @@ class _HasilSiswaPageState extends State<HasilSiswaPage> {
 
         const SizedBox(height: 26),
 
-        // DAFTAR HASIL
         const Text(
           'Daftar Hasil Siswa',
           style: TextStyle(
@@ -487,6 +525,10 @@ class _HasilSiswaPageState extends State<HasilSiswaPage> {
         ? (hasil['salah'] as num).toInt()
         : 0;
 
+    final int totalSoal = hasil['totalSoal'] is num
+        ? (hasil['totalSoal'] as num).toInt()
+        : benar + salah;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
       padding: const EdgeInsets.all(18),
@@ -585,6 +627,14 @@ class _HasilSiswaPageState extends State<HasilSiswaPage> {
             ],
           ),
 
+          const SizedBox(height: 10),
+
+          _buildAnswerInfo(
+            icon: Icons.assignment_rounded,
+            title: 'Total Soal',
+            value: totalSoal.toString(),
+          ),
+
           const SizedBox(height: 14),
 
           Row(
@@ -597,8 +647,9 @@ class _HasilSiswaPageState extends State<HasilSiswaPage> {
               const SizedBox(width: 6),
               Expanded(
                 child: Text(
-                  hasil['tanggal']?.toString() ??
-                      'Belum ada tanggal',
+                  _formatTanggal(
+                    hasil['createdAt'] ?? hasil['tanggal'],
+                  ),
                   style: const TextStyle(
                     color: mutedBlue,
                     fontSize: 12,
