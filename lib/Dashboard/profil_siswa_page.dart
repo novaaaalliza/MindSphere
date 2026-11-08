@@ -20,13 +20,14 @@ class _ProfilSiswaPageState extends State<ProfilSiswaPage> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
+  bool isLoading = true;
+  bool isSaving = false;
+
   String namaSiswa = 'Memuat...';
   String emailSiswa = '-';
   String nomorTelepon = '-';
   String kelasSiswa = 'Belum Bergabung';
   String kodeKelas = '-';
-
-  bool sedangMemuat = true;
 
   @override
   void initState() {
@@ -35,18 +36,19 @@ class _ProfilSiswaPageState extends State<ProfilSiswaPage> {
   }
 
   // ============================================================
-  // MEMUAT DATA PROFIL DARI FIREBASE
+  // MEMUAT PROFIL DARI FIRESTORE
   // ============================================================
 
   Future<void> _muatProfil() async {
     final user = _auth.currentUser;
 
     if (user == null) {
-      if (!mounted) return;
-      setState(() {
-        sedangMemuat = false;
-        namaSiswa = 'Pengguna';
-      });
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+          namaSiswa = 'Pengguna belum login';
+        });
+      }
       return;
     }
 
@@ -54,20 +56,17 @@ class _ProfilSiswaPageState extends State<ProfilSiswaPage> {
       final userDoc =
           await _firestore.collection('users').doc(user.uid).get();
 
-      final data = userDoc.data() ?? {};
+      final userData = userDoc.data() ?? {};
 
-      String nama = (data['nama'] ??
-              data['namaLengkap'] ??
-              data['name'] ??
-              user.displayName ??
-              'Siswa')
-          .toString();
+      String nama = userData['name']?.toString() ??
+          user.displayName ??
+          'Nama Siswa';
 
-      String telepon = (data['nomorTelepon'] ??
-              data['noTelepon'] ??
-              data['telepon'] ??
-              '-')
-          .toString();
+      String email = userData['email']?.toString() ??
+          user.email ??
+          '-';
+
+      String telepon = userData['phone']?.toString() ?? '-';
 
       String kelas = 'Belum Bergabung';
       String kode = '-';
@@ -80,416 +79,107 @@ class _ProfilSiswaPageState extends State<ProfilSiswaPage> {
           .get();
 
       if (kelasDiikuti.docs.isNotEmpty) {
-        final kelasData = kelasDiikuti.docs.first.data();
+        final dataKelas = kelasDiikuti.docs.first.data();
 
-        kelas = (kelasData['namaKelas'] ?? 'Kelas Siswa').toString();
-        kode = (kelasData['kodeKelas'] ?? '-').toString();
+        kelas = dataKelas['namaKelas']?.toString() ??
+            'Belum Bergabung';
+
+        kode = dataKelas['kodeKelas']?.toString() ?? '-';
       }
 
       if (!mounted) return;
 
       setState(() {
         namaSiswa = nama;
-        emailSiswa = user.email ?? '-';
+        emailSiswa = email;
         nomorTelepon = telepon;
         kelasSiswa = kelas;
         kodeKelas = kode;
-        sedangMemuat = false;
+        isLoading = false;
       });
     } catch (e) {
       if (!mounted) return;
 
       setState(() {
-        sedangMemuat = false;
+        isLoading = false;
       });
 
-      _tampilkanPesan('Gagal memuat profil: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Gagal memuat profil: $e'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
     }
   }
 
   // ============================================================
-  // PESAN
+  // MENYIMPAN PROFIL KE FIRESTORE
   // ============================================================
 
-  void _tampilkanPesan(String pesan) {
-    if (!mounted) return;
+  Future<void> _simpanProfil({
+    required String nama,
+    required String telepon,
+  }) async {
+    final user = _auth.currentUser;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(pesan)),
-    );
-  }
+    if (user == null) return;
 
-  // ============================================================
-  // BUILD
-  // ============================================================
+    if (nama.isEmpty) {
+      _pesan('Nama lengkap tidak boleh kosong.');
+      return;
+    }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF5F8FD),
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          onPressed: () => Navigator.pop(context),
-          icon: const Icon(
-            Icons.arrow_back_rounded,
-            color: textBlue,
-          ),
-        ),
-        title: const Text(
-          'Profil Siswa',
-          style: TextStyle(
-            color: textBlue,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
-      body: sedangMemuat
-          ? const Center(
-              child: CircularProgressIndicator(color: royalBlue),
-            )
-          : RefreshIndicator(
-              color: royalBlue,
-              onRefresh: _muatProfil,
-              child: SingleChildScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  children: [
-                    // HEADER PROFIL
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(24),
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [royalBlue, skyBlue],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        borderRadius: BorderRadius.circular(24),
-                        boxShadow: [
-                          BoxShadow(
-                            color: royalBlue.withValues(alpha: 0.18),
-                            blurRadius: 15,
-                            offset: const Offset(0, 7),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        children: [
-                          Container(
-                            width: 92,
-                            height: 92,
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: Colors.white.withValues(alpha: 0.8),
-                                width: 3,
-                              ),
-                            ),
-                            child: const Icon(
-                              Icons.person_rounded,
-                              color: royalBlue,
-                              size: 50,
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            namaSiswa,
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 21,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          const Text(
-                            'Siswa',
-                            style: TextStyle(
-                              color: Colors.white70,
-                              fontSize: 14,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            emailSiswa,
-                            style: const TextStyle(
-                              color: Colors.white70,
-                              fontSize: 13,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+    setState(() {
+      isSaving = true;
+    });
 
-                    const SizedBox(height: 24),
+    try {
+      await _firestore.collection('users').doc(user.uid).set({
+        'name': nama,
+        'phone': telepon,
+        'updatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
 
-                    const Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        'Informasi Profil',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: textBlue,
-                        ),
-                      ),
-                    ),
+      await user.updateDisplayName(nama);
 
-                    const SizedBox(height: 12),
+      if (!mounted) return;
 
-                    _buildInfoItem(
-                      Icons.person_outline_rounded,
-                      'Nama Lengkap',
-                      namaSiswa,
-                    ),
-                    _buildInfoItem(
-                      Icons.email_outlined,
-                      'Email',
-                      emailSiswa,
-                    ),
-                    _buildInfoItem(
-                      Icons.phone_outlined,
-                      'Nomor Telepon',
-                      nomorTelepon,
-                    ),
-                    _buildInfoItem(
-                      Icons.school_outlined,
-                      'Kelas',
-                      kelasSiswa,
-                    ),
-                    _buildInfoItem(
-                      Icons.key_rounded,
-                      'Kode Kelas',
-                      kodeKelas,
-                    ),
+      setState(() {
+        namaSiswa = nama;
+        nomorTelepon = telepon.isEmpty ? '-' : telepon;
+        isSaving = false;
+      });
 
-                    const SizedBox(height: 14),
+      Navigator.pop(context);
 
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton.icon(
-                        onPressed: _showEditProfileDialog,
-                        icon: const Icon(Icons.edit_rounded, size: 19),
-                        label: const Text(
-                          'Edit Profil',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: royalBlue,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                          elevation: 0,
-                        ),
-                      ),
-                    ),
+      _pesan('Profil berhasil diperbarui.');
+    } catch (e) {
+      if (!mounted) return;
 
-                    const SizedBox(height: 24),
+      setState(() {
+        isSaving = false;
+      });
 
-                    const Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        'Keamanan Akun',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: textBlue,
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 12),
-
-                    _buildActionItem(
-                      Icons.lock_outline_rounded,
-                      'Ubah Password',
-                      'Perbarui password akun',
-                      _showChangePasswordDialog,
-                    ),
-
-                    const SizedBox(height: 24),
-
-                    SizedBox(
-                      width: double.infinity,
-                      child: OutlinedButton.icon(
-                        onPressed: _showLogoutDialog,
-                        icon: const Icon(Icons.logout_rounded, size: 19),
-                        label: const Text(
-                          'Keluar dari Akun',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: Colors.redAccent,
-                          side: const BorderSide(color: Colors.redAccent),
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 20),
-                  ],
-                ),
-              ),
-            ),
-    );
-  }
-
-  // ============================================================
-  // INFO ITEM
-  // ============================================================
-
-  Widget _buildInfoItem(
-    IconData icon,
-    String title,
-    String value,
-  ) {
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(17),
-        border: Border.all(color: const Color(0xFFE1E9F5)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: paleBlue,
-              borderRadius: BorderRadius.circular(13),
-            ),
-            child: Icon(icon, color: royalBlue, size: 22),
-          ),
-          const SizedBox(width: 13),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: mutedBlue,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  value,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: textBlue,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ============================================================
-  // ACTION ITEM
-  // ============================================================
-
-  Widget _buildActionItem(
-    IconData icon,
-    String title,
-    String subtitle,
-    VoidCallback onTap,
-  ) {
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(17),
-        border: Border.all(color: const Color(0xFFE1E9F5)),
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(17),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: paleBlue,
-                    borderRadius: BorderRadius.circular(13),
-                  ),
-                  child: Icon(icon, color: royalBlue, size: 22),
-                ),
-                const SizedBox(width: 13),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        title,
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          color: textBlue,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        subtitle,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: mutedBlue,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const Icon(
-                  Icons.arrow_forward_ios_rounded,
-                  size: 15,
-                  color: mutedBlue,
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
+      _pesan('Gagal menyimpan profil: $e');
+    }
   }
 
   // ============================================================
   // EDIT PROFIL
   // ============================================================
 
-  Future<void> _showEditProfileDialog() async {
+  void _showEditProfileDialog() {
     final namaController = TextEditingController(text: namaSiswa);
     final teleponController = TextEditingController(
       text: nomorTelepon == '-' ? '' : nomorTelepon,
     );
 
-    await showDialog(
+    showDialog(
       context: context,
       builder: (dialogContext) {
-        bool sedangMenyimpan = false;
-
         return StatefulBuilder(
-          builder: (context, setDialogState) {
+          builder: (contextDialog, setDialogState) {
             return AlertDialog(
               title: const Text(
                 'Edit Profil',
@@ -518,87 +208,50 @@ class _ProfilSiswaPageState extends State<ProfilSiswaPage> {
                         prefixIcon: Icon(Icons.phone_outlined),
                       ),
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 10),
                     const Text(
                       'Email akun tidak diubah melalui menu ini.',
-                      style: TextStyle(fontSize: 12, color: mutedBlue),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: mutedBlue,
+                      ),
                     ),
                   ],
                 ),
               ),
               actions: [
                 TextButton(
-                  onPressed: sedangMenyimpan
+                  onPressed: isSaving
                       ? null
                       : () => Navigator.pop(dialogContext),
                   child: const Text('Batal'),
                 ),
                 ElevatedButton(
-                  onPressed: sedangMenyimpan
+                  onPressed: isSaving
                       ? null
                       : () async {
                           final nama = namaController.text.trim();
-                          final telepon = teleponController.text.trim();
-                          final user = _auth.currentUser;
+                          final telepon =
+                              teleponController.text.trim();
 
                           if (nama.isEmpty) {
-                            _tampilkanPesan('Nama tidak boleh kosong.');
+                            _pesan('Nama tidak boleh kosong.');
                             return;
                           }
 
-                          if (user == null) {
-                            _tampilkanPesan('Akun tidak ditemukan.');
-                            return;
-                          }
-
-                          setDialogState(() {
-                            sedangMenyimpan = true;
-                          });
-
-                          try {
-                            await _firestore
-                                .collection('users')
-                                .doc(user.uid)
-                                .set({
-                              'nama': nama,
-                              'nomorTelepon':
-                                  telepon.isEmpty ? '-' : telepon,
-                            }, SetOptions(merge: true));
-
-                            await user.updateDisplayName(nama);
-
-                            if (!mounted) return;
-
-                            setState(() {
-                              namaSiswa = nama;
-                              nomorTelepon =
-                                  telepon.isEmpty ? '-' : telepon;
-                            });
-
-                            if (dialogContext.mounted) {
-                              Navigator.pop(dialogContext);
-                            }
-
-                            _tampilkanPesan(
-                              'Profil berhasil diperbarui.',
-                            );
-                          } catch (e) {
-                            setDialogState(() {
-                              sedangMenyimpan = false;
-                            });
-                            _tampilkanPesan(
-                              'Gagal memperbarui profil: $e',
-                            );
-                          }
+                          await _simpanProfil(
+                            nama: nama,
+                            telepon: telepon,
+                          );
                         },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: royalBlue,
                     foregroundColor: Colors.white,
                   ),
-                  child: sedangMenyimpan
+                  child: isSaving
                       ? const SizedBox(
-                          width: 18,
                           height: 18,
+                          width: 18,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
                             color: Colors.white,
@@ -611,28 +264,28 @@ class _ProfilSiswaPageState extends State<ProfilSiswaPage> {
           },
         );
       },
-    );
-
-    namaController.dispose();
-    teleponController.dispose();
+    ).then((_) {
+      namaController.dispose();
+      teleponController.dispose();
+    });
   }
 
   // ============================================================
-  // UBAH PASSWORD FIREBASE AUTH
+  // UBAH PASSWORD FIREBASE AUTHENTICATION
   // ============================================================
 
-  Future<void> _showChangePasswordDialog() async {
+  void _showChangePasswordDialog() {
     final lamaController = TextEditingController();
     final baruController = TextEditingController();
     final konfirmasiController = TextEditingController();
 
-    await showDialog(
+    bool sedangMengubah = false;
+
+    showDialog(
       context: context,
       builder: (dialogContext) {
-        bool sedangMengubah = false;
-
         return StatefulBuilder(
-          builder: (context, setDialogState) {
+          builder: (contextDialog, setDialogState) {
             return AlertDialog(
               title: const Text(
                 'Ubah Password',
@@ -687,43 +340,33 @@ class _ProfilSiswaPageState extends State<ProfilSiswaPage> {
                       : () async {
                           final lama = lamaController.text;
                           final baru = baruController.text;
-                          final konfirmasi = konfirmasiController.text;
+                          final konfirmasi =
+                              konfirmasiController.text;
 
                           if (lama.isEmpty ||
                               baru.isEmpty ||
                               konfirmasi.isEmpty) {
-                            _tampilkanPesan(
-                              'Semua kolom password harus diisi.',
-                            );
+                            _pesan('Semua password harus diisi.');
                             return;
                           }
 
                           if (baru.length < 6) {
-                            _tampilkanPesan(
+                            _pesan(
                               'Password baru minimal 6 karakter.',
                             );
                             return;
                           }
 
                           if (baru != konfirmasi) {
-                            _tampilkanPesan(
+                            _pesan(
                               'Konfirmasi password tidak sesuai.',
                             );
                             return;
                           }
 
                           if (lama == baru) {
-                            _tampilkanPesan(
+                            _pesan(
                               'Password baru harus berbeda.',
-                            );
-                            return;
-                          }
-
-                          final user = _auth.currentUser;
-
-                          if (user == null || user.email == null) {
-                            _tampilkanPesan(
-                              'Akun tidak ditemukan.',
                             );
                             return;
                           }
@@ -733,6 +376,15 @@ class _ProfilSiswaPageState extends State<ProfilSiswaPage> {
                           });
 
                           try {
+                            final user = _auth.currentUser;
+
+                            if (user == null ||
+                                user.email == null) {
+                              throw Exception(
+                                'Akun tidak ditemukan.',
+                              );
+                            }
+
                             final credential =
                                 EmailAuthProvider.credential(
                               email: user.email!,
@@ -747,40 +399,33 @@ class _ProfilSiswaPageState extends State<ProfilSiswaPage> {
 
                             if (!mounted) return;
 
-                            if (dialogContext.mounted) {
-                              Navigator.pop(dialogContext);
-                            }
-
-                            _tampilkanPesan(
-                              'Password berhasil diperbarui.',
-                            );
+                            Navigator.pop(dialogContext);
+                            _pesan('Password berhasil diubah.');
                           } on FirebaseAuthException catch (e) {
-                            setDialogState(() {
-                              sedangMengubah = false;
-                            });
-
                             String pesan;
 
                             if (e.code == 'wrong-password' ||
                                 e.code == 'invalid-credential') {
                               pesan = 'Password lama tidak sesuai.';
                             } else if (e.code ==
-                                'requires-recent-login') {
-                              pesan =
-                                  'Silakan login ulang sebelum mengubah password.';
+                                'weak-password') {
+                              pesan = 'Password baru terlalu lemah.';
                             } else {
                               pesan = e.message ??
                                   'Gagal mengubah password.';
                             }
 
-                            _tampilkanPesan(pesan);
+                            setDialogState(() {
+                              sedangMengubah = false;
+                            });
+
+                            _pesan(pesan);
                           } catch (e) {
                             setDialogState(() {
                               sedangMengubah = false;
                             });
-                            _tampilkanPesan(
-                              'Terjadi kesalahan: $e',
-                            );
+
+                            _pesan('Gagal mengubah password: $e');
                           }
                         },
                   style: ElevatedButton.styleFrom(
@@ -789,8 +434,8 @@ class _ProfilSiswaPageState extends State<ProfilSiswaPage> {
                   ),
                   child: sedangMengubah
                       ? const SizedBox(
-                          width: 18,
                           height: 18,
+                          width: 18,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
                             color: Colors.white,
@@ -803,11 +448,11 @@ class _ProfilSiswaPageState extends State<ProfilSiswaPage> {
           },
         );
       },
-    );
-
-    lamaController.dispose();
-    baruController.dispose();
-    konfirmasiController.dispose();
+    ).then((_) {
+      lamaController.dispose();
+      baruController.dispose();
+      konfirmasiController.dispose();
+    });
   }
 
   // ============================================================
@@ -848,7 +493,8 @@ class _ProfilSiswaPageState extends State<ProfilSiswaPage> {
                     (route) => false,
                   );
                 } catch (e) {
-                  _tampilkanPesan('Gagal keluar dari akun: $e');
+                  if (!mounted) return;
+                  _pesan('Gagal keluar: $e');
                 }
               },
               style: ElevatedButton.styleFrom(
@@ -860,6 +506,388 @@ class _ProfilSiswaPageState extends State<ProfilSiswaPage> {
           ],
         );
       },
+    );
+  }
+
+  // ============================================================
+  // PESAN
+  // ============================================================
+
+  void _pesan(String pesan) {
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(pesan)),
+    );
+  }
+
+  // ============================================================
+  // TAMPILAN
+  // ============================================================
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFF5F8FD),
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          onPressed: () => Navigator.pop(context),
+          icon: const Icon(
+            Icons.arrow_back_rounded,
+            color: textBlue,
+          ),
+        ),
+        title: const Text(
+          'Profil Siswa',
+          style: TextStyle(
+            color: textBlue,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+      body: isLoading
+          ? const Center(
+              child: CircularProgressIndicator(
+                color: royalBlue,
+              ),
+            )
+          : RefreshIndicator(
+              color: royalBlue,
+              onRefresh: _muatProfil,
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  children: [
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [royalBlue, skyBlue],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(24),
+                        boxShadow: [
+                          BoxShadow(
+                            color: royalBlue.withValues(alpha: 0.18),
+                            blurRadius: 15,
+                            offset: const Offset(0, 7),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        children: [
+                          Container(
+                            width: 92,
+                            height: 92,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: Colors.white.withValues(
+                                  alpha: 0.8,
+                                ),
+                                width: 3,
+                              ),
+                            ),
+                            child: const Icon(
+                              Icons.person_rounded,
+                              color: royalBlue,
+                              size: 50,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            namaSiswa,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 21,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          const Text(
+                            'Siswa',
+                            style: TextStyle(
+                              color: Colors.white70,
+                              fontSize: 14,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            emailSiswa,
+                            style: const TextStyle(
+                              color: Colors.white70,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    const Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        'Informasi Profil',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: textBlue,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    _buildInfoItem(
+                      icon: Icons.person_outline_rounded,
+                      title: 'Nama Lengkap',
+                      value: namaSiswa,
+                    ),
+                    _buildInfoItem(
+                      icon: Icons.email_outlined,
+                      title: 'Email',
+                      value: emailSiswa,
+                    ),
+                    _buildInfoItem(
+                      icon: Icons.phone_outlined,
+                      title: 'Nomor Telepon',
+                      value: nomorTelepon,
+                    ),
+                    _buildInfoItem(
+                      icon: Icons.school_outlined,
+                      title: 'Kelas',
+                      value: kelasSiswa,
+                    ),
+                    _buildInfoItem(
+                      icon: Icons.key_rounded,
+                      title: 'Kode Kelas',
+                      value: kodeKelas,
+                    ),
+                    const SizedBox(height: 14),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: _showEditProfileDialog,
+                        icon: const Icon(Icons.edit_rounded, size: 19),
+                        label: const Text(
+                          'Edit Profil',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: royalBlue,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 14,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          elevation: 0,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    const Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        'Keamanan Akun',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: textBlue,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    _buildActionItem(
+                      icon: Icons.lock_outline_rounded,
+                      title: 'Ubah Password',
+                      subtitle:
+                          'Perbarui password akun secara berkala',
+                      onTap: _showChangePasswordDialog,
+                    ),
+                    const SizedBox(height: 24),
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: _showLogoutDialog,
+                        icon: const Icon(
+                          Icons.logout_rounded,
+                          size: 19,
+                        ),
+                        label: const Text(
+                          'Keluar dari Akun',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.redAccent,
+                          side: const BorderSide(
+                            color: Colors.redAccent,
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 14,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                  ],
+                ),
+              ),
+            ),
+    );
+  }
+
+  // ============================================================
+  // INFO ITEM
+  // ============================================================
+
+  Widget _buildInfoItem({
+    required IconData icon,
+    required String title,
+    required String value,
+  }) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(17),
+        border: Border.all(
+          color: const Color(0xFFE1E9F5),
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: paleBlue,
+              borderRadius: BorderRadius.circular(13),
+            ),
+            child: Icon(
+              icon,
+              color: royalBlue,
+              size: 22,
+            ),
+          ),
+          const SizedBox(width: 13),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: mutedBlue,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: textBlue,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ============================================================
+  // ACTION ITEM
+  // ============================================================
+
+  Widget _buildActionItem({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(17),
+        border: Border.all(
+          color: const Color(0xFFE1E9F5),
+        ),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(17),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: paleBlue,
+                    borderRadius: BorderRadius.circular(13),
+                  ),
+                  child: Icon(
+                    icon,
+                    color: royalBlue,
+                    size: 22,
+                  ),
+                ),
+                const SizedBox(width: 13),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: textBlue,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        subtitle,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: mutedBlue,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  size: 15,
+                  color: mutedBlue,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
